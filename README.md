@@ -1,4 +1,4 @@
-# N.A.V.I. モバイル（Android）
+# N.A.V.I. モバイル（Navigator of All Vital Information）
 
 PCの音声アシスタント「N.A.V.I.」を、スマホから使うための専用アプリ。
 
