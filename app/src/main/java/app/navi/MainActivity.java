@@ -347,6 +347,23 @@ public class MainActivity extends Activity {
             });
         }
 
+        /** 端末に保存してある、今週の予定（なければ空の文字） */
+        @JavascriptInterface
+        public String getSnapshot() {
+            return Store.snapshot(MainActivity.this);
+        }
+
+        /** 画面がPCから受け取った予定を、端末にも保存する（次回、通信できなくても見られる） */
+        @JavascriptInterface
+        public void saveSnapshot(String json) {
+            try {
+                JSONObject o = new JSONObject(json);
+                long at = o.optLong("generatedAt", 0);
+                if (at >= Store.snapshotAt(MainActivity.this)) Store.setSnapshot(MainActivity.this, json, at);
+            } catch (Exception ignored) {
+            }
+        }
+
         /** 「ナビ」の呼びかけ待ちを、オン／オフする */
         @JavascriptInterface
         public void setWake(final boolean on) {

@@ -50,4 +50,17 @@ final class Store {
     static void setWake(Context c, boolean on) {
         sp(c).edit().putBoolean("wake", on).apply();
     }
+
+    /** PCが毎朝送る「1週間分の予定」。通信できなくても見られるよう、端末に保存しておく */
+    static String snapshot(Context c) {
+        return sp(c).getString("snapshot", "");
+    }
+
+    static long snapshotAt(Context c) {
+        return sp(c).getLong("snapshotAt", 0);
+    }
+
+    static void setSnapshot(Context c, String json, long generatedAt) {
+        sp(c).edit().putString("snapshot", json).putLong("snapshotAt", generatedAt).apply();
+    }
 }

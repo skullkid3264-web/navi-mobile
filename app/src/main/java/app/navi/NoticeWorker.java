@@ -22,6 +22,8 @@ public class NoticeWorker extends Worker {
         Context c = getApplicationContext();
         if (!Store.isPaired(c)) return Result.success();
 
+        fetchSnapshot(c);
+
         try {
             long last = Store.lastNotice(c);
             JSONObject p = new JSONObject();
@@ -51,6 +53,21 @@ public class NoticeWorker extends Worker {
             return Result.success();
         } catch (Exception e) {
             return Result.success();   // つながらないときは、次の15分後にまた試す
+        }
+    }
+
+    /** 今週の予定が新しくなっていたら、端末に保存する（アプリを開いていなくても、朝のうちに受け取れる） */
+    private void fetchSnapshot(Context c) {
+        try {
+            JSONObject p = new JSONObject();
+            p.put("since", Store.snapshotAt(c));
+            JSONObject res = Api.call(Store.url(c), Store.token(c), "snapshotGet", p);
+            if (!res.optBoolean("ok")) return;
+            JSONObject r = res.optJSONObject("result");
+            if (r == null || r.optBoolean("unchanged")) return;
+            long at = r.optLong("generatedAt", 0);
+            if (at > Store.snapshotAt(c)) Store.setSnapshot(c, r.toString(), at);
+        } catch (Exception ignored) {
         }
     }
 }
