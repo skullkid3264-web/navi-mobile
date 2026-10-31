@@ -117,8 +117,11 @@
       <option value="memo">📒 メモ</option>
       <option value="todo">✅ Todo</option>
       <option value="event">📅 予定</option>
+      <option value="snote">🧑‍🎓 生徒メモ（月末の報告用）</option>
+      <option value="journal">📔 日記</option>
       <option value="send">💬 PCへの指示</option>
     </select>
+    <div id="obStudentRow" style="margin-top:8px"><input type="text" id="obStudent" placeholder="生徒（名前・番号・クラス全員）"></div>
     <div style="display:flex;gap:8px;margin-top:8px;align-items:flex-end">
       <textarea id="obText" rows="2" placeholder="内容"></textarea>
       <button id="obMic" style="width:52px;height:52px;border-radius:50%;padding:0;background:var(--pink);color:#2b1020;flex:none">🎤</button>
@@ -479,7 +482,7 @@
   var outbox = [];
   try { outbox = JSON.parse(lsGet('outbox', '[]')) || []; } catch (e) { outbox = []; }
   var flushing = false;
-  var TYPE_LABEL = { memo: '📒 メモ', todo: '✅ Todo', event: '📅 予定', send: '💬 指示' };
+  var TYPE_LABEL = { memo: '📒 メモ', todo: '✅ Todo', event: '📅 予定', snote: '🧑‍🎓 生徒メモ', journal: '📔 日記', send: '💬 指示' };
 
   function saveOutbox() { lsSet('outbox', JSON.stringify(outbox)); updateBadges(); }
 
@@ -519,7 +522,7 @@
     var items = outbox.filter(function (o) { return o.type !== 'send'; });
     if (!items.length) { if (manual) { $('obMsg').textContent = '送るものはありません'; } return; }
     flushing = true;
-    var payload = items.map(function (o) { return { cid: o.cid, type: o.type, text: o.text, due: o.date && o.type === 'todo' ? o.date : '', date: o.date, start: o.start, end: o.end, title: o.title, note: o.note, repeat: o.repeat }; });
+    var payload = items.map(function (o) { return { cid: o.cid, type: o.type, student: o.student, text: o.text, due: o.date && o.type === 'todo' ? o.date : '', date: o.date, start: o.start, end: o.end, title: o.title, note: o.note, repeat: o.repeat }; });
     talkToPC('sync', JSON.stringify(payload)).then(function (st) {
       var ok = {};
       (st.results || []).forEach(function (r) { if (r.ok) { ok[r.cid] = true; } });
@@ -543,7 +546,7 @@
     outbox.forEach(function (o, i) {
       var d = document.createElement('div'); d.className = 'ob';
       var b = document.createElement('div'); b.className = 'body';
-      var main = o.type === 'event' ? o.title : o.text;
+      var main = o.type === 'event' ? o.title : (o.type === 'snote' ? o.student + '：' + o.text : o.text);
       b.textContent = TYPE_LABEL[o.type] + '　' + main;
       var sm = document.createElement('small');
       var bits = [];
@@ -561,12 +564,13 @@
 
   function obTypeChanged() {
     var t = $('obType').value;
-    $('obDateRow').style.display = (t === 'todo' || t === 'event') ? '' : 'none';
+    $('obDateRow').style.display = (t === 'todo' || t === 'event' || t === 'snote' || t === 'journal') ? '' : 'none';
+    $('obStudentRow').style.display = t === 'snote' ? '' : 'none';
     $('obTimeRow').style.display = t === 'event' ? '' : 'none';
     $('obRepRow').style.display = t === 'event' ? '' : 'none';
-    $('obDateLabel').textContent = t === 'todo' ? '期限（なくてもOK）' : '日付';
+    $('obDateLabel').textContent = t === 'todo' ? '期限（なくてもOK）' : (t === 'snote' || t === 'journal' ? '日付（今日でOK）' : '日付');
     $('obText').placeholder = t === 'event' ? '予定の名前' : (t === 'send' ? 'PCのN.A.V.I.への指示（例：ゆきにゴールドを2枚）' : '内容');
-    if (t === 'event' && !$('obDate').value) { $('obDate').value = ymd(new Date()); }
+    if ((t === 'event' || t === 'snote' || t === 'journal') && !$('obDate').value) { $('obDate').value = ymd(new Date()); }
   }
   $('obType').onchange = obTypeChanged;
   $('obMic').onclick = function () {
@@ -584,9 +588,16 @@
     } else {
       it.text = text;
       if (t === 'todo') { it.date = $('obDate').value || ''; }
+      if (t === 'snote') {
+        it.student = $('obStudent').value.trim();
+        if (!it.student) { $('obMsg').textContent = '生徒を入れてください'; return; }
+        it.date = $('obDate').value || ymd(new Date());
+      }
+      if (t === 'journal') { it.date = $('obDate').value || ymd(new Date()); }
     }
     queueItem(it);
     $('obText').value = ''; $('obStart').value = ''; $('obEnd').value = '';
+    if (t === 'journal') { $('obMsg').textContent = ''; }
     $('obMsg').textContent = '書き溜めました' + (pcOnline ? '（まもなくPCに送ります）' : '（つながったら送ります）');
     if (pcOnline) { flushOutbox(); }
   };
