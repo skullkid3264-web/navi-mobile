@@ -1,0 +1,61 @@
+plugins {
+    id 'com.android.application'
+}
+
+// GitHub Actions が自動で入れる値。版の番号 = ビルドの通し番号。
+def runNumber = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger()
+def updateRepo = System.getenv("GITHUB_REPOSITORY") ?: ""
+def keystoreFile = System.getenv("KEYSTORE_FILE")
+
+android {
+    namespace 'app.navi'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "app.navi"
+        minSdk 24
+        targetSdk 34
+        versionCode runNumber
+        versionName "${runNumber}"
+        buildConfigField "String", "UPDATE_REPO", "\"${updateRepo}\""
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    signingConfigs {
+        release {
+            if (keystoreFile) {
+                storeFile file(keystoreFile)
+                storePassword System.getenv("KEYSTORE_PASSWORD")
+                // 依頼掲示板と同じ署名鍵を使う（鍵の中の名前は questboard のまま）
+                keyAlias "questboard"
+                keyPassword System.getenv("KEYSTORE_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig keystoreFile ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core:1.13.1'
+    implementation 'androidx.webkit:webkit:1.11.0'
+    implementation 'androidx.work:work-runtime:2.9.1'
+}

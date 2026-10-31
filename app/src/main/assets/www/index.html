@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>N.A.V.I.</title>
+<style>
+  :root { --bg:#14151c; --card:#1f2130; --card2:#2a2d42; --text:#eee; --sub:#9aa3b5; --me:#9ec5ff; --ai:#8fe39b; --ng:#ff8a80; --note:#ffd54f; --accent:#b39ddb; --pink:#f48fb1; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; margin:0; }
+  body { font-family:"Noto Sans JP",sans-serif; background:var(--bg); color:var(--text); display:flex; flex-direction:column; }
+  header { display:flex; align-items:center; gap:8px; padding:calc(8px + env(safe-area-inset-top)) 12px 8px; background:var(--card); }
+  header h1 { font-size:17px; margin:0; letter-spacing:.5px; color:var(--accent); flex:1; }
+  header h1 small { font-size:11px; color:var(--sub); font-weight:normal; margin-left:6px; }
+  .dot { display:inline-block; width:9px; height:9px; border-radius:50%; background:#666; margin-right:4px; }
+  .dot.on { background:var(--ai); } .dot.off { background:var(--ng); }
+  .ib { background:none; border:none; color:var(--text); font-size:20px; padding:6px 8px; border-radius:10px; }
+  .ib.active { background:var(--card2); }
+  #banner { display:none; background:var(--pink); color:#2b1020; padding:8px 12px; font-size:14px; }
+  #banner button { margin-left:8px; background:#2b1020; color:#fff; font-size:13px; padding:6px 10px; }
+  .tabs { display:flex; background:var(--card); border-bottom:1px solid var(--card2); }
+  .tabs button { flex:1; background:none; color:var(--sub); border-radius:0; padding:10px; font-size:14px; border-bottom:3px solid transparent; }
+  .tabs button.on { color:var(--accent); border-bottom-color:var(--accent); font-weight:bold; }
+  .badge { background:var(--pink); color:#2b1020; font-size:11px; border-radius:9px; padding:1px 6px; margin-left:4px; }
+  .pane { flex:1; overflow-y:auto; padding:12px; display:none; }
+  .pane.on { display:block; }
+  #chat { display:flex; flex-direction:column; gap:8px; }
+  .bubble { padding:10px 12px; border-radius:14px; background:var(--card); font-size:15px; line-height:1.55; white-space:pre-wrap; word-break:break-word; }
+  .bubble.me { color:var(--me); align-self:flex-end; max-width:88%; border-bottom-right-radius:4px; }
+  .bubble.ai { color:var(--ai); align-self:flex-start; max-width:94%; border-bottom-left-radius:4px; }
+  .bubble.err { color:var(--ng); }
+  .bubble.live { opacity:.65; }
+  #plan { display:none; background:var(--card); border-radius:14px; padding:12px; margin-top:10px; border:1px solid var(--card2); }
+  .step { margin-bottom:10px; white-space:pre-wrap; word-break:break-word; font-size:15px; }
+  .step .ng { color:var(--ng); font-size:14px; } .step .note { color:var(--note); font-size:13px; }
+  .row { display:flex; gap:8px; }
+  button { font-family:inherit; font-size:16px; border:none; border-radius:12px; padding:12px 14px; background:var(--card2); color:var(--text); }
+  button:disabled { opacity:.4; }
+  button.run { background:#43a047; color:#fff; font-weight:bold; flex:1; padding:16px; font-size:18px; }
+  button.go { background:var(--accent); color:#1b1230; font-weight:bold; }
+  #chips { display:flex; gap:6px; overflow-x:auto; padding:6px 12px; background:var(--bg); }
+  #chips button { white-space:nowrap; font-size:13px; padding:8px 12px; border-radius:16px; background:var(--card); border:1px solid var(--card2); }
+  footer { background:var(--card); padding:8px 10px calc(8px + env(safe-area-inset-bottom)); }
+  footer .inner { display:flex; gap:8px; align-items:flex-end; }
+  textarea, input[type=text], input[type=password] { width:100%; font-family:inherit; font-size:16px; padding:10px; border-radius:12px; border:1px solid var(--card2); background:var(--bg); color:var(--text); }
+  textarea { resize:none; flex:1; }
+  #mic { width:56px; height:56px; border-radius:50%; font-size:24px; padding:0; background:var(--pink); color:#2b1020; flex:none; }
+  #mic.on { background:#ef5350; color:#fff; animation:pulse 1s infinite; }
+  @keyframes pulse { 50% { transform:scale(1.1); } }
+  .notice { background:var(--card); border-radius:12px; padding:10px 12px; margin-bottom:8px; }
+  .notice.new { border-left:4px solid var(--pink); }
+  .notice b { display:block; font-size:15px; margin-bottom:2px; }
+  .notice span { color:var(--sub); font-size:12px; }
+  .empty { color:var(--sub); text-align:center; margin-top:40px; }
+  #setup, #settings { position:fixed; inset:0; background:var(--bg); z-index:10; overflow-y:auto; padding:calc(16px + env(safe-area-inset-top)) 16px 24px; display:none; }
+  #setup.on, #settings.on { display:block; }
+  h2 { color:var(--accent); font-size:20px; margin:8px 0 12px; }
+  p, li { line-height:1.7; font-size:15px; }
+  li { margin-bottom:4px; }
+  label { display:block; font-size:13px; color:var(--sub); margin:12px 0 4px; }
+  .sw { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--card2); }
+  .sw input { width:24px; height:24px; }
+  .msg { color:var(--note); font-size:14px; min-height:20px; margin-top:8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>✦ N.A.V.I.<small id="ver"></small></h1>
+  <span style="font-size:12px;color:var(--sub)"><span class="dot" id="dot"></span><span id="pcText">…</span></span>
+  <button class="ib" id="spk" title="返事を読み上げる">🔊</button>
+  <button class="ib" id="gear" title="設定">⚙️</button>
+</header>
+<div id="banner"><span id="bannerText">新しい版があります</span><button id="bannerBtn">更新する</button></div>
+<div class="tabs">
+  <button id="tabChat" class="on">💬 チャット</button>
+  <button id="tabNotices">🔔 お知らせ<span class="badge" id="badge" style="display:none">0</span></button>
+</div>
+
+<div class="pane on" id="paneChat">
+  <div id="chat"></div>
+  <div id="plan"></div>
+</div>
+<div class="pane" id="paneNotices">
+  <div id="noticeList"></div>
+</div>
+
+<div id="chips">
+  <button data-q="今日のまとめを教えて">☀️ 今日のまとめ</button>
+  <button data-q="承認待ちの目標を見せて">🎯 承認待ち</button>
+  <button data-q="Claudeへの相談リストを見せて">🙋 相談リスト</button>
+  <button data-q="今日のやることを3つ選んで">📝 今日の3つ</button>
+  <button data-q="夕方の振り返りをして">🌙 振り返り</button>
+</div>
+<footer><div class="inner">
+  <textarea id="text" rows="1" placeholder="話しかけるか、書いてください"></textarea>
+  <button class="go" id="sendBtn" style="height:56px">送る</button>
+  <button id="mic">🎤</button>
+</div></footer>
+
+<!-- 最初の登録 -->
+<div id="setup">
+  <h2>✦ はじめまして、N.A.V.I.です</h2>
+  <p>PCのN.A.V.I.とつなぐ登録が、最初に1回だけ必要です。</p>
+  <ol>
+    <li>PCのN.A.V.I.で「📱 スマホを登録」を開く</li>
+    <li>「📲 アプリ用の登録コード」の <b>コピー</b> を押す</li>
+    <li>このスマホに送る（メモ・LINEのKeepなど）→ ここに貼り付け</li>
+  </ol>
+  <label>登録コード（navi://pair?… の文字）</label>
+  <input type="text" id="setCode" placeholder="navi://pair?u=…&k=…">
+  <p style="color:var(--sub);font-size:13px">コードがうまくいかないときは、下に GAS のアドレスと合言葉を別々に入れても登録できます。</p>
+  <label>GASのアドレス（https://script.google.com/…/exec）</label>
+  <input type="text" id="setUrl">
+  <label>合言葉（config.json の gas_token）</label>
+  <input type="password" id="setTok">
+  <div style="margin-top:16px"><button class="go" id="setGo" style="width:100%">登録する</button></div>
+  <div class="msg" id="setMsg"></div>
+</div>
+
+<!-- 設定 -->
+<div id="settings">
+  <h2>設定</h2>
+  <p id="setInfo" style="color:var(--sub)"></p>
+  <div class="sw"><span>話し終わったら自動で送る</span><input type="checkbox" id="optAuto"></div>
+  <div class="sw"><span>返事を読み上げる 🔊</span><input type="checkbox" id="optSpeak"></div>
+  <div style="margin-top:14px" class="row">
+    <button id="btnNotify" style="flex:1">🔔 通知を許可する</button>
+  </div>
+  <div style="margin-top:10px" class="row">
+    <button id="btnUpdate" style="flex:1">⬆ 新しい版を確かめる</button>
+  </div>
+  <div style="margin-top:10px" class="row">
+    <button id="btnTest" style="flex:1">📨 テスト通知をPC経由で送る</button>
+  </div>
+  <div style="margin-top:10px" class="row">
+    <button id="btnUnpair" style="flex:1;color:var(--ng)">登録を解除する</button>
+  </div>
+  <div class="msg" id="setMsg2"></div>
+  <div style="margin-top:20px"><button class="go" id="btnClose" style="width:100%">閉じる</button></div>
+</div>
+
+<script>
+(function () {
+  var A = window.Android;
+  var $ = function (id) { return document.getElementById(id); };
+  var info = {};
+  var busy = false;
+  var planVisible = false;
+  var live = null;
+  var cbs = {};
+  var seq = 0;
+
+  // ---- 保存（使えない環境でも動く） ----
+  function lsGet(k, d) { try { var v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+  // ---- PC(GAS)への呼び出し ----
+  function call(action, params) {
+    return new Promise(function (resolve, reject) {
+      var id = 'c' + (++seq);
+      cbs[id] = function (txt) {
+        var j;
+        try { j = JSON.parse(txt); } catch (e) { reject(new Error('返事を読めませんでした')); return; }
+        if (j && j.ok) { resolve(j.result); } else { reject(new Error((j && j.error) || '不明なエラー')); }
+      };
+      A.call(id, action, JSON.stringify(params || {}));
+    });
+  }
+
+  function pollReply(id, n) {
+    return new Promise(function (resolve, reject) {
+      (function step(i) {
+        if (i > 90) { reject(new Error('PCから返事がありません（PCのN.A.V.I.が起動していて「📱 スマホから使う」がオンか確認してください）')); return; }
+        setTimeout(function () {
+          call('mobileFetch', { id: id }).then(function (r) {
+            if (r && r.response) { resolve(r.response); } else { step(i + 1); }
+          }).catch(reject);
+        }, i < 5 ? 1500 : 2500);
+      })(0);
+    });
+  }
+
+  function talkToPC(kind, text) {
+    return call('mobileSubmit', { kind: kind, text: text || '' }).then(function (id) { return pollReply(id); });
+  }
+
+  // ---- 表示 ----
+  function say(who, text, cls) {
+    var d = document.createElement('div');
+    d.className = 'bubble ' + who + (cls ? ' ' + cls : '');
+    d.textContent = text;
+    $('chat').appendChild(d);
+    $('paneChat').scrollTop = $('paneChat').scrollHeight;
+    return d;
+  }
+
+  function setBusy(b) {
+    busy = b;
+    $('sendBtn').disabled = b;
+    document.querySelectorAll('#plan button').forEach(function (x) { x.disabled = b; });
+  }
+
+  function showState(st) {
+    if (st.reply) {
+      say('ai', st.reply);
+      if (lsGet('speak', '1') === '1') { A.speak(st.reply); }
+    }
+    var el = $('plan'); el.innerHTML = '';
+    var items = st.plan || [];
+    planVisible = items.length > 0;
+    if (!planVisible) { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    items.forEach(function (it, i) {
+      var d = document.createElement('div'); d.className = 'step';
+      d.appendChild(document.createTextNode((i + 1) + '. ' + it.label));
+      (it.problems || []).forEach(function (p) { var s = document.createElement('div'); s.className = 'ng'; s.textContent = '！ ' + p; d.appendChild(s); });
+      (it.notes || []).forEach(function (p) { var s = document.createElement('div'); s.className = 'note'; s.textContent = '※ ' + p; d.appendChild(s); });
+      el.appendChild(d);
+    });
+    var row = document.createElement('div'); row.className = 'row';
+    var run = document.createElement('button'); run.className = 'run'; run.textContent = '実行する'; run.disabled = !st.can_execute;
+    run.onclick = function () { send('execute', ''); };
+    var cancel = document.createElement('button'); cancel.textContent = 'やめる';
+    cancel.onclick = function () { send('cancel', ''); };
+    row.appendChild(run); row.appendChild(cancel); el.appendChild(row);
+    $('paneChat').scrollTop = $('paneChat').scrollHeight;
+    if (st.can_execute && lsGet('speak', '1') === '1') { A.speak((st.reply ? st.reply + '。' : '') + '内容を確認して、実行と言うか、ボタンを押してください'); }
+  }
+
+  function send(kind, text) {
+    if (busy) { return; }
+    if (kind === 'send') {
+      if (!text.trim()) { return; }
+      say('me', text);
+      $('text').value = '';
+    }
+    A.stopSpeak();
+    setBusy(true);
+    var th = say('ai', kind === 'execute' ? '実行しています…' : '考え中…（PCのAIが読んでいます）', 'live');
+    talkToPC(kind, text).then(function (st) {
+      th.remove();
+      showState(st);
+    }).catch(function (e) {
+      th.remove();
+      say('ai', '❌ ' + e.message, 'err');
+    }).then(function () { setBusy(false); checkPc(); });
+  }
+
+  function checkPc() {
+    call('mobileStatus', {}).then(function (r) { pcState(!!(r && r.pcOnline)); }).catch(function () { pcState(false); });
+  }
+  function pcState(on) {
+    $('dot').className = 'dot ' + (on ? 'on' : 'off');
+    $('pcText').textContent = on ? 'PC接続中' : 'PCオフ';
+  }
+
+  // ---- 音声 ----
+  var YES = /^(実行|実行して|実行する|はい|お願い|おねがい|お願いします|オッケー|ok|やって|やってください)[。！!、\s]*$/i;
+  var NO = /^(やめる|やめて|キャンセル|いいえ|中止|だめ|ダメ)[。！!、\s]*$/;
+
+  window.NAVI = {
+    _cb: function (id, txt) { var f = cbs[id]; delete cbs[id]; if (f) { f(txt); } },
+    onListening: function (on) {
+      $('mic').className = on ? 'on' : '';
+      $('mic').textContent = on ? '■' : '🎤';
+      if (!on && live) { live = null; }
+    },
+    onSpeech: function (text, final) {
+      if (!final) {
+        if (!live) { live = say('me', text, 'live'); } else { live.textContent = text; }
+        return;
+      }
+      if (live) { live.remove(); live = null; }
+      var t = (text || '').trim();
+      if (planVisible && YES.test(t)) { say('me', t); send('execute', ''); return; }
+      if (planVisible && NO.test(t)) { say('me', t); send('cancel', ''); return; }
+      if (lsGet('auto', '1') === '1') { send('send', t); }
+      else { $('text').value = ($('text').value + ' ' + t).trim(); }
+    },
+    onSpeechError: function (msg) { if (live) { live.remove(); live = null; } say('ai', '🎤 ' + msg, 'err'); },
+    onPaired: function () { refreshInfo(); closeSetup(); say('ai', '登録できました。話しかけてみてください。'); startPolling(); },
+    onNotifyPerm: function (ok) { $('setMsg2').textContent = ok ? '通知を許可しました' : '通知が許可されていません（端末の設定から許可してください）'; refreshInfo(); },
+    openTab: function (t) { showTab(t === 'notices' ? 'notices' : 'chat'); },
+    onUpdateAvailable: function (ver, notes) { $('bannerText').textContent = '新しい版（第' + ver + '版）があります'; $('banner').style.display = 'block'; },
+    onUpToDate: function () { $('setMsg2').textContent = '今が最新の版です'; },
+    onUpdateError: function (m) { $('setMsg2').textContent = m; $('bannerBtn').disabled = false; },
+    onUpdateProgress: function (p) { $('bannerText').textContent = '更新をダウンロード中… ' + p + '%'; },
+    handleBack: function () {
+      if ($('settings').className === 'on') { closeSettings(); return true; }
+      if ($('paneNotices').className.indexOf('on') >= 0) { showTab('chat'); return true; }
+      return false;
+    }
+  };
+
+  $('mic').onclick = function () {
+    if (!info.speech) { say('ai', 'この端末では音声認識が使えません。キーボードのマイクで入力してください', 'err'); return; }
+    if ($('mic').className === 'on') { A.stopListen(); } else { A.listen(); }
+  };
+
+  // ---- お知らせ ----
+  var notices = [];
+  function loadNotices() {
+    if (!info.paired) { return; }
+    call('noticesGet', { since: 0 }).then(function (r) {
+      notices = (r.items || []).slice().reverse();
+      renderNotices();
+    }).catch(function () {});
+  }
+  function renderNotices() {
+    var seen = Number(lsGet('seenNotice', '0'));
+    var box = $('noticeList'); box.innerHTML = '';
+    var unread = 0;
+    if (!notices.length) { box.innerHTML = '<div class="empty">まだお知らせはありません</div>'; }
+    notices.forEach(function (n) {
+      var isNew = n.id > seen; if (isNew) { unread++; }
+      var d = document.createElement('div'); d.className = 'notice' + (isNew ? ' new' : '');
+      var b = document.createElement('b'); b.textContent = n.title;
+      var p = document.createElement('div'); p.textContent = n.body; p.style.whiteSpace = 'pre-wrap';
+      var s = document.createElement('span'); var dt = new Date(n.at);
+      s.textContent = (dt.getMonth() + 1) + '/' + dt.getDate() + ' ' + ('0' + dt.getHours()).slice(-2) + ':' + ('0' + dt.getMinutes()).slice(-2);
+      d.appendChild(b); d.appendChild(p); d.appendChild(s); box.appendChild(d);
+    });
+    var onNoticesTab = $('paneNotices').className.indexOf('on') >= 0;
+    if (onNoticesTab && notices.length) { lsSet('seenNotice', String(notices[0].id)); unread = 0; }
+    $('badge').style.display = unread ? '' : 'none';
+    $('badge').textContent = unread;
+  }
+
+  function showTab(t) {
+    var n = t === 'notices';
+    $('paneChat').className = 'pane' + (n ? '' : ' on');
+    $('paneNotices').className = 'pane' + (n ? ' on' : '');
+    $('tabChat').className = n ? '' : 'on';
+    $('tabNotices').className = n ? 'on' : '';
+    $('chips').style.display = n ? 'none' : '';
+    document.querySelector('footer').style.display = n ? 'none' : '';
+    if (n) { loadNotices(); }
+  }
+  $('tabChat').onclick = function () { showTab('chat'); };
+  $('tabNotices').onclick = function () { showTab('notices'); };
+
+  // ---- 入力 ----
+  $('sendBtn').onclick = function () { send('send', $('text').value); };
+  document.querySelectorAll('#chips button').forEach(function (b) {
+    b.onclick = function () { send('send', b.getAttribute('data-q')); };
+  });
+  var ta = $('text');
+  ta.addEventListener('input', function () { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 120) + 'px'; });
+
+  // ---- 設定・登録 ----
+  function openSettings() {
+    $('optAuto').checked = lsGet('auto', '1') === '1';
+    $('optSpeak').checked = lsGet('speak', '1') === '1';
+    $('setInfo').textContent = '接続先：' + (info.host || '未登録') + ' ／ 版：' + (info.version || '') + ' ／ 通知：' + (info.canNotify ? '許可済み' : '未許可');
+    $('setMsg2').textContent = '';
+    $('settings').className = 'on';
+  }
+  function closeSettings() { $('settings').className = ''; }
+  function closeSetup() { $('setup').className = ''; }
+  $('gear').onclick = openSettings;
+  $('btnClose').onclick = closeSettings;
+  $('optAuto').onchange = function () { lsSet('auto', this.checked ? '1' : '0'); };
+  $('optSpeak').onchange = function () { lsSet('speak', this.checked ? '1' : '0'); $('spk').style.opacity = this.checked ? 1 : .4; };
+  $('spk').onclick = function () {
+    var on = lsGet('speak', '1') !== '1'; lsSet('speak', on ? '1' : '0'); $('spk').style.opacity = on ? 1 : .4; if (!on) { A.stopSpeak(); }
+  };
+  $('btnNotify').onclick = function () { A.requestNotify(); };
+  $('btnUpdate').onclick = function () { $('setMsg2').textContent = '確かめています…'; A.checkUpdate(true); };
+  $('bannerBtn').onclick = function () { this.disabled = true; A.startUpdate(); };
+  $('btnTest').onclick = function () {
+    $('setMsg2').textContent = 'PCに頼んでいます…';
+    call('noticePost', { title: 'N.A.V.I.', body: 'テスト通知です。15分以内にスマホへ通知が届きます', priority: 3 })
+      .then(function () { $('setMsg2').textContent = '送りました。最大15分ほどで通知が届きます（Androidの省電力の仕様）'; })
+      .catch(function (e) { $('setMsg2').textContent = '❌ ' + e.message; });
+  };
+  var unpairArmed = false;
+  $('btnUnpair').onclick = function () {
+    var b = this;
+    if (!unpairArmed) {
+      unpairArmed = true; b.textContent = 'もう一度押すと解除します';
+      setTimeout(function () { unpairArmed = false; b.textContent = '登録を解除する'; }, 4000);
+      return;
+    }
+    unpairArmed = false; b.textContent = '登録を解除する';
+    A.unpair(); closeSettings(); refreshInfo();
+  };
+
+  $('setGo').onclick = function () {
+    var code = $('setCode').value.trim();
+    var ok = code ? A.setPair(code, '') : A.setPair($('setUrl').value, $('setTok').value);
+    if (ok) { window.NAVI.onPaired(); }
+    else { $('setMsg').textContent = '登録できませんでした。コード、またはアドレスと合言葉を確認してください'; }
+  };
+
+  function refreshInfo() {
+    try { info = JSON.parse(A.getInfo()); } catch (e) { info = {}; }
+    $('ver').textContent = info.version ? '第' + info.version + '版' : '';
+    $('setup').className = info.paired ? '' : 'on';
+    $('spk').style.opacity = lsGet('speak', '1') === '1' ? 1 : .4;
+  }
+
+  var pollTimer = null;
+  function startPolling() {
+    checkPc(); loadNotices();
+    if (pollTimer) { clearInterval(pollTimer); }
+    pollTimer = setInterval(function () { checkPc(); loadNotices(); }, 60000);
+  }
+
+  refreshInfo();
+  if (info.paired) {
+    say('ai', 'N.A.V.I.です。🎤を押して話しかけてください。内容を確認して「実行」と言うか、ボタンを押すと動きます。');
+    if (!info.canNotify) { A.requestNotify(); }
+    startPolling();
+  }
+  A.pageReady();
+})();
+</script>
+</body>
+</html>
