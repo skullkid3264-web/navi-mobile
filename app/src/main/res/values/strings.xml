@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">N.A.V.I.</string>
+    <string name="shortcut_talk">N.A.V.I.に話す</string>
+    <string name="tile_talk">ナビに話す</string>
 </resources>

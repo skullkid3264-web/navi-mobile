@@ -41,4 +41,13 @@ final class Store {
     static void setLastNotice(Context c, long id) {
         sp(c).edit().putLong("lastNotice", id).apply();
     }
+
+    /** 「ナビ」の呼びかけ待ちをオンにしているか */
+    static boolean wake(Context c) {
+        return sp(c).getBoolean("wake", false);
+    }
+
+    static void setWake(Context c, boolean on) {
+        sp(c).edit().putBoolean("wake", on).apply();
+    }
 }

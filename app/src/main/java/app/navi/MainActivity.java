@@ -55,6 +55,7 @@ public class MainActivity extends Activity {
     private static final int REQ_INSTALL_PERMISSION = 11;
     private static final int REQ_NOTIFY = 21;
     private static final int REQ_AUDIO = 31;
+    private static final int REQ_WAKE = 41;
 
     private WebView web;
     private final Handler main = new Handler(Looper.getMainLooper());
@@ -64,6 +65,7 @@ public class MainActivity extends Activity {
     private boolean checkedOnLaunch = false;
     private String pendingTab;
     private boolean pendingPaired = false;
+    private boolean pendingListen = false;
 
     // 更新
     private String pendingApkUrl;
@@ -120,6 +122,12 @@ public class MainActivity extends Activity {
 
         handleIntent(getIntent());
 
+        // 「ナビ」呼びかけ待ちがオンのまま（再起動などで止まっていた）なら、開いたときに再開する
+        if (Store.wake(this) && Store.isPaired(this)
+                && checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            startWakeService();
+        }
+
         if (savedInstanceState != null) {
             web.restoreState(savedInstanceState);
         } else {
@@ -145,6 +153,15 @@ public class MainActivity extends Activity {
                 } else {
                     pendingPaired = true;
                 }
+            }
+        }
+
+        if (intent.getBooleanExtra("listen", false) || "true".equals(intent.getStringExtra("listen"))) {
+            intent.removeExtra("listen");
+            if (pageIsReady) {
+                callJs("NAVI.autoListen && NAVI.autoListen()");
+            } else {
+                pendingListen = true;
             }
         }
 
@@ -188,8 +205,29 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        WakeService.setAppVisible(true);
+    }
+
+    private void startWakeService() {
+        try {
+            Intent i = new Intent(this, WakeService.class);
+            if (Build.VERSION.SDK_INT >= 26) {
+                startForegroundService(i);
+            } else {
+                startService(i);
+            }
+        } catch (Exception e) {
+            Store.setWake(this, false);
+            callJs("NAVI.onWake && NAVI.onWake(false," + JSONObject.quote("呼びかけ待ちを始められませんでした：" + e.getMessage()) + ")");
+        }
+    }
+
+    @Override
     protected void onPause() {
         super.onPause();
+        WakeService.setAppVisible(false);
         stopListeningNow();
         if (tts != null) tts.stop();
     }
@@ -219,6 +257,14 @@ public class MainActivity extends Activity {
                 startListeningNow();
             } else {
                 callJs("NAVI.onSpeechError && NAVI.onSpeechError(" + JSONObject.quote("マイクの許可がありません。端末の設定でマイクを許可してください") + ")");
+            }
+        } else if (requestCode == REQ_WAKE) {
+            if (granted) {
+                Store.setWake(this, true);
+                startWakeService();
+                callJs("NAVI.onWake && NAVI.onWake(true,'')");
+            } else {
+                callJs("NAVI.onWake && NAVI.onWake(false," + JSONObject.quote("マイクの許可がありません。端末の設定でマイクを許可してください") + ")");
             }
         } else if (requestCode == REQ_NOTIFY) {
             callJs("NAVI.onNotifyPerm && NAVI.onNotifyPerm(" + granted + ")");
@@ -253,6 +299,7 @@ public class MainActivity extends Activity {
                 o.put("version", BuildConfig.VERSION_NAME);
                 o.put("canNotify", Notices.canNotify(MainActivity.this));
                 o.put("speech", SpeechRecognizer.isRecognitionAvailable(MainActivity.this));
+                o.put("wake", Store.wake(MainActivity.this) && WakeService.isRunning());
                 return o.toString();
             } catch (Exception e) {
                 return "{}";
@@ -297,6 +344,26 @@ public class MainActivity extends Activity {
                 }
                 final String result = out;
                 callJs("NAVI._cb(" + JSONObject.quote(id) + "," + JSONObject.quote(result) + ")");
+            });
+        }
+
+        /** 「ナビ」の呼びかけ待ちを、オン／オフする */
+        @JavascriptInterface
+        public void setWake(final boolean on) {
+            main.post(() -> {
+                if (on) {
+                    if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                        requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, REQ_WAKE);
+                        return;
+                    }
+                    Store.setWake(MainActivity.this, true);
+                    startWakeService();
+                    callJs("NAVI.onWake && NAVI.onWake(true,'')");
+                } else {
+                    Store.setWake(MainActivity.this, false);
+                    stopService(new Intent(MainActivity.this, WakeService.class));
+                    callJs("NAVI.onWake && NAVI.onWake(false,'')");
+                }
             });
         }
 
@@ -358,6 +425,10 @@ public class MainActivity extends Activity {
                 if (pendingPaired) {
                     pendingPaired = false;
                     callJs("NAVI.onPaired && NAVI.onPaired()");
+                }
+                if (pendingListen) {
+                    pendingListen = false;
+                    callJs("NAVI.autoListen && NAVI.autoListen()");
                 }
                 if (pendingTab != null) {
                     callJs("NAVI.openTab && NAVI.openTab(" + JSONObject.quote(pendingTab) + ")");

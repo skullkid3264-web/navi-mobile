@@ -124,6 +124,7 @@
   <p id="setInfo" style="color:var(--sub)"></p>
   <div class="sw"><span>話し終わったら自動で送る</span><input type="checkbox" id="optAuto"></div>
   <div class="sw"><span>返事を読み上げる 🔊</span><input type="checkbox" id="optSpeak"></div>
+  <div class="sw"><span>📣「ナビ」と呼びかけて使う<br><small style="color:var(--sub)">オンの間ずっとマイクで待ちます。電池を使います</small></span><input type="checkbox" id="optWake"></div>
   <div style="margin-top:14px" class="row">
     <button id="btnNotify" style="flex:1">🔔 通知を許可する</button>
   </div>
@@ -281,6 +282,8 @@
     onSpeechError: function (msg) { if (live) { live.remove(); live = null; } say('ai', '🎤 ' + msg, 'err'); },
     onPaired: function () { refreshInfo(); closeSetup(); say('ai', '登録できました。話しかけてみてください。'); startPolling(); },
     onNotifyPerm: function (ok) { $('setMsg2').textContent = ok ? '通知を許可しました' : '通知が許可されていません（端末の設定から許可してください）'; refreshInfo(); },
+    onWake: function (on, msg) { $('optWake').checked = !!on; info.wake = !!on; $('setMsg2').textContent = msg || (on ? '呼びかけ待ちをオンにしました。画面を閉じて「ナビ、今日のまとめ」と話しかけてみてください' : '呼びかけ待ちをオフにしました'); },
+    autoListen: function () { if (info.paired && info.speech && $('mic').className !== 'on') { setTimeout(function () { A.listen(); }, 300); } },
     openTab: function (t) { showTab(t === 'notices' ? 'notices' : 'chat'); },
     onUpdateAvailable: function (ver, notes) { $('bannerText').textContent = '新しい版（第' + ver + '版）があります'; $('banner').style.display = 'block'; },
     onUpToDate: function () { $('setMsg2').textContent = '今が最新の版です'; },
@@ -352,6 +355,7 @@
   function openSettings() {
     $('optAuto').checked = lsGet('auto', '1') === '1';
     $('optSpeak').checked = lsGet('speak', '1') === '1';
+    $('optWake').checked = !!info.wake;
     $('setInfo').textContent = '接続先：' + (info.host || '未登録') + ' ／ 版：' + (info.version || '') + ' ／ 通知：' + (info.canNotify ? '許可済み' : '未許可');
     $('setMsg2').textContent = '';
     $('settings').className = 'on';
@@ -365,6 +369,7 @@
   $('spk').onclick = function () {
     var on = lsGet('speak', '1') !== '1'; lsSet('speak', on ? '1' : '0'); $('spk').style.opacity = on ? 1 : .4; if (!on) { A.stopSpeak(); }
   };
+  $('optWake').onchange = function () { A.setWake(this.checked); };
   $('btnNotify').onclick = function () { A.requestNotify(); };
   $('btnUpdate').onclick = function () { $('setMsg2').textContent = '確かめています…'; A.checkUpdate(true); };
   $('bannerBtn').onclick = function () { this.disabled = true; A.startUpdate(); };
