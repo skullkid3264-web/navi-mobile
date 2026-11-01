@@ -5,54 +5,60 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>N.A.V.I.</title>
 <style>
-  :root { --bg:#14151c; --card:#1f2130; --card2:#2a2d42; --text:#eee; --sub:#9aa3b5; --me:#9ec5ff; --ai:#8fe39b; --ng:#ff8a80; --note:#ffd54f; --accent:#b39ddb; --pink:#f48fb1; }
+  :root { --bg:#12111c; --card:#1c1b2d; --card2:#292743; --line:#37345a; --text:#f1eefc; --sub:#a39fc2; --me:#ffffff; --ai:#f1eefc; --ng:#ff8a9b; --note:#ffd98a; --accent:#c4b0ff; --pink:#ff9ccb; --mint:#8be9b5; --r:18px;
+          --grad:linear-gradient(135deg,#8f78e8,#d983c0); --shadow:0 4px 18px rgba(0,0,0,.28); }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html, body { height:100%; margin:0; }
-  body { font-family:"Noto Sans JP",sans-serif; background:var(--bg); color:var(--text); display:flex; flex-direction:column; }
-  header { display:flex; align-items:center; gap:8px; padding:calc(8px + env(safe-area-inset-top)) 12px 8px; background:var(--card); }
-  header h1 { font-size:17px; margin:0; letter-spacing:.5px; color:var(--accent); flex:1; }
+  body { font-family:"Noto Sans JP",system-ui,sans-serif; background:radial-gradient(120% 60% at 100% 0%,#2a1c44 0%,rgba(42,28,68,0) 55%),var(--bg); color:var(--text); display:flex; flex-direction:column; -webkit-font-smoothing:antialiased; }
+  header { display:flex; align-items:center; gap:8px; padding:calc(10px + env(safe-area-inset-top)) 14px 8px; background:transparent; }
+  header h1 { font-size:19px; margin:0; letter-spacing:1px; font-weight:800; background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent; flex:1; }
+  header > span { background:var(--card); border:1px solid var(--line); border-radius:999px; padding:4px 10px; white-space:nowrap; }
   header h1 small { font-size:11px; color:var(--sub); font-weight:normal; margin-left:6px; }
   .dot { display:inline-block; width:9px; height:9px; border-radius:50%; background:#666; margin-right:4px; }
   .dot.on { background:var(--ai); } .dot.off { background:var(--ng); }
-  .ib { background:none; border:none; color:var(--text); font-size:20px; padding:6px 8px; border-radius:10px; }
+  .ib { background:none; border:none; color:var(--text); font-size:20px; padding:6px 8px; border-radius:12px; }
   .ib.active { background:var(--card2); }
   #banner { display:none; background:var(--pink); color:#2b1020; padding:8px 12px; font-size:14px; }
   #banner button { margin-left:8px; background:#2b1020; color:#fff; font-size:13px; padding:6px 10px; }
-  .tabs { display:flex; background:var(--card); border-bottom:1px solid var(--card2); }
-  .tabs button { flex:1; background:none; color:var(--sub); border-radius:0; padding:10px; font-size:14px; border-bottom:3px solid transparent; }
-  .tabs button { font-size:13px; padding:10px 2px; }
-  .tabs button.on { color:var(--accent); border-bottom-color:var(--accent); font-weight:bold; }
-  .badge { background:var(--pink); color:#2b1020; font-size:11px; border-radius:9px; padding:1px 6px; margin-left:4px; }
-  .pane { flex:1; overflow-y:auto; padding:12px; display:none; }
+  .tabs { display:flex; gap:4px; margin:4px 12px 8px; padding:4px; background:var(--card); border:1px solid var(--line); border-radius:999px; }
+  .tabs button { flex:1; background:none; color:var(--sub); border-radius:999px; font-size:12.5px; padding:9px 2px; font-weight:600; transition:background .15s,color .15s; }
+  .tabs button.on { color:#fff; background:var(--grad); box-shadow:0 2px 10px rgba(143,120,232,.45); }
+  .badge { background:var(--pink); color:#2b1020; font-size:11px; font-weight:700; border-radius:9px; padding:1px 6px; margin-left:4px; }
+  .pane { flex:1; overflow-y:auto; padding:6px 14px 14px; display:none; }
   .pane.on { display:block; }
   #chat { display:flex; flex-direction:column; gap:8px; }
-  .bubble { padding:10px 12px; border-radius:14px; background:var(--card); font-size:15px; line-height:1.55; white-space:pre-wrap; word-break:break-word; }
-  .bubble.me { color:var(--me); align-self:flex-end; max-width:88%; border-bottom-right-radius:4px; }
-  .bubble.ai { color:var(--ai); align-self:flex-start; max-width:94%; border-bottom-left-radius:4px; }
+  .bubble { padding:11px 14px; border-radius:var(--r); background:var(--card); font-size:15px; line-height:1.6; white-space:pre-wrap; word-break:break-word; box-shadow:var(--shadow); animation:rise .18s ease-out; }
+  .bubble.me { color:var(--me); background:var(--grad); align-self:flex-end; max-width:86%; border-bottom-right-radius:6px; }
+  .bubble.ai { color:var(--ai); background:var(--card); border:1px solid var(--line); border-left:3px solid var(--pink); align-self:flex-start; max-width:94%; border-bottom-left-radius:6px; }
+  @keyframes rise { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
   .bubble.err { color:var(--ng); }
   .bubble.live { opacity:.65; }
-  #plan { display:none; background:var(--card); border-radius:14px; padding:12px; margin-top:10px; border:1px solid var(--card2); }
+  #plan { display:none; background:var(--card); border-radius:var(--r); padding:14px; margin-top:12px; border:1px solid var(--line); border-top:3px solid var(--accent); box-shadow:var(--shadow); }
   .step { margin-bottom:10px; white-space:pre-wrap; word-break:break-word; font-size:15px; }
   .step .ng { color:var(--ng); font-size:14px; } .step .note { color:var(--note); font-size:13px; }
   .row { display:flex; gap:8px; }
-  button { font-family:inherit; font-size:16px; border:none; border-radius:12px; padding:12px 14px; background:var(--card2); color:var(--text); }
+  button { font-family:inherit; font-size:16px; border:none; border-radius:14px; padding:12px 14px; background:var(--card2); color:var(--text); transition:transform .08s, filter .15s; }
+  button:active { transform:scale(.97); filter:brightness(1.15); }
   button:disabled { opacity:.4; }
-  button.run { background:#43a047; color:#fff; font-weight:bold; flex:1; padding:16px; font-size:18px; }
-  button.go { background:var(--accent); color:#1b1230; font-weight:bold; }
-  #chips { display:flex; gap:6px; overflow-x:auto; padding:6px 12px; background:var(--bg); }
-  #chips button { white-space:nowrap; font-size:13px; padding:8px 12px; border-radius:16px; background:var(--card); border:1px solid var(--card2); }
-  footer { background:var(--card); padding:8px 10px calc(8px + env(safe-area-inset-bottom)); }
-  footer .inner { display:flex; gap:8px; align-items:flex-end; }
-  textarea, input[type=text], input[type=password] { width:100%; font-family:inherit; font-size:16px; padding:10px; border-radius:12px; border:1px solid var(--card2); background:var(--bg); color:var(--text); }
+  button.run { background:linear-gradient(135deg,#3fbf7f,#2e9c6a); color:#fff; font-weight:800; flex:1; padding:16px; font-size:18px; box-shadow:0 4px 14px rgba(63,191,127,.35); }
+  button.go { background:var(--grad); color:#fff; font-weight:800; }
+  #chips { display:flex; gap:8px; overflow-x:auto; padding:6px 14px 8px; scrollbar-width:none; }
+  #chips::-webkit-scrollbar { display:none; }
+  #chips button { white-space:nowrap; font-size:13px; padding:8px 14px; border-radius:999px; background:var(--card); border:1px solid var(--line); color:var(--accent); font-weight:600; }
+  footer { padding:6px 12px calc(10px + env(safe-area-inset-bottom)); }
+  footer .inner { display:flex; gap:8px; align-items:flex-end; background:var(--card); border:1px solid var(--line); border-radius:28px; padding:6px 6px 6px 14px; box-shadow:var(--shadow); }
+  footer textarea { border:none !important; background:transparent !important; padding:10px 0 !important; }
+  footer #sendBtn { height:48px !important; border-radius:24px; padding:0 18px; }
+  textarea, input[type=text], input[type=password] { width:100%; font-family:inherit; font-size:16px; padding:10px; border-radius:14px; border:1px solid var(--line); background:var(--bg); color:var(--text); }
   textarea { resize:none; flex:1; }
-  #mic { width:56px; height:56px; border-radius:50%; font-size:24px; padding:0; background:var(--pink); color:#2b1020; flex:none; }
+  #mic { width:48px; height:48px; border-radius:50%; font-size:22px; padding:0; background:linear-gradient(135deg,#ff9ccb,#f77fb3); color:#2b1020; flex:none; box-shadow:0 3px 12px rgba(255,156,203,.4); }
   #mic.on { background:#ef5350; color:#fff; animation:pulse 1s infinite; }
   @keyframes pulse { 50% { transform:scale(1.1); } }
-  .notice { background:var(--card); border-radius:12px; padding:10px 12px; margin-bottom:8px; }
+  .notice { background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:12px 14px; margin-bottom:10px; }
   .notice.new { border-left:4px solid var(--pink); }
   .notice b { display:block; font-size:15px; margin-bottom:2px; }
   .notice span { color:var(--sub); font-size:12px; }
-  .day { background:var(--card); border-radius:14px; padding:10px 12px; margin-bottom:10px; }
+  .day { background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:12px 14px; margin-bottom:10px; box-shadow:var(--shadow); }
   .day.today { border:2px solid var(--accent); }
   .day h3 { margin:0 0 6px; font-size:15px; color:var(--accent); }
   .day h3 small { color:var(--pink); margin-left:6px; }
@@ -66,21 +72,21 @@
   .sub { color:var(--sub); font-size:12px; margin-bottom:8px; }
   #pendingBar { display:none; background:var(--card2); padding:8px 12px; font-size:14px; }
   #pendingBar button { margin-left:8px; font-size:13px; padding:6px 10px; background:var(--accent); color:#1b1230; }
-  .ob { background:var(--card); border-radius:12px; padding:10px 12px; margin-bottom:8px; display:flex; gap:8px; align-items:flex-start; }
+  .ob { background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:12px 14px; margin-bottom:10px; display:flex; gap:8px; align-items:flex-start; }
   .ob .body { flex:1; word-break:break-word; font-size:15px; }
   .ob .body small { color:var(--sub); display:block; }
   .ob button { font-size:14px; padding:6px 10px; }
-  .form { background:var(--card); border-radius:14px; padding:12px; margin-bottom:12px; }
+  .form { background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:14px; margin-bottom:12px; }
   .form select, .form input[type=date], .form input[type=time] { font-family:inherit; font-size:16px; padding:10px; border-radius:12px; border:1px solid var(--card2); background:var(--bg); color:var(--text); width:100%; }
   .form .r2 { display:flex; gap:8px; margin-top:8px; }
   .form .r2 > * { flex:1; min-width:0; }
   .calhead { display:flex; align-items:center; gap:6px; margin-bottom:8px; }
-  .calhead b { flex:1; text-align:center; font-size:17px; color:var(--accent); }
+  .calhead b { flex:1; text-align:center; font-size:18px; font-weight:800; color:var(--text); }
   .calhead button { padding:8px 12px; font-size:15px; }
   .cal { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; margin-bottom:10px; }
   .cal .wd { text-align:center; font-size:12px; color:var(--sub); padding:2px 0; }
   .cal .wd.s0, .cell.s0 .n { color:#ef9a9a; } .cal .wd.s6, .cell.s6 .n { color:#90caf9; }
-  button.cell { background:var(--card); border-radius:8px; min-height:50px; padding:4px 1px; font-size:13px; text-align:center; border:2px solid transparent; line-height:1.2; color:var(--text); }
+  button.cell { background:var(--card); border-radius:12px; min-height:52px; padding:4px 1px; font-size:13px; text-align:center; border:2px solid transparent; line-height:1.2; color:var(--text); }
   button.cell.out { opacity:.4; }
   button.cell.today { border-color:var(--accent); }
   button.cell.sel { background:var(--card2); border-color:var(--pink); }
@@ -91,6 +97,9 @@
   .it .acts { flex:none; display:flex; gap:4px; }
   .it .acts button { padding:4px 9px; font-size:14px; }
   .it.gone .tt { text-decoration:line-through; opacity:.6; }
+  input[type=checkbox], input[type=range] { accent-color:#b79cff; }
+  #voiceBox, #clipBox { border:1px solid var(--line); }
+  .sw { border-bottom-color:var(--line); }
   .empty { color:var(--sub); text-align:center; margin-top:40px; }
   #setup, #settings { position:fixed; inset:0; background:var(--bg); z-index:10; overflow-y:auto; padding:calc(16px + env(safe-area-inset-top)) 16px 24px; display:none; }
   #setup.on, #settings.on { display:block; }
@@ -170,13 +179,14 @@
 <div id="pendingBar"><span id="pendingText"></span><button id="pendingGo">確認して送る</button></div>
 <div id="chips">
   <button data-q="今日のまとめを教えて">☀️ 今日のまとめ</button>
+  <button data-q="やることを全部見せて">📋 やること一覧</button>
   <button data-q="承認待ちの目標を見せて">🎯 承認待ち</button>
   <button data-q="Claudeへの相談リストを見せて">🙋 相談リスト</button>
   <button data-q="今日のやることを3つ選んで">📝 今日の3つ</button>
   <button data-q="夕方の振り返りをして">🌙 振り返り</button>
 </div>
 <footer><div class="inner">
-  <textarea id="text" rows="1" placeholder="話しかけるか、書いてください"></textarea>
+  <textarea id="text" rows="1" placeholder="話しかけてね"></textarea>
   <button class="go" id="sendBtn" style="height:56px">送る</button>
   <button id="mic">🎤</button>
 </div></footer>
@@ -225,9 +235,9 @@
   <div id="clipBox" style="margin-top:12px;padding:12px;border-radius:14px;background:var(--card)">
     <div style="font-weight:700;margin-bottom:8px">🎀 短い声（PCのVOICEVOXで作った素材）</div>
     <select id="speakMode" style="width:100%;font-family:inherit;font-size:16px;padding:10px;border-radius:12px;border:1px solid var(--card2);background:var(--bg);color:var(--text)">
-      <option value="clip">短い声だけ（確認・完了などは、読み上げの代わりに）</option>
-      <option value="both">短い声のあとに、読み上げも</option>
-      <option value="tts">読み上げだけ（短い声は使わない）</option>
+      <option value="clip">短い声だけ（読み上げの代わり）</option>
+      <option value="both">短い声 → 読み上げも</option>
+      <option value="tts">読み上げだけ</option>
     </select>
     <div class="row" style="margin-top:10px"><button id="btnClipSync" style="flex:1">⬇ 声の素材を今すぐ取り込む</button><button id="btnClipTry" style="flex:1">▶ 試しに鳴らす</button></div>
     <div id="clipInfo" style="color:var(--sub);font-size:12px;margin-top:6px"></div>
@@ -291,8 +301,39 @@
     });
   }
 
+  // 同じWi-FiのPCに直接つなげるとき（PCがGASに知らせたアドレスがあり、つながるとき）は直接。だめなときだけGAS経由
+  var lanUrl = '', lanDownUntil = 0, viaLan = false;
+  function callLanP(kind, text) {
+    return new Promise(function (resolve, reject) {
+      var id = 'c' + (++seq);
+      cbs[id] = function (txt) {
+        var j;
+        try { j = JSON.parse(txt); } catch (e) { reject(new Error('返事を読めませんでした')); return; }
+        if (j && j.ok) { resolve(j.result); return; }
+        var err = new Error((j && j.error) || '不明なエラー');
+        err.connect = !!(j && j.connect); err.auth = !!(j && j.auth);
+        reject(err);
+      };
+      A.callLan(id, lanUrl, kind, text || '');
+    });
+  }
+  function setViaLan(v) {
+    viaLan = v;
+    if (pcOnline) { $('pcText').textContent = v ? 'PC接続中（Wi-Fi直結）' : 'PC接続中'; }
+  }
   function talkToPC(kind, text) {
-    return call('mobileSubmit', { kind: kind, text: text || '' }).then(function (id) { return pollReply(id); });
+    var viaGas = function () {
+      setViaLan(false);
+      return call('mobileSubmit', { kind: kind, text: text || '' }).then(function (id) { return pollReply(id); });
+    };
+    if (lanUrl && Date.now() >= lanDownUntil && typeof A.callLan === 'function') {
+      return callLanP(kind, text).then(function (r) { setViaLan(true); return r; }, function (e) {
+        // まだ何も送っていない失敗（つながらない・合言葉が合わない）だけ、GAS経由でやり直す。途中の失敗では二重に送らない
+        if (e.connect || e.auth) { lanDownUntil = Date.now() + (e.auth ? 600000 : 60000); return viaGas(); }
+        throw e;
+      });
+    }
+    return viaGas();
   }
 
   // ---- 表示 ----
@@ -460,7 +501,11 @@
   }
 
   function checkPc() {
-    call('mobileStatus', {}).then(function (r) { pcState(!!(r && r.pcOnline)); }).catch(function () { pcState(false); });
+    call('mobileStatus', {}).then(function (r) {
+      var u = (r && r.lan) ? String(r.lan) : '';
+      if (u !== lanUrl) { lanUrl = u; lanDownUntil = 0; }
+      pcState(!!(r && r.pcOnline));
+    }).catch(function () { pcState(false); });
   }
   function pcState(on) {
     var was = pcOnline;
@@ -468,7 +513,7 @@
     if (on) { flushOutbox(); }
     updatePendingBar();
     $('dot').className = 'dot ' + (on ? 'on' : 'off');
-    $('pcText').textContent = on ? 'PC接続中' : 'PCオフ';
+    $('pcText').textContent = on ? (viaLan ? 'PC接続中（Wi-Fi直結）' : 'PC接続中') : 'PCオフ';
   }
 
   // ---- 音声 ----

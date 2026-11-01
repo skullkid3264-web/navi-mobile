@@ -51,6 +51,66 @@ final class Api {
         }
     }
 
+    /** 同じWi-Fiで直接つなげないとき（まだ何も送っていない）に投げる。呼び出し側は、GAS経由に切り替えてよい */
+    static final class Unreachable extends IOException {
+        Unreachable(String m) {
+            super(m);
+        }
+    }
+
+    /** 家庭内（プライベート）のアドレスだけを許す。合言葉を、外のアドレスへ送らないため */
+    static boolean isPrivateUrl(String base) {
+        try {
+            URL u = new URL(base);
+            if (!"http".equals(u.getProtocol())) return false;
+            String h = u.getHost();
+            if (h.startsWith("192.168.") || h.startsWith("10.")) return true;
+            if (h.startsWith("172.")) {
+                String[] p = h.split("\\.");
+                if (p.length == 4) {
+                    int second = Integer.parseInt(p[1]);
+                    return second >= 16 && second <= 31;
+                }
+            }
+            return false;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** PCのN.A.V.I.に、同じWi-Fiから直接話しかける。PCの返事（JSON）をそのまま返す */
+    static JSONObject callLan(String base, String key, String kind, String text) throws Exception {
+        if (!isPrivateUrl(base)) throw new Unreachable("直接つなげるアドレスではありません");
+        String url = base.endsWith("/") ? base + "api" : base + "/api";
+        JSONObject body = new JSONObject();
+        body.put("key", key);
+        body.put("kind", kind);
+        body.put("text", text == null ? "" : text);
+
+        HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
+        try {
+            c.setConnectTimeout(1500);
+            c.setReadTimeout(130000);          // AIが考える時間（長い指示）を待つ
+            c.setRequestMethod("POST");
+            c.setDoOutput(true);
+            c.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+            try {
+                c.connect();
+            } catch (IOException e) {
+                throw new Unreachable(String.valueOf(e.getMessage()));
+            }
+            byte[] data = body.toString().getBytes(StandardCharsets.UTF_8);
+            try (OutputStream os = c.getOutputStream()) {
+                os.write(data);
+            }
+            int code = c.getResponseCode();
+            if (code != 200) throw new IOException("HTTP " + code);
+            return new JSONObject(read(c.getInputStream()));
+        } finally {
+            c.disconnect();
+        }
+    }
+
     private static String read(InputStream in) throws IOException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         byte[] buf = new byte[8192];

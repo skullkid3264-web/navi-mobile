@@ -351,6 +351,37 @@ public class MainActivity extends Activity {
             });
         }
 
+        /** 同じWi-FiのPCに直接つなぐ。結果は NAVI._cb(id, {ok, result|error, connect?}) 。connect=true は「まだ何も送っていない」 */
+        @JavascriptInterface
+        public void callLan(final String id, final String base, final String kind, final String text) {
+            io.execute(() -> {
+                String out;
+                try {
+                    JSONObject r = Api.callLan(base, Store.token(MainActivity.this), kind, text);
+                    if (r.has("error")) {
+                        out = new JSONObject().put("ok", false).put("error", r.optString("error"))
+                                .put("auth", r.optString("error").contains("合言葉")).toString();
+                    } else {
+                        out = new JSONObject().put("ok", true).put("result", r).toString();
+                    }
+                } catch (Api.Unreachable e) {
+                    out = jsonFail("直接つなげません", true);
+                } catch (Exception e) {
+                    out = jsonFail("直接つないだ通信でエラー：" + e.getMessage(), false);
+                }
+                final String result = out;
+                callJs("NAVI._cb(" + JSONObject.quote(id) + "," + JSONObject.quote(result) + ")");
+            });
+        }
+
+        private String jsonFail(String msg, boolean connect) {
+            try {
+                return new JSONObject().put("ok", false).put("error", msg).put("connect", connect).toString();
+            } catch (Exception e) {
+                return "{\"ok\":false}";
+            }
+        }
+
         /** 端末に保存してある、今週の予定（なければ空の文字） */
         @JavascriptInterface
         public String getSnapshot() {
