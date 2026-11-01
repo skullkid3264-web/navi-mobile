@@ -169,6 +169,23 @@
     <div class="r2" id="obDateRow"><div><label style="margin:0 0 2px" id="obDateLabel">日付</label><input type="date" id="obDate"></div></div>
     <div class="r2" id="obTimeRow"><div><label style="margin:0 0 2px">開始</label><input type="time" id="obStart"></div><div><label style="margin:0 0 2px">終了</label><input type="time" id="obEnd"></div></div>
     <div class="r2" id="obRepRow"><select id="obRepeat"><option value="none">くり返さない</option><option value="weekly">毎週</option><option value="daily">毎日</option><option value="monthly">毎月</option></select></div>
+    <div id="obTodoAttr" style="display:none">
+      <label style="margin:10px 0 2px">🏷 属性（なくてもOK）</label>
+      <div class="r2"><select id="tdTime"><option value="">所要時間</option><option value="2分">2分</option><option value="15分">15分</option><option value="1時間">1時間</option><option value="2時間">2時間</option></select>
+        <select id="tdPlace"><option value="">場所・状況</option><option>PC</option><option>外出先</option><option>教室</option><option>家</option></select></div>
+      <div class="r2" style="margin-top:6px"><select id="tdArea"><option value="">領域</option><option>宣伝</option><option>学習報告書</option><option>アプリ開発</option><option>生徒対応</option><option>教室運営</option></select>
+        <select id="tdEffort"><option value="">気力</option><option>集中が要る</option><option>ラクにできる</option></select></div>
+      <div class="r2" style="margin-top:6px"><select id="tdState"><option value="">状態：ふつう</option><option>今日</option><option>進行中</option></select>
+        <select id="tdKind"><option value="">期限の種類</option><option>〆切</option><option>目安</option></select></div>
+      <div class="r2" style="margin-top:6px"><select id="tdRepeat"><option value="">くり返し：なし</option><option>毎日</option><option>毎週</option><option>毎月</option></select>
+        <input type="text" id="tdWait" placeholder="⏳待ち（誰の返事待ち）"></div>
+    </div>
+    <div id="obMemoAttr" style="display:none">
+      <label style="margin:10px 0 2px">🏷 属性（なくてもOK）</label>
+      <div class="r2"><select id="mmKind"><option value="">種類</option><option>アイデア</option><option>生徒のこと</option><option>連絡</option><option>買い物</option><option>インスタのネタ</option><option>学び</option></select>
+        <select id="mmReview"><option value="">見直し日：なし</option><option value="3日後">3日後</option><option value="1週間後">1週間後</option><option value="2週間後">2週間後</option><option value="1か月後">1か月後</option></select></div>
+      <div class="sw" style="padding:6px 0"><span>📌 残す（仕分けの対象にしない）</span><input type="checkbox" id="mmKeep"></div>
+    </div>
     <button class="go" id="obAdd" style="width:100%;margin-top:10px">書き溜める</button>
     <div class="msg" id="obMsg"></div>
   </div>
@@ -908,7 +925,8 @@
     var items = all.slice(0, FLUSH_CHUNK);
     total = total || all.length;
     flushing = true;
-    var payload = items.map(function (o) { return { cid: o.cid, type: o.type, student: o.student, text: o.text, due: o.date && o.type === 'todo' ? o.date : '', date: o.date, start: o.start, end: o.end, title: o.title, note: o.note, repeat: o.repeat, until: o.until, eid: o.eid, attrs: o.attrs, remind: o.remind }; });
+    var payload = items.map(function (o) { return { cid: o.cid, type: o.type, student: o.student, text: o.text, due: o.date && o.type === 'todo' ? o.date : '', date: o.date, start: o.start, end: o.end, title: o.title, note: o.note, repeat: o.repeat, until: o.until, eid: o.eid, attrs: o.attrs, remind: o.remind,
+      time: o.time, place: o.place, area: o.area, effort: o.effort, state: o.state, due_kind: o.due_kind, wait_for: o.wait_for, kind: o.kind, review: o.review, keep: o.keep }; });
     var sent = 0, failed = false;
     talkToPC('sync', JSON.stringify(payload)).then(function (st) {
       var ok = {};
@@ -970,6 +988,8 @@
     $('obStudentRow').style.display = t === 'snote' ? '' : 'none';
     $('obTimeRow').style.display = t === 'event' ? '' : 'none';
     $('obRepRow').style.display = t === 'event' ? '' : 'none';
+    $('obTodoAttr').style.display = t === 'todo' ? '' : 'none';
+    $('obMemoAttr').style.display = t === 'memo' ? '' : 'none';
     $('obDateLabel').textContent = t === 'todo' ? '期限（なくてもOK）' : (t === 'snote' || t === 'journal' ? '日付（今日でOK）' : '日付');
     $('obText').placeholder = t === 'event' ? '予定の名前' : (t === 'send' ? 'PCのN.A.V.I.への指示（例：ゆきにゴールドを2枚）' : '内容');
     if ((t === 'event' || t === 'snote' || t === 'journal') && !$('obDate').value) { $('obDate').value = ymd(new Date()); }
@@ -989,7 +1009,17 @@
       if (it.start && it.end && it.end <= it.start) { $('obMsg').textContent = '終了が開始より前になっています'; return; }
     } else {
       it.text = text;
-      if (t === 'todo') { it.date = $('obDate').value || ''; }
+      if (t === 'todo') {
+        it.date = $('obDate').value || '';
+        var tdv = { time: $('tdTime').value, place: $('tdPlace').value, area: $('tdArea').value, effort: $('tdEffort').value, state: $('tdState').value,
+                    due_kind: $('tdKind').value, repeat: $('tdRepeat').value, wait_for: $('tdWait').value.trim() };
+        for (var tk in tdv) { if (tdv[tk]) { it[tk] = tdv[tk]; } }
+      }
+      if (t === 'memo') {
+        if ($('mmKind').value) { it.kind = $('mmKind').value; }
+        if ($('mmReview').value) { it.review = $('mmReview').value; }
+        if ($('mmKeep').checked) { it.keep = 'はい'; }
+      }
       if (t === 'snote') {
         it.student = $('obStudent').value.trim();
         if (!it.student) { $('obMsg').textContent = '生徒を入れてください'; return; }
@@ -999,6 +1029,8 @@
     }
     queueItem(it);
     $('obText').value = ''; $('obStart').value = ''; $('obEnd').value = '';
+    ['tdTime', 'tdPlace', 'tdArea', 'tdEffort', 'tdState', 'tdKind', 'tdRepeat', 'mmKind', 'mmReview'].forEach(function (id) { $(id).value = ''; });
+    $('tdWait').value = ''; $('mmKeep').checked = false;
     if (t === 'journal') { $('obMsg').textContent = ''; }
     $('obMsg').textContent = '書き溜めました' + (pcOnline ? '（まもなくPCに送ります）' : '（つながったら送ります）');
     if (pcOnline) { flushOutbox(); }
