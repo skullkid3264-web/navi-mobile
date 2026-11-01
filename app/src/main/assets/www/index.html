@@ -74,6 +74,23 @@
   .form select, .form input[type=date], .form input[type=time] { font-family:inherit; font-size:16px; padding:10px; border-radius:12px; border:1px solid var(--card2); background:var(--bg); color:var(--text); width:100%; }
   .form .r2 { display:flex; gap:8px; margin-top:8px; }
   .form .r2 > * { flex:1; min-width:0; }
+  .calhead { display:flex; align-items:center; gap:6px; margin-bottom:8px; }
+  .calhead b { flex:1; text-align:center; font-size:17px; color:var(--accent); }
+  .calhead button { padding:8px 12px; font-size:15px; }
+  .cal { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; margin-bottom:10px; }
+  .cal .wd { text-align:center; font-size:12px; color:var(--sub); padding:2px 0; }
+  .cal .wd.s0, .cell.s0 .n { color:#ef9a9a; } .cal .wd.s6, .cell.s6 .n { color:#90caf9; }
+  button.cell { background:var(--card); border-radius:8px; min-height:50px; padding:4px 1px; font-size:13px; text-align:center; border:2px solid transparent; line-height:1.2; color:var(--text); }
+  button.cell.out { opacity:.4; }
+  button.cell.today { border-color:var(--accent); }
+  button.cell.sel { background:var(--card2); border-color:var(--pink); }
+  .cell .dots { display:block; min-height:10px; margin-top:3px; }
+  .cell .dots i { display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--accent); margin:1px; }
+  .cell .dots i.l { background:var(--pink); } .cell .dots i.p { background:none; border:1px solid var(--note); }
+  .cell .dots small { font-size:10px; color:var(--sub); }
+  .it .acts { flex:none; display:flex; gap:4px; }
+  .it .acts button { padding:4px 9px; font-size:14px; }
+  .it.gone .tt { text-decoration:line-through; opacity:.6; }
   .empty { color:var(--sub); text-align:center; margin-top:40px; }
   #setup, #settings { position:fixed; inset:0; background:var(--bg); z-index:10; overflow-y:auto; padding:calc(16px + env(safe-area-inset-top)) 16px 24px; display:none; }
   #setup.on, #settings.on { display:block; }
@@ -108,7 +125,18 @@
 </div>
 <div class="pane" id="paneSched">
   <div id="schedBox"></div>
-  <button id="schedAdd" style="width:100%;margin-top:4px">＋ 予定を書き溜める</button>
+  <div class="form" id="evForm" style="display:none">
+    <b id="evFormTitle">予定を入れる</b>
+    <input type="text" id="evTitle" placeholder="予定の名前" style="margin-top:8px">
+    <div class="r2"><div><label style="margin:0 0 2px">日付</label><input type="date" id="evDate"></div></div>
+    <div class="r2"><div><label style="margin:0 0 2px">開始</label><input type="time" id="evStart"></div><div><label style="margin:0 0 2px">終了</label><input type="time" id="evEnd"></div></div>
+    <div class="r2"><select id="evRepeat"><option value="none">くり返さない</option><option value="weekly">毎週</option><option value="daily">毎日</option><option value="monthly">毎月</option></select></div>
+    <div class="r2" id="evUntilRow"><div><label style="margin:0 0 2px">くり返しの終わり（なくてもOK）</label><input type="date" id="evUntil"></div></div>
+    <input type="text" id="evNote" placeholder="メモ（なくてもOK）" style="margin-top:8px">
+    <div class="row" style="margin-top:10px"><button class="go" id="evSave" style="flex:1">保存</button><button id="evCancel">やめる</button></div>
+    <div class="msg" id="evMsg"></div>
+  </div>
+  <button id="schedAdd" style="width:100%;margin-top:4px">＋ 予定を入れる</button>
 </div>
 <div class="pane" id="paneOutbox">
   <p class="sub">つながらない場所でも、ここに書いておけます。PCにつながると自動で送ります（指示だけは、つながってから確認して実行します）。</p>
@@ -437,39 +465,81 @@
     }).catch(function () {});
   }
 
-  function dayCard(d, extra, isToday) {
-    var card = document.createElement('div');
-    card.className = 'day' + (isToday ? ' today' : '');
-    var dt = new Date(d.date + 'T00:00:00');
-    var h = document.createElement('h3');
-    h.textContent = (dt.getMonth() + 1) + '/' + dt.getDate() + '（' + WD[dt.getDay()] + '）';
-    if (isToday) { var sm = document.createElement('small'); sm.textContent = '今日'; h.appendChild(sm); }
-    card.appendChild(h);
-    var items = (d.items || []).concat(extra || []);
-    items.sort(function (a, b) { return (a.start || '99:99') < (b.start || '99:99') ? -1 : 1; });
-    if (!items.length) {
-      var n = document.createElement('div'); n.className = 'it none'; n.textContent = '予定なし'; card.appendChild(n);
-    }
-    items.forEach(function (it) {
-      var row = document.createElement('div'); row.className = 'it' + (it.pending ? ' pend' : '');
-      var tm = document.createElement('div'); tm.className = 'tm'; tm.textContent = rng(it);
-      var tt = document.createElement('div'); tt.style.flex = '1';
-      tt.textContent = (it.kind === 'lesson' ? '🏫 ' : '') + it.title + (it.note ? '（' + it.note + '）' : '');
-      if (it.pending) { var tg = document.createElement('span'); tg.className = 'tag'; tg.textContent = '⏳未送信'; tt.appendChild(tg); }
-      row.appendChild(tm); row.appendChild(tt); card.appendChild(row);
+  // ---- カレンダー ----
+  var calY = (new Date()).getFullYear(), calM = (new Date()).getMonth(), calSel = ymd(new Date());
+  var editing = null;       // null＝新規／{eid:..}＝PCの予定を変更／{idx:..}＝書き溜め中の予定を変更
+
+  function dayMap() {
+    var m = {};
+    ((snap && snap.days) || []).forEach(function (d) { m[d.date] = d.items || []; });
+    return m;
+  }
+
+  // 書き溜め中の変更を重ねた、その日の予定
+  function itemsOn(date, map) {
+    var base = (map[date] || []).map(function (it) {
+      var c = {}; for (var k in it) { c[k] = it[k]; }
+      outbox.forEach(function (o) {
+        if (c.kind === 'personal' && o.eid === c.id) {
+          if (o.type === 'event_delete') { c.gone = true; }
+          if (o.type === 'event_edit') { c.editPending = true; }
+        }
+      });
+      return c;
     });
-    return card;
+    outbox.forEach(function (o, i) {
+      if (o.type === 'event' && o.date === date) {
+        base.push({ start: o.start || '', end: o.end || '', title: o.title, note: o.note || '', pending: true, idx: i, repeat: o.repeat, until: o.until });
+      }
+    });
+    base.sort(function (a, b) { return (a.start || '99:99') < (b.start || '99:99') ? -1 : 1; });
+    return base;
+  }
+
+  function mkBtn(text, fn) { var b = document.createElement('button'); b.textContent = text; b.onclick = fn; return b; }
+
+  function dayItemRow(it, date) {
+    var row = document.createElement('div'); row.className = 'it' + (it.pending ? ' pend' : '') + (it.gone ? ' gone' : '');
+    var tm = document.createElement('div'); tm.className = 'tm'; tm.textContent = rng(it);
+    var tt = document.createElement('div'); tt.className = 'tt'; tt.style.flex = '1';
+    var rep = { daily: '（毎日）', weekly: '（毎週）', monthly: '（毎月）' }[it.repeat] || '';
+    tt.textContent = (it.kind === 'lesson' ? '🏫 ' : '') + it.title + rep + (it.note ? '（' + it.note + '）' : '');
+    if (it.pending) { var tg = document.createElement('span'); tg.className = 'tag'; tg.textContent = '⏳未送信'; tt.appendChild(tg); }
+    if (it.gone) { var tg2 = document.createElement('span'); tg2.className = 'tag'; tg2.textContent = '⏳削除待ち'; tt.appendChild(tg2); }
+    if (it.editPending) { var tg3 = document.createElement('span'); tg3.className = 'tag'; tg3.textContent = '⏳変更待ち'; tt.appendChild(tg3); }
+    row.appendChild(tm); row.appendChild(tt);
+    var acts = document.createElement('div'); acts.className = 'acts';
+    if (it.pending) {
+      acts.appendChild(mkBtn('✎', function () { openEvForm({ idx: it.idx }); }));
+      acts.appendChild(mkBtn('✕', function () { outbox.splice(it.idx, 1); saveOutbox(); renderSched(); }));
+    } else if (it.kind === 'personal' && it.id && !it.gone) {
+      acts.appendChild(mkBtn('✎', function () { openEvForm({ eid: it.id, item: it, date: date }); }));
+      var del = mkBtn('🗑', function () {
+        if (del.dataset.arm !== '1') {
+          del.dataset.arm = '1'; del.textContent = 'もう一度';
+          setTimeout(function () { del.dataset.arm = ''; del.textContent = '🗑'; }, 3000);
+          return;
+        }
+        queueEventDelete(it);
+      });
+      acts.appendChild(del);
+    }
+    row.appendChild(acts);
+    return row;
+  }
+
+  function queueEventDelete(it) {
+    outbox = outbox.filter(function (o) { return !(o.type === 'event_edit' && o.eid === it.id); });
+    var rep = it.repeat && it.repeat !== 'none';
+    queueItem({ type: 'event_delete', eid: it.id, title: it.title + (rep ? '（くり返し全部）' : '') });
+    if (pcOnline) { flushOutbox(); }
   }
 
   function renderSched() {
     var box = $('schedBox'); box.innerHTML = '';
     var today = ymd(new Date());
-    var pend = {};
-    outbox.filter(function (o) { return o.type === 'event'; }).forEach(function (o) {
-      (pend[o.date] = pend[o.date] || []).push({ start: o.start || '', end: o.end || '', title: o.title, note: o.note || '', pending: true });
-    });
     if (!snap) {
-      box.innerHTML = '<div class="empty">まだ予定が届いていません。<br>PCのN.A.V.I.が毎朝6時に送ります</div>';
+      box.innerHTML = '<div class="empty">まだ予定が届いていません。<br>PCのN.A.V.I.が起動すると送られます</div>';
     } else {
       var meta = document.createElement('div'); meta.className = 'sub';
       meta.textContent = '最終更新：' + fmtAt(snap.generatedAt) + '（PCから）';
@@ -484,25 +554,118 @@
         w2.textContent = 'この予定には、レッスン予定表が含まれていません（PCが読み込めませんでした）。';
         box.appendChild(w2);
       }
-      var todayDay = (snap.days || []).filter(function (d) { return d.date === today; })[0];
-      if (todayDay) { box.appendChild(dayCard(todayDay, pend[today], true)); }
-      var h = document.createElement('div'); h.className = 'sub'; h.style.marginTop = '14px';
-      h.textContent = '今週（日曜〜土曜）'; box.appendChild(h);
-      (snap.days || []).forEach(function (d) { box.appendChild(dayCard(d, pend[d.date], d.date === today)); });
     }
-    // 今週の外にある、書き溜め中の予定
-    var inWeek = {}; ((snap && snap.days) || []).forEach(function (d) { inWeek[d.date] = true; });
-    var outside = outbox.filter(function (o) { return o.type === 'event' && !inWeek[o.date]; });
-    if (outside.length) {
-      var h2 = document.createElement('div'); h2.className = 'sub'; h2.style.marginTop = '14px'; h2.textContent = '書き溜め中の予定（つながったら登録）';
-      box.appendChild(h2);
-      outside.sort(function (a, b) { return a.date < b.date ? -1 : 1; }).forEach(function (o) {
-        var d = { date: o.date, items: [] };
-        box.appendChild(dayCard(d, [{ start: o.start, end: o.end, title: o.title, note: o.note, pending: true }], false));
-      });
+    var map = dayMap();
+
+    // 月の移動
+    var head = document.createElement('div'); head.className = 'calhead';
+    head.appendChild(mkBtn('◀', function () { calM--; if (calM < 0) { calM = 11; calY--; } calSel = calY + '-' + pad(calM + 1) + '-01'; renderSched(); }));
+    var ttl = document.createElement('b'); ttl.textContent = calY + '年 ' + (calM + 1) + '月'; head.appendChild(ttl);
+    head.appendChild(mkBtn('今日', function () { var n = new Date(); calY = n.getFullYear(); calM = n.getMonth(); calSel = ymd(n); renderSched(); }));
+    head.appendChild(mkBtn('▶', function () { calM++; if (calM > 11) { calM = 0; calY++; } calSel = calY + '-' + pad(calM + 1) + '-01'; renderSched(); }));
+    box.appendChild(head);
+
+    // 月のマス（日曜はじまり）
+    var grid = document.createElement('div'); grid.className = 'cal';
+    for (var w0 = 0; w0 < 7; w0++) { var h = document.createElement('div'); h.className = 'wd s' + w0; h.textContent = WD[w0]; grid.appendChild(h); }
+    var first = new Date(calY, calM, 1);
+    var cur = new Date(calY, calM, 1 - first.getDay());
+    var last = new Date(calY, calM + 1, 0);
+    while (cur <= last || cur.getDay() !== 0) {
+      (function (d) {
+        var key = ymd(d);
+        var items = itemsOn(key, map).filter(function (x) { return !x.gone; });
+        var c = document.createElement('button');
+        c.className = 'cell s' + d.getDay() + (d.getMonth() !== calM ? ' out' : '') + (key === today ? ' today' : '') + (key === calSel ? ' sel' : '');
+        var n = document.createElement('span'); n.className = 'n'; n.textContent = d.getDate(); c.appendChild(n);
+        var dots = document.createElement('span'); dots.className = 'dots';
+        items.slice(0, 3).forEach(function (x) { var i = document.createElement('i'); i.className = x.pending ? 'p' : (x.kind === 'lesson' ? 'l' : ''); dots.appendChild(i); });
+        if (items.length > 3) { var sm = document.createElement('small'); sm.textContent = '+' + (items.length - 3); dots.appendChild(sm); }
+        c.appendChild(dots);
+        c.onclick = function () { calSel = key; if (d.getMonth() !== calM) { calY = d.getFullYear(); calM = d.getMonth(); } renderSched(); };
+        grid.appendChild(c);
+      })(new Date(cur.getFullYear(), cur.getMonth(), cur.getDate()));
+      cur.setDate(cur.getDate() + 1);
     }
+    box.appendChild(grid);
+
+    // 選んだ日
+    var dt = new Date(calSel + 'T00:00:00');
+    var card = document.createElement('div'); card.className = 'day' + (calSel === today ? ' today' : '');
+    var h3 = document.createElement('h3');
+    h3.textContent = (dt.getMonth() + 1) + '/' + dt.getDate() + '（' + WD[dt.getDay()] + '）';
+    if (calSel === today) { var tsm = document.createElement('small'); tsm.textContent = '今日'; h3.appendChild(tsm); }
+    card.appendChild(h3);
+    var dayItems = itemsOn(calSel, map);
+    var outOfRange = snap && snap.rangeStart && (calSel < snap.rangeStart || calSel > snap.rangeEnd);
+    var noData = snap && !(calSel in map);
+    if (!dayItems.length) {
+      var nn = document.createElement('div'); nn.className = 'it none';
+      nn.textContent = noData ? (outOfRange ? 'この日の予定は、まだ届いていません（PCから届く範囲の外です）' : 'この日の予定は、まだ届いていません') : '予定なし';
+      card.appendChild(nn);
+    }
+    dayItems.forEach(function (it) { card.appendChild(dayItemRow(it, calSel)); });
+    box.appendChild(card);
   }
-  $('schedAdd').onclick = function () { $('obType').value = 'event'; obTypeChanged(); showTab('outbox'); };
+
+  // ---- 予定の入力（タイプ入力）----
+  function openEvForm(ctx) {
+    editing = ctx || null;
+    var f = { title: '', date: calSel, start: '', end: '', repeat: 'none', until: '', note: '' };
+    var label = '予定を入れる';
+    if (ctx && ctx.item) {
+      var it = ctx.item;
+      var pe = null;
+      outbox.forEach(function (o) { if (o.type === 'event_edit' && o.eid === ctx.eid) { pe = o; } });
+      if (pe) { it = { title: pe.title, start: pe.start, end: pe.end, repeat: pe.repeat, until: pe.until, note: pe.note, base: pe.date }; }
+      f = { title: it.title || '', date: (it.repeat && it.repeat !== 'none' && it.base) ? it.base : ctx.date, start: it.start || '', end: it.end || '',
+            repeat: it.repeat || 'none', until: it.until || '', note: it.note || '' };
+      label = '予定を変更' + (f.repeat !== 'none' ? '（くり返しは全部まとめて変わります）' : '');
+    } else if (ctx && ctx.idx !== undefined && outbox[ctx.idx]) {
+      var o = outbox[ctx.idx];
+      f = { title: o.title || '', date: o.date || calSel, start: o.start || '', end: o.end || '', repeat: o.repeat || 'none', until: o.until || '', note: o.note || '' };
+      label = '書き溜め中の予定を変更';
+    }
+    $('evFormTitle').textContent = label;
+    $('evTitle').value = f.title; $('evDate').value = f.date; $('evStart').value = f.start; $('evEnd').value = f.end;
+    $('evRepeat').value = f.repeat; $('evUntil').value = f.until; $('evNote').value = f.note; $('evMsg').textContent = '';
+    evRepeatChanged();
+    $('evForm').style.display = '';
+    $('schedAdd').style.display = 'none';
+    try { $('evForm').scrollIntoView({ block: 'center' }); } catch (e) {}
+  }
+  function closeEvForm() { editing = null; $('evForm').style.display = 'none'; $('schedAdd').style.display = ''; }
+  function evRepeatChanged() { $('evUntilRow').style.display = $('evRepeat').value === 'none' ? 'none' : ''; }
+  $('evRepeat').onchange = evRepeatChanged;
+  $('schedAdd').onclick = function () { openEvForm(null); };
+  $('evCancel').onclick = closeEvForm;
+  $('evSave').onclick = function () {
+    var f = { title: $('evTitle').value.trim(), date: $('evDate').value, start: $('evStart').value, end: $('evEnd').value,
+              repeat: $('evRepeat').value, until: $('evUntil').value, note: $('evNote').value.trim() };
+    var err = '';
+    if (!f.title) { err = '予定の名前を入れてください'; }
+    else if (!f.date) { err = '日付を入れてください'; }
+    else if (f.end && !f.start) { err = '終了を入れるときは、開始も入れてください'; }
+    else if (f.start && f.end && f.end <= f.start) { err = '終了が開始より前になっています'; }
+    else if (f.repeat !== 'none' && f.until && f.until < f.date) { err = 'くり返しの終わりが、最初の日より前になっています'; }
+    if (err) { $('evMsg').textContent = err; return; }
+    if (f.repeat === 'none') { f.until = ''; }
+    var ctx = editing;
+    if (ctx && ctx.eid) {
+      outbox = outbox.filter(function (o) { return !(o.type === 'event_edit' && o.eid === ctx.eid); });   // 同じ予定の古い変更は、新しい方で置き換える
+      queueItem({ type: 'event_edit', eid: ctx.eid, title: f.title, date: f.date, start: f.start, end: f.end, repeat: f.repeat, until: f.until, note: f.note });
+    } else if (ctx && ctx.idx !== undefined && outbox[ctx.idx]) {
+      var o = outbox[ctx.idx];
+      o.title = f.title; o.date = f.date; o.start = f.start; o.end = f.end; o.repeat = f.repeat; o.until = f.until; o.note = f.note;
+      saveOutbox();
+    } else {
+      queueItem({ type: 'event', title: f.title, date: f.date, start: f.start, end: f.end, repeat: f.repeat, until: f.until, note: f.note });
+    }
+    calSel = f.date; var nd = new Date(f.date + 'T00:00:00'); calY = nd.getFullYear(); calM = nd.getMonth();
+    closeEvForm();
+    renderSched();
+    if (pcOnline) { flushOutbox(); }
+  };
 
   // =====================================================
   // 書き溜め（つながらないとき用）
@@ -510,7 +673,7 @@
   var outbox = [];
   try { outbox = JSON.parse(lsGet('outbox', '[]')) || []; } catch (e) { outbox = []; }
   var flushing = false;
-  var TYPE_LABEL = { memo: '📒 メモ', todo: '✅ Todo', event: '📅 予定', snote: '🧑‍🎓 生徒メモ', journal: '📔 日記', send: '💬 指示' };
+  var TYPE_LABEL = { memo: '📒 メモ', todo: '✅ Todo', event: '📅 予定', event_edit: '✏️ 予定の変更', event_delete: '🗑 予定の削除', snote: '🧑‍🎓 生徒メモ', journal: '📔 日記', send: '💬 指示' };
 
   function saveOutbox() { lsSet('outbox', JSON.stringify(outbox)); updateBadges(); }
 
@@ -545,12 +708,13 @@
   };
 
   // メモ・Todo・予定は、そのままPCに登録する（指示は、確認が要るので自動では送らない）
+  var flushAgain = false;
   function flushOutbox(manual) {
-    if (flushing) { return; }
+    if (flushing) { flushAgain = true; return; }
     var items = outbox.filter(function (o) { return o.type !== 'send'; });
     if (!items.length) { if (manual) { $('obMsg').textContent = '送るものはありません'; } return; }
     flushing = true;
-    var payload = items.map(function (o) { return { cid: o.cid, type: o.type, student: o.student, text: o.text, due: o.date && o.type === 'todo' ? o.date : '', date: o.date, start: o.start, end: o.end, title: o.title, note: o.note, repeat: o.repeat }; });
+    var payload = items.map(function (o) { return { cid: o.cid, type: o.type, student: o.student, text: o.text, due: o.date && o.type === 'todo' ? o.date : '', date: o.date, start: o.start, end: o.end, title: o.title, note: o.note, repeat: o.repeat, until: o.until, eid: o.eid }; });
     talkToPC('sync', JSON.stringify(payload)).then(function (st) {
       var ok = {};
       (st.results || []).forEach(function (r) { if (r.ok) { ok[r.cid] = true; } });
@@ -560,10 +724,16 @@
       var sent = before - outbox.length;
       if (sent) { say('ai', '📝 書き溜めを ' + sent + ' 件、PCに送りました。'); }
       if (curTab === 'outbox') { renderOutbox(); if (manual) { $('obMsg').textContent = sent + '件、送りました'; } }
-      if (curTab === 'sched') { renderSched(); fetchSnapshot(); }
+      if (curTab === 'sched') { renderSched(); }
+      if (items.some(function (o) { return /^event/.test(o.type); })) { setTimeout(fetchSnapshot, 4000); setTimeout(fetchSnapshot, 10000); }
     }).catch(function (e) {
       if (manual) { $('obMsg').textContent = '❌ ' + e.message; }
-    }).then(function () { flushing = false; });
+    }).then(function () {
+      flushing = false;
+      // 送っている間に「送って」と頼まれていた分があれば、続けて送る（頼まれたときだけ。失敗のくり返しを避ける）
+      var more = flushAgain; flushAgain = false;
+      if (more && outbox.some(function (o) { return o.type !== 'send'; })) { flushOutbox(false); }
+    });
   }
   $('obFlush').onclick = function () { $('obMsg').textContent = '送っています…'; flushOutbox(true); };
 
@@ -574,7 +744,7 @@
     outbox.forEach(function (o, i) {
       var d = document.createElement('div'); d.className = 'ob';
       var b = document.createElement('div'); b.className = 'body';
-      var main = o.type === 'event' ? o.title : (o.type === 'snote' ? o.student + '：' + o.text : o.text);
+      var main = (o.type === 'event' || o.type === 'event_edit' || o.type === 'event_delete') ? (o.title || '') : (o.type === 'snote' ? o.student + '：' + o.text : o.text);
       b.textContent = TYPE_LABEL[o.type] + '　' + main;
       var sm = document.createElement('small');
       var bits = [];
