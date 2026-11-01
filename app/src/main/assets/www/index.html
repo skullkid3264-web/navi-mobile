@@ -52,6 +52,7 @@
   textarea, input[type=text], input[type=password] { width:100%; font-family:inherit; font-size:16px; padding:10px; border-radius:14px; border:1px solid var(--line); background:var(--bg); color:var(--text); }
   textarea { resize:none; flex:1; }
   #mic { width:48px; height:48px; border-radius:50%; font-size:22px; padding:0; background:linear-gradient(135deg,#ff9ccb,#f77fb3); color:#2b1020; flex:none; box-shadow:0 3px 12px rgba(255,156,203,.4); }
+  #stopVoice { width:48px; height:48px; border-radius:50%; font-size:20px; padding:0; flex:none; background:var(--card2); color:var(--text); }
   #mic.on { background:#ef5350; color:#fff; animation:pulse 1s infinite; }
   @keyframes pulse { 50% { transform:scale(1.1); } }
   .notice { background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:12px 14px; margin-bottom:10px; }
@@ -188,6 +189,7 @@
 <footer><div class="inner">
   <textarea id="text" rows="1" placeholder="話しかけてね"></textarea>
   <button class="go" id="sendBtn" style="height:56px">送る</button>
+  <button id="stopVoice" title="読み上げを止める">⏹</button>
   <button id="mic">🎤</button>
 </div></footer>
 
@@ -459,14 +461,21 @@
     });
   }
   // 返事を声にする。短い声が使えるときは、モードに合わせて「声だけ」「声→読み上げ」にする
+  var speakGen = 0;
+  function stopVoice() {
+    speakGen++;
+    try { A.stopSpeak(); } catch (e) {}
+    try { if (clipEl) { clipEl.pause(); } } catch (e) {}
+  }
   function speakFor(text, clip, only, extra) {
+    var gen = ++speakGen;
     if (lsGet('speak', '1') !== '1') { return; }
     var full = (text ? text + (extra ? '。' : '') : '') + (extra || '');
     var mode = lsGet('speakMode', 'clip');
     var has = clip && clipCache[clip] && clipCache[clip].length;
     if (mode === 'tts' || !has) { if (full) { A.speak(full); } return; }
-    if (mode === 'clip' && only) { playClip(clip).then(function (ok) { if (!ok && full) { A.speak(full); } }); return; }
-    playClip(clip).then(function () { if (full) { A.speak(full); } });
+    if (mode === 'clip' && only) { playClip(clip).then(function (ok) { if (!ok && full && gen === speakGen) { A.speak(full); } }); return; }
+    playClip(clip).then(function () { if (full && gen === speakGen) { A.speak(full); } });
   }
 
   function showState(st) {
@@ -498,6 +507,7 @@
     if (busy) { return; }
     if (kind === 'send') {
       if (!text.trim()) { return; }
+      stopVoice();
       say('me', text);
       $('text').value = '';
     }
@@ -879,30 +889,45 @@
 
   // メモ・Todo・予定は、そのままPCに登録する（指示は、確認が要るので自動では送らない）
   var flushAgain = false;
-  function flushOutbox(manual) {
+  // たくさんあるときは、30件ずつ小分けにして順に送る（PCにも通信にも負担をかけない）。登録できなかった分は、その回は飛ばして先へ進む
+  var FLUSH_CHUNK = 30;
+  function flushOutbox(manual, skip, total) {
     if (flushing) { flushAgain = true; return; }
-    var items = outbox.filter(function (o) { return o.type !== 'send'; });
-    if (!items.length) { if (manual) { $('obMsg').textContent = '送るものはありません'; } return; }
+    skip = skip || {};
+    var all = outbox.filter(function (o) { return o.type !== 'send' && !skip[o.cid]; });
+    if (!all.length) { if (manual && !total) { $('obMsg').textContent = '送るものはありません'; } return; }
+    var items = all.slice(0, FLUSH_CHUNK);
+    total = total || all.length;
     flushing = true;
     var payload = items.map(function (o) { return { cid: o.cid, type: o.type, student: o.student, text: o.text, due: o.date && o.type === 'todo' ? o.date : '', date: o.date, start: o.start, end: o.end, title: o.title, note: o.note, repeat: o.repeat, until: o.until, eid: o.eid }; });
+    var sent = 0, failed = false;
     talkToPC('sync', JSON.stringify(payload)).then(function (st) {
       var ok = {};
       (st.results || []).forEach(function (r) { if (r.ok) { ok[r.cid] = true; } });
+      items.forEach(function (o) { if (!ok[o.cid]) { skip[o.cid] = true; } });
       var before = outbox.length;
       outbox = outbox.filter(function (o) { return !ok[o.cid]; });
       saveOutbox();
-      var sent = before - outbox.length;
-      if (sent) { say('ai', '📝 書き溜めを ' + sent + ' 件、PCに送りました。'); }
-      if (curTab === 'outbox') { renderOutbox(); if (manual) { $('obMsg').textContent = sent + '件、送りました'; } }
+      sent = before - outbox.length;
+      if (curTab === 'outbox') { renderOutbox(); if (manual) { $('obMsg').textContent = '送っています…（残り ' + outbox.filter(function (o) { return o.type !== 'send' && !skip[o.cid]; }).length + '件）'; } }
       if (curTab === 'sched') { renderSched(); }
       if (items.some(function (o) { return /^event/.test(o.type); })) { setTimeout(fetchSnapshot, 4000); setTimeout(fetchSnapshot, 10000); }
     }).catch(function (e) {
+      failed = true;
       if (manual) { $('obMsg').textContent = '❌ ' + e.message; }
     }).then(function () {
       flushing = false;
+      var more = outbox.some(function (o) { return o.type !== 'send' && !skip[o.cid]; });
+      if (!failed && more) { flushOutbox(manual, skip, total); return; }    // 続きがあれば、次の30件へ
+      if (!failed && (sent || total)) {
+        var left = outbox.filter(function (o) { return o.type !== 'send'; }).length;
+        var done = total - Object.keys(skip).length;
+        if (done > 0) { say('ai', '📝 書き溜めを ' + done + ' 件、PCに送りました。' + (left ? '（' + left + '件は登録できませんでした）' : '')); }
+        if (manual) { $('obMsg').textContent = done + '件、送りました'; }
+      }
       // 送っている間に「送って」と頼まれていた分があれば、続けて送る（頼まれたときだけ。失敗のくり返しを避ける）
-      var more = flushAgain; flushAgain = false;
-      if (more && outbox.some(function (o) { return o.type !== 'send'; })) { flushOutbox(false); }
+      var again = flushAgain; flushAgain = false;
+      if (again && outbox.some(function (o) { return o.type !== 'send'; })) { flushOutbox(false); }
     });
   }
   $('obFlush').onclick = function () { $('obMsg').textContent = '送っています…'; flushOutbox(true); };
@@ -1057,6 +1082,7 @@
   $('pitchSel').oninput = function () { $('pitchVal').textContent = Number(this.value).toFixed(1); };
   $('btnVoiceTry').onclick = function () { applyVoiceSettings(); setTimeout(function () { A.speakSample(); }, 250); };
   $('btnVoiceSys').onclick = function () { A.openTtsSettings(); };
+  $('stopVoice').onclick = stopVoice;
   $('speakMode').onchange = function () { lsSet('speakMode', this.value); };
   $('clipRate').onchange = function () { lsSet('clipRate', this.value); };
   $('btnClipSync').onclick = function () { syncClips(true); };
