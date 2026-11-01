@@ -239,6 +239,11 @@
       <option value="both">短い声 → 読み上げも</option>
       <option value="tts">読み上げだけ</option>
     </select>
+    <select id="clipRate" style="width:100%;margin-top:8px;font-family:inherit;font-size:16px;padding:10px;border-radius:12px;border:1px solid var(--card2);background:var(--bg);color:var(--text)">
+      <option value="1">短い声の速さ：ふつう</option>
+      <option value="1.15">短い声の速さ：少し速い</option>
+      <option value="1.3">短い声の速さ：速い</option>
+    </select>
     <div class="row" style="margin-top:10px"><button id="btnClipSync" style="flex:1">⬇ 声の素材を今すぐ取り込む</button><button id="btnClipTry" style="flex:1">▶ 試しに鳴らす</button></div>
     <div id="clipInfo" style="color:var(--sub);font-size:12px;margin-top:6px"></div>
   </div>
@@ -353,7 +358,7 @@
   }
 
   // ---- 短い声（PCのVOICEVOXが作った素材。スマホに保存して、場面に合わせて鳴らす）----
-  var clipDb = null, clipCache = {}, clipVersion = '', lastClip = {}, clipSyncing = false;
+  var clipErr = '', clipDb = null, clipCache = {}, clipVersion = '', lastClip = {}, clipSyncing = false;
   var clipCount = function () { var n = 0; for (var k in clipCache) { n += clipCache[k].length; } return n; };
 
   function clipOpen() {
@@ -402,7 +407,7 @@
   function renderClipInfo(msg) {
     var n = clipCount();
     $('clipInfo').textContent = (typeof msg === 'string' && msg ? msg + '　' : '') +
-      (n ? '取り込み済み：' + n + '個（' + Object.keys(clipCache).length + '種類）' : 'まだ素材がありません。PCで「ボイス素材を作って」と言うと、作ってここに届きます');
+      (clipErr ? '（直前の再生失敗：' + clipErr + '）　' : '') + (n ? '取り込み済み：' + n + '個（' + Object.keys(clipCache).length + '種類）' : 'まだ素材がありません。PCで「ボイス素材を作って」と言うと、作ってここに届きます');
   }
   function syncClips(manual) {
     if (!info.paired || clipSyncing) { return; }
@@ -421,6 +426,19 @@
       return chain.then(function () { return clipSave(ver, got); }).then(function () { renderClipInfo('取り込みました。'); });
     }).catch(function (e) { if (manual) { renderClipInfo('❌ ' + e.message); } }).then(function () { clipSyncing = false; });
   }
+  // 1つの Audio を使い回す。最初のタップで「鳴らしてよい」状態にしておくと、あとから（通信の返事のあと）でも鳴らせる
+  var clipEl = null, clipUnlocked = false;
+  var SILENT = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=';
+  function clipAudio() { if (!clipEl) { clipEl = new Audio(); clipEl.preload = 'auto'; } return clipEl; }
+  function unlockClip() {
+    if (clipUnlocked) { return; }
+    try {
+      var a = clipAudio(); a.src = SILENT;
+      var pr = a.play();
+      if (pr && pr.then) { pr.then(function () { clipUnlocked = true; a.pause(); }).catch(function () {}); } else { clipUnlocked = true; }
+    } catch (e) {}
+  }
+  ['touchstart', 'click', 'keydown'].forEach(function (ev) { document.addEventListener(ev, unlockClip, { passive: true }); });
   function playClip(tag) {
     return new Promise(function (resolve) {
       var list = clipCache[tag];
@@ -428,11 +446,16 @@
       var pick = list[0];
       if (list.length > 1) { do { pick = list[Math.floor(Math.random() * list.length)]; } while (pick.id === lastClip[tag]); }
       lastClip[tag] = pick.id;
-      var url = URL.createObjectURL(pick.blob), a = new Audio(url), done = false;
-      var fin = function (ok) { if (!done) { done = true; try { URL.revokeObjectURL(url); } catch (e) {} resolve(ok); } };
+      var url = URL.createObjectURL(pick.blob), a = clipAudio(), done = false;
+      var fin = function (ok) { if (!done) { done = true; a.onended = a.onerror = null; try { URL.revokeObjectURL(url); } catch (e) {} resolve(ok); } };
       a.onended = function () { fin(true); };
-      a.onerror = function () { fin(false); };
-      try { var pr = a.play(); if (pr && pr.catch) { pr.catch(function () { fin(false); }); } } catch (e) { fin(false); }
+      a.onerror = function () { clipErr = '再生エラー'; fin(false); };
+      try {
+        a.pause(); a.src = url; a.currentTime = 0;
+        a.playbackRate = parseFloat(lsGet('clipRate', '1.15')) || 1; a.preservesPitch = true;
+        var pr = a.play();
+        if (pr && pr.catch) { pr.catch(function (e) { clipErr = String(e && e.name || e); fin(false); }); }
+      } catch (e) { clipErr = String(e); fin(false); }
     });
   }
   // 返事を声にする。短い声が使えるときは、モードに合わせて「声だけ」「声→読み上げ」にする
@@ -1015,6 +1038,7 @@
     $('optSpeak').checked = lsGet('speak', '1') === '1';
     $('optWake').checked = !!info.wake;
     $('speakMode').value = lsGet('speakMode', 'clip');
+    $('clipRate').value = lsGet('clipRate', '1.15');
     renderClipInfo();
     $('setInfo').textContent = '接続先：' + (info.host || '未登録') + ' ／ 版：' + (info.version || '') + ' ／ 通知：' + (info.canNotify ? '許可済み' : '未許可');
     $('setMsg2').textContent = '';
@@ -1034,6 +1058,7 @@
   $('btnVoiceTry').onclick = function () { applyVoiceSettings(); setTimeout(function () { A.speakSample(); }, 250); };
   $('btnVoiceSys').onclick = function () { A.openTtsSettings(); };
   $('speakMode').onchange = function () { lsSet('speakMode', this.value); };
+  $('clipRate').onchange = function () { lsSet('clipRate', this.value); };
   $('btnClipSync').onclick = function () { syncClips(true); };
   $('btnClipTry').onclick = function () {
     var tags = Object.keys(clipCache);
