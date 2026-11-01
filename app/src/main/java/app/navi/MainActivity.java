@@ -93,6 +93,7 @@ public class MainActivity extends Activity {
         s.setDomStorageEnabled(true);
         s.setAllowFileAccess(false);
         s.setAllowContentAccess(false);
+        s.setMediaPlaybackRequiresUserGesture(false);   // 短い声を、タップなしでも鳴らせるように
         s.setTextZoom(100);
 
         final WebViewAssetLoader loader = new WebViewAssetLoader.Builder()

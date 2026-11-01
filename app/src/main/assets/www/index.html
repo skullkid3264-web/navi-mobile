@@ -222,6 +222,16 @@
     </div>
     <div style="color:var(--sub);font-size:12px;margin-top:6px">声の種類は端末に入っているものです。「声をふやす」で端末の設定を開くと、日本語の声を追加できます。</div>
   </div>
+  <div id="clipBox" style="margin-top:12px;padding:12px;border-radius:14px;background:var(--card)">
+    <div style="font-weight:700;margin-bottom:8px">🎀 短い声（PCのVOICEVOXで作った素材）</div>
+    <select id="speakMode" style="width:100%;font-family:inherit;font-size:16px;padding:10px;border-radius:12px;border:1px solid var(--card2);background:var(--bg);color:var(--text)">
+      <option value="clip">短い声だけ（確認・完了などは、読み上げの代わりに）</option>
+      <option value="both">短い声のあとに、読み上げも</option>
+      <option value="tts">読み上げだけ（短い声は使わない）</option>
+    </select>
+    <div class="row" style="margin-top:10px"><button id="btnClipSync" style="flex:1">⬇ 声の素材を今すぐ取り込む</button><button id="btnClipTry" style="flex:1">▶ 試しに鳴らす</button></div>
+    <div id="clipInfo" style="color:var(--sub);font-size:12px;margin-top:6px"></div>
+  </div>
   <div class="sw"><span>📣「ナビ」と呼びかけて使う<br><small style="color:var(--sub)">オンの間ずっとマイクで待ちます。電池を使います</small></span><input type="checkbox" id="optWake"></div>
   <div style="margin-top:14px" class="row">
     <button id="btnNotify" style="flex:1">🔔 通知を許可する</button>
@@ -301,15 +311,107 @@
     document.querySelectorAll('#plan button').forEach(function (x) { x.disabled = b; });
   }
 
+  // ---- 短い声（PCのVOICEVOXが作った素材。スマホに保存して、場面に合わせて鳴らす）----
+  var clipDb = null, clipCache = {}, clipVersion = '', lastClip = {}, clipSyncing = false;
+  var clipCount = function () { var n = 0; for (var k in clipCache) { n += clipCache[k].length; } return n; };
+
+  function clipOpen() {
+    return new Promise(function (resolve) {
+      try {
+        var rq = indexedDB.open('navi-clips', 1);
+        rq.onupgradeneeded = function () { rq.result.createObjectStore('clips'); };
+        rq.onsuccess = function () { clipDb = rq.result; resolve(clipDb); };
+        rq.onerror = function () { resolve(null); };
+      } catch (e) { resolve(null); }
+    });
+  }
+  function clipLoad() {
+    return clipOpen().then(function (db) {
+      if (!db) { return; }
+      return new Promise(function (resolve) {
+        try {
+          var tx = db.transaction('clips', 'readonly'), rq = tx.objectStore('clips').openCursor();
+          rq.onsuccess = function () {
+            var c = rq.result;
+            if (c) { if (c.key === '_version') { clipVersion = String(c.value || ''); } else { clipCache[c.key] = c.value || []; } c.continue(); }
+            else { resolve(); }
+          };
+          rq.onerror = function () { resolve(); };
+        } catch (e) { resolve(); }
+      });
+    }).then(renderClipInfo);
+  }
+  function clipSave(version, got) {
+    var db = clipDb;
+    return new Promise(function (resolve, reject) {
+      if (!db) { clipCache = got; clipVersion = version; resolve(); return; }
+      var tx = db.transaction('clips', 'readwrite'), st = tx.objectStore('clips');
+      st.clear();
+      for (var t in got) { st.put(got[t], t); }
+      st.put(version, '_version');
+      tx.oncomplete = function () { clipCache = got; clipVersion = version; resolve(); };
+      tx.onerror = function () { reject(new Error('端末に保存できませんでした')); };
+    });
+  }
+  function b64Blob(b64, mime) {
+    var bin = atob(b64), u8 = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) { u8[i] = bin.charCodeAt(i); }
+    return new Blob([u8], { type: mime || 'audio/wav' });
+  }
+  function renderClipInfo(msg) {
+    var n = clipCount();
+    $('clipInfo').textContent = (typeof msg === 'string' && msg ? msg + '　' : '') +
+      (n ? '取り込み済み：' + n + '個（' + Object.keys(clipCache).length + '種類）' : 'まだ素材がありません。PCで「ボイス素材を作って」と言うと、作ってここに届きます');
+  }
+  function syncClips(manual) {
+    if (!info.paired || clipSyncing) { return; }
+    clipSyncing = true;
+    if (manual) { renderClipInfo('確認しています…'); }
+    call('clipsGet', { since: clipVersion }).then(function (r) {
+      if (!r) { if (manual) { renderClipInfo('PCから素材はまだ届いていません。'); } return; }
+      if (r.unchanged) { if (manual) { renderClipInfo('最新です。'); } return; }
+      var ver = String(r.version), got = {}, chain = Promise.resolve();
+      (r.tags || []).forEach(function (t) {
+        chain = chain.then(function () { return call('clipsGet', { tag: t }); }).then(function (x) {
+          if (!x || String(x.version) !== ver) { throw new Error('取り込み中に素材が更新されました。もう一度どうぞ'); }
+          got[t] = (x.clips || []).map(function (c) { return { id: c.id, mime: c.mime, blob: b64Blob(c.b64, c.mime) }; });
+        });
+      });
+      return chain.then(function () { return clipSave(ver, got); }).then(function () { renderClipInfo('取り込みました。'); });
+    }).catch(function (e) { if (manual) { renderClipInfo('❌ ' + e.message); } }).then(function () { clipSyncing = false; });
+  }
+  function playClip(tag) {
+    return new Promise(function (resolve) {
+      var list = clipCache[tag];
+      if (!list || !list.length) { resolve(false); return; }
+      var pick = list[0];
+      if (list.length > 1) { do { pick = list[Math.floor(Math.random() * list.length)]; } while (pick.id === lastClip[tag]); }
+      lastClip[tag] = pick.id;
+      var url = URL.createObjectURL(pick.blob), a = new Audio(url), done = false;
+      var fin = function (ok) { if (!done) { done = true; try { URL.revokeObjectURL(url); } catch (e) {} resolve(ok); } };
+      a.onended = function () { fin(true); };
+      a.onerror = function () { fin(false); };
+      try { var pr = a.play(); if (pr && pr.catch) { pr.catch(function () { fin(false); }); } } catch (e) { fin(false); }
+    });
+  }
+  // 返事を声にする。短い声が使えるときは、モードに合わせて「声だけ」「声→読み上げ」にする
+  function speakFor(text, clip, only, extra) {
+    if (lsGet('speak', '1') !== '1') { return; }
+    var full = (text ? text + (extra ? '。' : '') : '') + (extra || '');
+    var mode = lsGet('speakMode', 'clip');
+    var has = clip && clipCache[clip] && clipCache[clip].length;
+    if (mode === 'tts' || !has) { if (full) { A.speak(full); } return; }
+    if (mode === 'clip' && only) { playClip(clip).then(function (ok) { if (!ok && full) { A.speak(full); } }); return; }
+    playClip(clip).then(function () { if (full) { A.speak(full); } });
+  }
+
   function showState(st) {
-    if (st.reply) {
-      say('ai', st.reply);
-      if (lsGet('speak', '1') === '1') { A.speak(st.reply); }
-    }
+    if (st.reply) { say('ai', st.reply); }
+    var speakIt = function () { speakFor(st.reply || '', st.clip, st.clip_only, st.can_execute ? '内容を確認して、実行と言うか、ボタンを押してください' : ''); };
     var el = $('plan'); el.innerHTML = '';
     var items = st.plan || [];
     planVisible = items.length > 0;
-    if (!planVisible) { el.style.display = 'none'; return; }
+    if (!planVisible) { el.style.display = 'none'; speakIt(); return; }
     el.style.display = 'block';
     items.forEach(function (it, i) {
       var d = document.createElement('div'); d.className = 'step';
@@ -325,7 +427,7 @@
     cancel.onclick = function () { send('cancel', ''); };
     row.appendChild(run); row.appendChild(cancel); el.appendChild(row);
     $('paneChat').scrollTop = $('paneChat').scrollHeight;
-    if (st.can_execute && lsGet('speak', '1') === '1') { A.speak((st.reply ? st.reply + '。' : '') + '内容を確認して、実行と言うか、ボタンを押してください'); }
+    speakIt();
   }
 
   function send(kind, text) {
@@ -867,6 +969,8 @@
     $('optAuto').checked = lsGet('auto', '1') === '1';
     $('optSpeak').checked = lsGet('speak', '1') === '1';
     $('optWake').checked = !!info.wake;
+    $('speakMode').value = lsGet('speakMode', 'clip');
+    renderClipInfo();
     $('setInfo').textContent = '接続先：' + (info.host || '未登録') + ' ／ 版：' + (info.version || '') + ' ／ 通知：' + (info.canNotify ? '許可済み' : '未許可');
     $('setMsg2').textContent = '';
     $('settings').className = 'on';
@@ -884,6 +988,13 @@
   $('pitchSel').oninput = function () { $('pitchVal').textContent = Number(this.value).toFixed(1); };
   $('btnVoiceTry').onclick = function () { applyVoiceSettings(); setTimeout(function () { A.speakSample(); }, 250); };
   $('btnVoiceSys').onclick = function () { A.openTtsSettings(); };
+  $('speakMode').onchange = function () { lsSet('speakMode', this.value); };
+  $('btnClipSync').onclick = function () { syncClips(true); };
+  $('btnClipTry').onclick = function () {
+    var tags = Object.keys(clipCache);
+    if (!tags.length) { renderClipInfo('まだ素材がありません。'); return; }
+    playClip(clipCache['praise'] ? 'praise' : tags[0]);
+  };
   function closeSettings() { $('settings').className = ''; }
   function closeSetup() { $('setup').className = ''; }
   $('gear').onclick = openSettings;
@@ -932,9 +1043,11 @@
   var pollTimer = null;
   function startPolling() {
     loadSnapshot(); fetchSnapshot();
+    clipLoad().then(function () { syncClips(false); });
     checkPc(); loadNotices();
     if (pollTimer) { clearInterval(pollTimer); }
-    pollTimer = setInterval(function () { checkPc(); loadNotices(); fetchSnapshot(); }, 60000);
+    var pollN = 0;
+    pollTimer = setInterval(function () { checkPc(); loadNotices(); fetchSnapshot(); if (++pollN % 20 === 0) { syncClips(false); } }, 60000);
   }
 
   refreshInfo();
