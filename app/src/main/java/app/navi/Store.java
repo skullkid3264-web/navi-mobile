@@ -63,4 +63,21 @@ final class Store {
     static void setSnapshot(Context c, String json, long generatedAt) {
         sp(c).edit().putString("snapshot", json).putLong("snapshotAt", generatedAt).apply();
     }
+
+    /** 読み上げの声の名前（空 = 端末の標準） */
+    static String ttsVoice(Context c) {
+        return sp(c).getString("ttsVoice", "");
+    }
+
+    static float ttsRate(Context c) {
+        return sp(c).getFloat("ttsRate", 1.0f);
+    }
+
+    static float ttsPitch(Context c) {
+        return sp(c).getFloat("ttsPitch", 1.0f);
+    }
+
+    static void setTts(Context c, String voice, float rate, float pitch) {
+        sp(c).edit().putString("ttsVoice", voice == null ? "" : voice).putFloat("ttsRate", rate).putFloat("ttsPitch", pitch).apply();
+    }
 }

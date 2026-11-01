@@ -15,6 +15,7 @@ import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
+import android.speech.tts.Voice;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
@@ -40,6 +41,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -242,6 +244,7 @@ public class MainActivity extends Activity {
         if (tts != null) {
             tts.shutdown();
             tts = null;
+            ttsReady = false;
         }
         if (web != null) web.destroy();
         super.onDestroy();
@@ -397,6 +400,48 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void speak(final String text) {
             main.post(() -> speakNow(text));
+        }
+
+        /** 読み上げの声の一覧を、NAVI.onVoices(一覧, 今の設定) で返す */
+        @JavascriptInterface
+        public void listVoices() {
+            main.post(MainActivity.this::sendVoices);
+        }
+
+        /** 声・速さ（0.5〜2）・高さ（0.5〜2）を保存して、すぐ反映する */
+        @JavascriptInterface
+        public void setVoice(final String name, final float rate, final float pitch) {
+            main.post(() -> {
+                float r = Math.max(0.5f, Math.min(2.0f, rate));
+                float p = Math.max(0.5f, Math.min(2.0f, pitch));
+                Store.setTts(MainActivity.this, name, r, p);
+                withTts(MainActivity.this::applyVoice);
+            });
+        }
+
+        /** 今の設定で試し聞きする */
+        @JavascriptInterface
+        public void speakSample() {
+            main.post(() -> {
+                if (tts != null) tts.stop();
+                speakNow("こんにちは。ナビです。この声で読み上げます。");
+            });
+        }
+
+        /** 端末の「テキスト読み上げ」の設定を開く（声の追加・エンジンの変更はここで） */
+        @JavascriptInterface
+        public void openTtsSettings() {
+            main.post(() -> {
+                try {
+                    startActivity(new Intent("com.android.settings.TTS_SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                } catch (Exception e) {
+                    try {
+                        startActivity(new Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                    } catch (Exception ignored) {
+                        Toast.makeText(MainActivity.this, "設定を開けませんでした", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
         }
 
         @JavascriptInterface
@@ -583,20 +628,91 @@ public class MainActivity extends Activity {
     // ---------------------------------------------------------------
     // 読み上げ
     // ---------------------------------------------------------------
+    private final ArrayList<Runnable> ttsWaiting = new ArrayList<>();
+    private boolean ttsStarting = false;
+
+    /** 読み上げの準備ができたら onReady を呼ぶ（初回は少し待つ） */
+    private void withTts(final Runnable onReady) {
+        if (tts != null && ttsReady) {
+            onReady.run();
+            return;
+        }
+        ttsWaiting.add(onReady);
+        if (ttsStarting) return;
+        ttsStarting = true;
+        if (tts != null) {
+            try {
+                tts.shutdown();
+            } catch (Exception ignored) {
+                // 前の準備に失敗していたものを片づける
+            }
+        }
+        tts = new TextToSpeech(this, status -> {
+            ttsStarting = false;
+            ttsReady = status == TextToSpeech.SUCCESS;
+            ArrayList<Runnable> todo = new ArrayList<>(ttsWaiting);
+            ttsWaiting.clear();
+            if (!ttsReady) return;
+            applyVoice();
+            for (Runnable r : todo) r.run();
+        });
+    }
+
+    /** 保存してある声・速さ・高さを反映する（見つからない声は標準に戻す） */
+    private void applyVoice() {
+        if (tts == null || !ttsReady) return;
+        try {
+            tts.setLanguage(Locale.JAPANESE);
+            String want = Store.ttsVoice(this);
+            if (!want.isEmpty()) {
+                Set<Voice> all = tts.getVoices();
+                if (all != null) {
+                    for (Voice v : all) {
+                        if (want.equals(v.getName())) {
+                            tts.setVoice(v);
+                            break;
+                        }
+                    }
+                }
+            }
+            tts.setSpeechRate(Store.ttsRate(this));
+            tts.setPitch(Store.ttsPitch(this));
+        } catch (Exception ignored) {
+            // 声が使えないときは、標準の声のまま話す
+        }
+    }
+
     private void speakNow(final String text) {
         if (text == null || text.trim().isEmpty()) return;
         final String t = text.length() > 600 ? text.substring(0, 600) : text;
-        if (tts == null) {
-            tts = new TextToSpeech(this, status -> {
-                ttsReady = status == TextToSpeech.SUCCESS;
-                if (ttsReady) {
-                    tts.setLanguage(Locale.JAPANESE);
-                    tts.speak(t, TextToSpeech.QUEUE_FLUSH, null, "navi");
+        withTts(() -> tts.speak(t, TextToSpeech.QUEUE_FLUSH, null, "navi"));
+    }
+
+    /** 日本語の声の一覧を JSON にして、画面（NAVI.onVoices）へ渡す */
+    private void sendVoices() {
+        withTts(() -> {
+            try {
+                JSONArray arr = new JSONArray();
+                Set<Voice> all = tts.getVoices();
+                if (all != null) {
+                    for (Voice v : all) {
+                        if (v.getLocale() == null || !"ja".equals(v.getLocale().getLanguage())) continue;
+                        JSONObject o = new JSONObject();
+                        o.put("name", v.getName());
+                        o.put("quality", v.getQuality());
+                        o.put("network", v.isNetworkConnectionRequired());
+                        arr.put(o);
+                    }
                 }
-            });
-            return;
-        }
-        if (ttsReady) tts.speak(t, TextToSpeech.QUEUE_FLUSH, null, "navi");
+                JSONObject cur = new JSONObject();
+                cur.put("voice", Store.ttsVoice(this));
+                cur.put("rate", Store.ttsRate(this));
+                cur.put("pitch", Store.ttsPitch(this));
+                callJs("NAVI.onVoices(" + arr.toString() + "," + cur.toString() + ")");
+            } catch (Exception e) {
+                callJs("NAVI.onVoices([],{})");
+            }
+        });
     }
 
     // ---------------------------------------------------------------

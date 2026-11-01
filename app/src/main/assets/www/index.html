@@ -181,6 +181,19 @@
   <p style="color:var(--sub);font-size:13px;margin-top:-6px">N.A.V.I. = Navigator of All Vital Information</p>
   <div class="sw"><span>話し終わったら自動で送る</span><input type="checkbox" id="optAuto"></div>
   <div class="sw"><span>返事を読み上げる 🔊</span><input type="checkbox" id="optSpeak"></div>
+  <div id="voiceBox" style="margin-top:12px;padding:12px;border-radius:14px;background:var(--card)">
+    <div style="font-weight:700;margin-bottom:8px">🗣 読み上げの声</div>
+    <select id="voiceSel" style="width:100%;font-family:inherit;font-size:16px;padding:10px;border-radius:12px;border:1px solid var(--card2);background:var(--bg);color:var(--text)"><option value="">端末の標準の声</option></select>
+    <div style="margin-top:10px;color:var(--sub);font-size:13px">速さ：<span id="rateVal">1.0</span></div>
+    <input type="range" id="rateSel" min="0.6" max="1.6" step="0.1" value="1.0" style="width:100%">
+    <div style="color:var(--sub);font-size:13px">高さ：<span id="pitchVal">1.0</span></div>
+    <input type="range" id="pitchSel" min="0.7" max="1.4" step="0.1" value="1.0" style="width:100%">
+    <div class="row" style="margin-top:10px">
+      <button id="btnVoiceTry" style="flex:1">▶ この声で試す</button>
+      <button id="btnVoiceSys" style="flex:1">➕ 声をふやす</button>
+    </div>
+    <div style="color:var(--sub);font-size:12px;margin-top:6px">声の種類は端末に入っているものです。「声をふやす」で端末の設定を開くと、日本語の声を追加できます。</div>
+  </div>
   <div class="sw"><span>📣「ナビ」と呼びかけて使う<br><small style="color:var(--sub)">オンの間ずっとマイクで待ちます。電池を使います</small></span><input type="checkbox" id="optWake"></div>
   <div style="margin-top:14px" class="row">
     <button id="btnNotify" style="flex:1">🔔 通知を許可する</button>
@@ -361,6 +374,21 @@
     onPaired: function () { refreshInfo(); closeSetup(); say('ai', '登録できました。話しかけてみてください。'); startPolling(); },
     onNotifyPerm: function (ok) { $('setMsg2').textContent = ok ? '通知を許可しました' : '通知が許可されていません（端末の設定から許可してください）'; refreshInfo(); },
     onWake: function (on, msg) { $('optWake').checked = !!on; info.wake = !!on; $('setMsg2').textContent = msg || (on ? '呼びかけ待ちをオンにしました。画面を閉じて「ナビ、今日のまとめ」と話しかけてみてください' : '呼びかけ待ちをオフにしました'); },
+    onVoices: function (list, cur) {
+      var sel = $('voiceSel'), html = '<option value="">端末の標準の声</option>';
+      list.sort(function (a, b) { return (b.quality - a.quality) || (a.name < b.name ? -1 : 1); });
+      list.forEach(function (v, i) {
+        var q = v.quality >= 400 ? '高音質' : (v.quality >= 300 ? '標準' : '軽量');
+        html += '<option value="' + v.name.replace(/"/g, '') + '">声' + (i + 1) + '（' + q + (v.network ? '・通信' : '') + '）　' + v.name + '</option>';
+      });
+      sel.innerHTML = html;
+      sel.value = (cur && cur.voice) || '';
+      if (sel.value !== ((cur && cur.voice) || '')) { sel.value = ''; }
+      var r = (cur && cur.rate) || 1, p = (cur && cur.pitch) || 1;
+      $('rateSel').value = r; $('rateVal').textContent = Number(r).toFixed(1);
+      $('pitchSel').value = p; $('pitchVal').textContent = Number(p).toFixed(1);
+      if (!list.length) { $('setMsg2').textContent = '日本語の声が見つかりませんでした。「声をふやす」から、端末の設定で追加してください'; }
+    },
     autoListen: function () { if (info.paired && info.speech && $('mic').className !== 'on') { setTimeout(function () { A.listen(); }, 300); } },
     openTab: function (t) { showTab(t); },
     onUpdateAvailable: function (ver, notes) { $('bannerText').textContent = '新しい版（第' + ver + '版）があります'; $('banner').style.display = 'block'; },
@@ -672,7 +700,20 @@
     $('setInfo').textContent = '接続先：' + (info.host || '未登録') + ' ／ 版：' + (info.version || '') + ' ／ 通知：' + (info.canNotify ? '許可済み' : '未許可');
     $('setMsg2').textContent = '';
     $('settings').className = 'on';
+    A.listVoices();
   }
+  function applyVoiceSettings() {
+    $('rateVal').textContent = Number($('rateSel').value).toFixed(1);
+    $('pitchVal').textContent = Number($('pitchSel').value).toFixed(1);
+    A.setVoice($('voiceSel').value, parseFloat($('rateSel').value), parseFloat($('pitchSel').value));
+  }
+  $('voiceSel').onchange = applyVoiceSettings;
+  $('rateSel').onchange = applyVoiceSettings;
+  $('pitchSel').onchange = applyVoiceSettings;
+  $('rateSel').oninput = function () { $('rateVal').textContent = Number(this.value).toFixed(1); };
+  $('pitchSel').oninput = function () { $('pitchVal').textContent = Number(this.value).toFixed(1); };
+  $('btnVoiceTry').onclick = function () { applyVoiceSettings(); setTimeout(function () { A.speakSample(); }, 250); };
+  $('btnVoiceSys').onclick = function () { A.openTtsSettings(); };
   function closeSettings() { $('settings').className = ''; }
   function closeSetup() { $('setup').className = ''; }
   $('gear').onclick = openSettings;
