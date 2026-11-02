@@ -145,7 +145,8 @@
     <div class="r2"><div><label style="margin:0 0 2px">開始</label><input type="time" id="evStart"></div><div><label style="margin:0 0 2px">終了</label><input type="time" id="evEnd"></div></div>
     <div class="r2"><select id="evRepeat"><option value="none">くり返さない</option><option value="weekly">毎週</option><option value="daily">毎日</option><option value="monthly">毎月</option></select></div>
     <div class="r2" id="evUntilRow"><div><label style="margin:0 0 2px">くり返しの終わり（なくてもOK）</label><input type="date" id="evUntil"></div></div>
-    <div class="sw" style="padding:8px 0"><span>🚶 お出かけ<br><small style="color:var(--sub)">外出の準備のため、予定の少し前（初期は1時間半前）にPCが知らせます。開始時刻が必要です</small></span><input type="checkbox" id="evOut"></div>
+    <div id="evAttrBox"></div>
+    <p class="sub" style="margin:2px 0 6px">属性をつけると、予定の少し前に知らせます（開始時刻が必要です）。属性の種類と「何分前」は、PCで決めたものがここに出ます。</p>
     <div class="r2"><select id="evBefore"><option value="">ほかの知らせ：なし</option><option value="10">10分前にも知らせる</option><option value="30">30分前にも知らせる</option><option value="60">1時間前にも知らせる</option><option value="0">始まりの時刻に知らせる</option></select></div>
     <input type="text" id="evNote" placeholder="メモ（なくてもOK）" style="margin-top:8px">
     <div class="row" style="margin-top:10px"><button class="go" id="evSave" style="flex:1">保存</button><button id="evCancel">やめる</button></div>
@@ -707,7 +708,7 @@
         var txt = JSON.stringify(r);
         lsSet('snapshot', txt);
         try { A.saveSnapshot(txt); } catch (e) {}
-        syncLocalReminders();
+        syncLocalReminders(); renderOptions();
         if (curTab === 'sched') { renderSched(); }
         if (curTab === 'lesson') { renderLessons(); }
         if (curTab === 'todo') { renderTodos(); }
@@ -859,9 +860,48 @@
   }
 
   // ---- 予定の入力（タイプ入力）----
+  // ---- PCで決めた選択肢（属性・場所・領域・メモの種類）。PCから届いたものを使い、なければ初期値 ----
+  var DEF_OPTS = { attrs: { 'お出かけ': 90 }, places: ['PC', '外出先', '教室', '家'], areas: ['宣伝', '学習報告書', 'アプリ開発', '生徒対応', '教室運営'], memoKinds: ['アイデア', '生徒のこと', '連絡', '買い物', 'インスタのネタ', '学び'] };
+  function opts() {
+    var o = (snap && snap.optionsInfo) || {};
+    function arr(v, d) { return (v && v.length) ? v : d; }
+    var at = o.attrs && Object.keys(o.attrs).length ? o.attrs : DEF_OPTS.attrs;
+    return { attrs: at, places: arr(o.places, DEF_OPTS.places), areas: arr(o.areas, DEF_OPTS.areas), memoKinds: arr(o.memoKinds, DEF_OPTS.memoKinds) };
+  }
+  function fillSelect(id, first, list) {
+    var el = $(id), cur = el.value; el.innerHTML = '';
+    var o0 = document.createElement('option'); o0.value = ''; o0.textContent = first; el.appendChild(o0);
+    list.forEach(function (x) { var o = document.createElement('option'); o.textContent = x; el.appendChild(o); });
+    el.value = list.indexOf(cur) >= 0 ? cur : '';
+  }
+  function renderOptions() {
+    var o = opts();
+    fillSelect('tdPlace', '場所・状況', o.places); fillSelect('tdArea', '領域', o.areas); fillSelect('mmKind', '種類', o.memoKinds);
+    if ($('evForm').style.display === 'none') { renderEvAttrs([]); }
+  }
+  function fmtMin(m) { return m >= 60 && m % 60 === 0 ? (m / 60) + '時間' : (m >= 60 ? Math.floor(m / 60) + '時間' + (m % 60) + '分' : m + '分'); }
+  function renderEvAttrs(checked) {
+    var box = $('evAttrBox'); box.innerHTML = ''; var t = opts().attrs;
+    Object.keys(t).forEach(function (name) {
+      var row = document.createElement('div'); row.className = 'sw'; row.style.padding = '6px 0';
+      var sp = document.createElement('span'); sp.textContent = (name === 'お出かけ' ? '🚶 ' : '⏰ ') + name + '（' + fmtMin(t[name]) + '前に知らせる）';
+      var cb = document.createElement('input'); cb.type = 'checkbox'; cb.setAttribute('data-attr', name); if (name === 'お出かけ') { cb.id = 'evOut'; }
+      cb.checked = (checked || []).indexOf(name) >= 0;
+      row.appendChild(sp); row.appendChild(cb); box.appendChild(row);
+    });
+    (checked || []).forEach(function (n) {      // PCの表から消えた属性でも、すでについているものは残す
+      if (!(n in t)) { var h = document.createElement('input'); h.type = 'hidden'; h.setAttribute('data-attr', n); h.value = '1'; box.appendChild(h); }
+    });
+  }
+  function checkedEvAttrs() {
+    var out = [];
+    document.querySelectorAll('#evAttrBox [data-attr]').forEach(function (e) { if (e.type === 'hidden' || e.checked) { out.push(e.getAttribute('data-attr')); } });
+    return out;
+  }
+
   function openEvForm(ctx) {
     editing = ctx || null;
-    var f = { title: '', date: calSel, start: '', end: '', repeat: 'none', until: '', note: '', out: false, before: '' };
+    var f = { title: '', date: calSel, start: '', end: '', repeat: 'none', until: '', note: '', attrs: [], before: '' };
     var label = '予定を入れる';
     if (ctx && ctx.item) {
       var it = ctx.item;
@@ -870,18 +910,18 @@
       if (pe) { it = { title: pe.title, start: pe.start, end: pe.end, repeat: pe.repeat, until: pe.until, note: pe.note, base: pe.date, attrs: pe.attrs, remind: pe.remind }; }
       f = { title: it.title || '', date: (it.repeat && it.repeat !== 'none' && it.base) ? it.base : ctx.date, start: it.start || '', end: it.end || '',
             repeat: it.repeat || 'none', until: it.until || '', note: it.note || '',
-            out: (it.attrs || []).indexOf('お出かけ') >= 0, before: (it.remind && it.remind.length) ? String(it.remind[0]) : '' };
+            attrs: it.attrs || [], before: (it.remind && it.remind.length) ? String(it.remind[0]) : '' };
       label = '予定を変更' + (f.repeat !== 'none' ? '（くり返しは全部まとめて変わります）' : '');
     } else if (ctx && ctx.idx !== undefined && outbox[ctx.idx]) {
       var o = outbox[ctx.idx];
       f = { title: o.title || '', date: o.date || calSel, start: o.start || '', end: o.end || '', repeat: o.repeat || 'none', until: o.until || '', note: o.note || '',
-           out: (o.attrs || []).indexOf('お出かけ') >= 0, before: (o.remind && o.remind.length) ? String(o.remind[0]) : '' };
+           attrs: o.attrs || [], before: (o.remind && o.remind.length) ? String(o.remind[0]) : '' };
       label = '書き溜め中の予定を変更';
     }
     $('evFormTitle').textContent = label;
     $('evTitle').value = f.title; $('evDate').value = f.date; $('evStart').value = f.start; $('evEnd').value = f.end;
     $('evRepeat').value = f.repeat; $('evUntil').value = f.until; $('evNote').value = f.note; $('evMsg').textContent = '';
-    $('evOut').checked = !!f.out; $('evBefore').value = f.before;
+    renderEvAttrs(f.attrs); $('evBefore').value = f.before;
     evRepeatChanged();
     $('evForm').style.display = '';
     $('schedAdd').style.display = 'none';
@@ -895,7 +935,7 @@
   $('evSave').onclick = function () {
     var f = { title: $('evTitle').value.trim(), date: $('evDate').value, start: $('evStart').value, end: $('evEnd').value,
               repeat: $('evRepeat').value, until: $('evUntil').value, note: $('evNote').value.trim(),
-              attrs: $('evOut').checked ? ['お出かけ'] : [], remind: $('evBefore').value === '' ? [] : [parseInt($('evBefore').value, 10)] };
+              attrs: checkedEvAttrs(), remind: $('evBefore').value === '' ? [] : [parseInt($('evBefore').value, 10)] };
     var err = '';
     if (!f.title) { err = '予定の名前を入れてください'; }
     else if (!f.date) { err = '日付を入れてください'; }
@@ -1335,8 +1375,9 @@
     var out = [], now = Date.now();
     function add(date, it) {
       var attrs = it.attrs || [], rem = (it.remind || []).map(Number).filter(function (n) { return n > 0; });
-      if (!it.start || (!attrs.length && !rem.length)) { return; }
-      if (!rem.length && attrs.indexOf('お出かけ') >= 0) { rem = [90]; }
+      var tbl = opts().attrs;
+      attrs.forEach(function (n) { var m = tbl[n] || (n === 'お出かけ' ? 90 : 0); if (m > 0 && rem.indexOf(m) < 0) { rem.push(m); } });
+      if (!it.start || !rem.length) { return; }
       var a = String(date).split('-'), b = String(it.start).split(':');
       if (a.length < 3 || b.length < 2) { return; }
       var st = new Date(+a[0], +a[1] - 1, +a[2], +b[0], +b[1], 0).getTime();
@@ -1561,7 +1602,7 @@
 
   var pollTimer = null;
   function startPolling() {
-    loadSnapshot(); syncLocalReminders(); fetchSnapshot();
+    loadSnapshot(); renderOptions(); syncLocalReminders(); fetchSnapshot();
     clipLoad().then(function () { syncClips(false); });
     checkPc(); loadNotices();
     if (pollTimer) { clearInterval(pollTimer); }
