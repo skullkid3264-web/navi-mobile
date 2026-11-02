@@ -113,7 +113,7 @@ public class ParentListener extends NotificationListenerService {
                     .put("app", appLabel(c, pkg))
                     .put("sender", t)
                     .put("text", body)
-                    .put("sig", pkg + "|" + sbn.getPostTime() + "|" + (t + body).hashCode())
+                    .put("sig", pkg + "|" + (t + "\n" + body).hashCode())
                     .put("at", System.currentTimeMillis());
             IO.execute(new Runnable() {
                 @Override
@@ -168,15 +168,25 @@ public class ParentListener extends NotificationListenerService {
 
     // ---------- 送る／溜める ----------
 
+    private static final long DUP_MS = 5 * 60 * 1000;
+
     private static void handle(Context c, JSONObject item) {
         synchronized (LOCK) {
             try {
                 JSONArray seen = new JSONArray(sp(c).getString("seen", "[]"));
                 String sig = item.optString("sig");
+                long nowMs = System.currentTimeMillis();
                 for (int i = 0; i < seen.length(); i++) {
-                    if (sig.equals(seen.optString(i))) return;          // 同じ通知の更新は、二度送らない
+                    // 「指紋#時刻」。同じ内容の通知が5分以内にもう一度来たら（通知の更新・再表示）、二度送らない
+                    String e = seen.optString(i);
+                    int h = e.lastIndexOf('#');
+                    if (h > 0 && sig.equals(e.substring(0, h))) {
+                        long at = 0;
+                        try { at = Long.parseLong(e.substring(h + 1)); } catch (Exception ignored) { }
+                        if (nowMs - at < DUP_MS) return;
+                    }
                 }
-                seen.put(sig);
+                seen.put(sig + "#" + nowMs);
                 JSONArray keep = new JSONArray();
                 for (int i = Math.max(0, seen.length() - 60); i < seen.length(); i++) keep.put(seen.optString(i));
                 sp(c).edit().putString("seen", keep.toString()).apply();
