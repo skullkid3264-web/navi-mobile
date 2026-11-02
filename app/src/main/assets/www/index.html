@@ -303,6 +303,11 @@
     <div class="row" style="margin-top:8px"><button id="pcAccess" style="flex:1">🔓 通知へのアクセスを許可する</button></div>
     <p style="color:var(--sub);font-size:12px;margin:6px 0 0" id="pcState"></p>
   </div>
+  <div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:6px" id="glyphTests">
+    <button data-g="ok">✅できた</button><button data-g="err">⚠️エラー</button><button data-g="think">💭考え中</button>
+    <button data-g="parent">💌保護者</button><button data-g="queued">📝書き溜め</button><button data-g="remind">⏰知らせ</button>
+    <button data-g="hello">👋起動</button><button data-g="off">■消す</button>
+  </div>
   <p style="color:var(--sub);font-size:12px;margin:-4px 0 8px" id="glyphNote">Nothing Phone (2a) 専用。アプリを開いているときだけ光ります。</p>
   <div id="voiceBox" style="margin-top:12px;padding:12px;border-radius:14px;background:var(--card)">
     <div style="font-weight:700;margin-bottom:8px">🗣 読み上げの声</div>
@@ -455,6 +460,7 @@
   // ---- 表示 ----
   function say(who, text, cls) {
     if (cls !== 'live') { logEv(who === 'me' ? 'あなた' : (cls === 'err' ? 'NAVI(エラー)' : 'NAVI'), text); }
+    if (cls === 'err') { setTimeout(function () { glyphCue('err'); }, 50); }
     var d = document.createElement('div');
     d.className = 'bubble ' + who + (cls ? ' ' + cls : '');
     d.textContent = text;
@@ -465,6 +471,7 @@
 
   function setBusy(b) {
     busy = b;
+    glyphCue(b ? 'think' : 'off');
     $('sendBtn').disabled = b;
     document.querySelectorAll('#plan button').forEach(function (x) { x.disabled = b; });
   }
@@ -651,7 +658,7 @@
       try { if (typeof A.setLanUrl === 'function') { A.setLanUrl(lanUrl, false); } } catch (e) {}
       var pendingParents = 0; try { pendingParents = (typeof A.getParentConfig === 'function' ? (parentCfgGet().pending || 0) : 0); } catch (e) {}
       if (pendingParents > 0 && lanUrl && typeof A.callLan === 'function' && Date.now() >= lanDownUntil) {      // 溜めた通知があり、同じWi-Fiでつながるなら送る
-        callLanP('ping', '').then(function () { try { A.setLanUrl(lanUrl, true); } catch (e) {} }, function () {});
+        callLanP('ping', '').then(function () { try { A.setLanUrl(lanUrl, true); } catch (e) {} glyphCue('parent'); }, function () {});
       }
       pcState(!!(r && r.pcOnline));
     }).catch(function () { pcState(false); });
@@ -1210,6 +1217,7 @@
     it.cid = 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
     it.at = Date.now();
     outbox.push(it);
+    glyphCue('queued');
     saveOutbox();
     if (curTab === 'outbox') { renderOutbox(); }
     if (curTab === 'sched') { renderSched(); }
@@ -1449,16 +1457,19 @@
     out.sort(function (x, y) { return x.at - y.at; });
     return out;
   }
-  var remindSig = '';
+  var remindSig = '', glyphTimers = [];
   function syncLocalReminders() {
     if (typeof A.setReminders !== 'function') { return; }
     var list = lsGet('localRemind', '1') === '1' ? localReminders() : [];
     var json = JSON.stringify(list);
     if (json === remindSig) { return; }
     remindSig = json;
+    glyphTimers.forEach(clearTimeout); glyphTimers = [];
+    list.forEach(function (r) { var d = r.at - Date.now(); if (d > 0 && d < 6 * 3600 * 1000) { glyphTimers.push(setTimeout(function () { glyphCue('remind'); }, d)); } });
     try { var nrem = A.setReminders(json); logEv('通知予約', '端末の通知を ' + nrem + ' 件、予約しました'); } catch (e) { logEv('error', 'setReminders: ' + e.message); }
   }
   setInterval(syncLocalReminders, 600000);
+  setTimeout(function () { try { if (A.glyphActive()) { glyphCue('hello'); } } catch (e) {} }, 2500);
 
   obTypeChanged();
   updateBadges();
@@ -1579,7 +1590,8 @@
     $('optLocalRemind').checked = lsGet('localRemind', '1') === '1';
     $('optGlyph').checked = lsGet('glyph', '1') === '1';
     var ga = false; try { ga = typeof A.glyphActive === 'function' && A.glyphActive(); } catch (e) {}
-    $('glyphNote').textContent = ga ? 'Nothing Phone (2a) につながっています。アプリを開いているときだけ光ります。' : 'Nothing Phone (2a) 専用です（いまは使えない状態です。Nothingの開発者向け設定が要ることがあります）。';
+    var gs = ''; try { gs = typeof A.glyphStatus === 'function' ? A.glyphStatus() : ''; } catch (e) {}
+    $('glyphNote').textContent = (ga ? '✅ ' : '⚠️ ') + (gs || (ga ? 'つながっています' : 'いまは使えない状態です')) + '　※アプリを開いているときだけ光ります。';
     $('optWake').checked = !!info.wake;
     $('speakMode').value = lsGet('speakMode', 'clip');
     $('clipRate').value = lsGet('clipRate', '1.15');
@@ -1688,6 +1700,8 @@
   document.querySelectorAll('.pcPkg').forEach(function (e) { e.onchange = saveParentCfg; });
   $('pcAccess').onclick = function () { try { A.openListenerSettings(); } catch (e) {} };
   $('optLocalRemind').onchange = function () { lsSet('localRemind', this.checked ? '1' : '0'); remindSig = ''; syncLocalReminders(); };
+  document.querySelectorAll('#glyphTests button').forEach(function (b) { b.onclick = function () { try { A.glyph(b.getAttribute('data-g')); } catch (e) {} setTimeout(openSettingsGlyph, 300); }; });
+  function openSettingsGlyph() { var gs = ''; try { gs = A.glyphStatus(); } catch (e) {} if (gs) { $('glyphNote').textContent = (A.glyphActive() ? '✅ ' : '⚠️ ') + gs; } }
   $('optGlyph').onchange = function () { lsSet('glyph', this.checked ? '1' : '0'); if (!this.checked) { try { A.glyph('off'); } catch (e) {} } };
   $('optSpeak').onchange = function () { lsSet('speak', this.checked ? '1' : '0'); $('spk').style.opacity = this.checked ? 1 : .4; };
   $('spk').onclick = function () {

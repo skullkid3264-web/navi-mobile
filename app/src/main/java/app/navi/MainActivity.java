@@ -597,6 +597,11 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public String glyphStatus() {
+            return GlyphHelper.status();
+        }
+
+        @JavascriptInterface
         public boolean glyphActive() {
             return GlyphHelper.active();
         }
