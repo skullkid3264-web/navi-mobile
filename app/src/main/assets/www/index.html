@@ -291,6 +291,8 @@
     <div style="font-weight:600;margin:10px 0 4px;font-size:13px">LINE公式アカウントなど、ほかのアプリを足す</div>
     <p style="color:var(--sub);font-size:12px;margin:0 0 6px">通知へのアクセスを許可したあと、そのアプリの通知が一度届くと、ここに出ます。名前を押すと対象に加わります。</p>
     <div id="pcSeen"></div>
+    <input type="text" id="pcFind" placeholder="入っているアプリから探す（例：公式）" style="width:100%;margin-top:4px">
+    <div id="pcFound" style="margin-top:6px"></div>
     <input type="text" id="pcWords" placeholder="名前でしぼる（例：ゆき,けん　空ならそのアプリの通知すべて）" style="width:100%;margin-top:6px">
     <div class="row" style="margin-top:8px"><button id="pcAccess" style="flex:1">🔓 通知へのアクセスを許可する</button></div>
     <p style="color:var(--sub);font-size:12px;margin:6px 0 0" id="pcState"></p>
@@ -1607,14 +1609,39 @@
     });
     if (!shown) { sb.textContent = '（まだありません）'; }
     document.querySelectorAll('.pcPkg').forEach(function (e) { e.checked = pk.indexOf(e.getAttribute('data-pkg')) >= 0; });
-    $('pcState').textContent = (c.access ? '✅ 通知へのアクセスは許可されています。' : '⚠ 通知へのアクセスが未許可です（下のボタンで許可）。') + (c.pending ? '　送れていない分：' + c.pending + '件' : '');
+    $('pcState').textContent = parentStateText(c);
   }
+  function parentStateText(c) {
+    var t = !c.access ? '⚠ 通知へのアクセスが未許可です（下のボタンで許可）。'
+          : (c.connected === false ? '⚠ 許可は入っていますが、まだつながっていません。通知へのアクセスの設定で、このアプリを一度オフ→オンにしてください。' : '✅ 通知を読める状態です。');
+    return t + (c.pending ? '　送れていない分：' + c.pending + '件' : '');
+  }
+  function addParentPkg(pkg) {
+    var c2 = parentCfgGet(), l = c2.pkgs || [];
+    if (l.indexOf(pkg) < 0) { l.push(pkg); }
+    A.setParentConfig(JSON.stringify({ on: c2.on, pkgs: l, words: c2.words || [] })); loadParentCfg();
+  }
+  function findParentApps() {
+    var q = ($('pcFind').value || '').trim().toLowerCase(), box = $('pcFound'); box.innerHTML = '';
+    if (!q) { return; }
+    var apps = []; try { apps = JSON.parse(A.getInstalledApps() || '[]'); } catch (e) {}
+    var n = 0;
+    apps.forEach(function (a) {
+      if (n >= 10 || (String(a.label).toLowerCase().indexOf(q) < 0 && String(a.pkg).toLowerCase().indexOf(q) < 0)) { return; }
+      n++;
+      var b = document.createElement('button'); b.type = 'button'; b.style.cssText = 'margin:0 6px 6px 0'; b.textContent = '＋ ' + a.label;
+      b.onclick = function () { addParentPkg(a.pkg); $('pcFind').value = ''; $('pcFound').innerHTML = ''; };
+      box.appendChild(b);
+    });
+    if (!n) { box.textContent = '見つかりません'; }
+  }
+  $('pcFind').oninput = findParentApps;
   function saveParentCfg() {
     var pkgs = [], words = ($('pcWords').value || '').split(/[,、，\s]+/).filter(function (x) { return x; });
     document.querySelectorAll('.pcPkg').forEach(function (e) { if (e.checked) { pkgs.push(e.getAttribute('data-pkg')); } });
     try { A.setParentConfig(JSON.stringify({ on: $('pcOn').checked, pkgs: pkgs, words: words })); } catch (e) {}
     var c = parentCfgGet();      // 画面は組み直さない（入力中に、押そうとしたボタンが消えないように）
-    $('pcState').textContent = (c.access ? '✅ 通知へのアクセスは許可されています。' : '⚠ 通知へのアクセスが未許可です（下のボタンで許可）。') + (c.pending ? '　送れていない分：' + c.pending + '件' : '');
+    $('pcState').textContent = parentStateText(c);
   }
   $('pcOn').onchange = saveParentCfg; $('pcWords').onchange = saveParentCfg;
   document.querySelectorAll('.pcPkg').forEach(function (e) { e.onchange = saveParentCfg; });

@@ -243,5 +243,46 @@ public class ParentListener extends NotificationListenerService {
     @Override
     public void onListenerConnected() {
         super.onListenerConnected();
+        sp(getApplicationContext()).edit().putBoolean("connected", true).putLong("connectedAt", System.currentTimeMillis()).apply();
+    }
+
+    @Override
+    public void onListenerDisconnected() {
+        super.onListenerDisconnected();
+        sp(getApplicationContext()).edit().putBoolean("connected", false).apply();
+    }
+
+    static boolean connected(Context c) {
+        return sp(c).getBoolean("connected", false);
+    }
+
+    /** 許可は入っているのに、アプリの更新などで接続が切れているとき、つなぎ直す */
+    static void rebindIfNeeded(Context c) {
+        try {
+            if (accessEnabled(c) && !connected(c)) {
+                NotificationListenerService.requestRebind(new ComponentName(c, ParentListener.class));
+            }
+        } catch (Throwable ignored) {
+        }
+    }
+
+    /** 端末に入っているアプリ（ホーム画面に出るもの）の一覧 [{pkg,label}]。名前順 */
+    static String installedApps(Context c) {
+        JSONArray out = new JSONArray();
+        try {
+            android.content.Intent i = new android.content.Intent(android.content.Intent.ACTION_MAIN).addCategory(android.content.Intent.CATEGORY_LAUNCHER);
+            java.util.List<android.content.pm.ResolveInfo> list = c.getPackageManager().queryIntentActivities(i, 0);
+            java.util.TreeMap<String, String> m = new java.util.TreeMap<>();
+            for (android.content.pm.ResolveInfo r : list) {
+                String pkg = r.activityInfo.packageName;
+                if (pkg.equals(c.getPackageName())) continue;
+                m.put(String.valueOf(r.loadLabel(c.getPackageManager())) + "\u0000" + pkg, pkg);
+            }
+            for (java.util.Map.Entry<String, String> e : m.entrySet()) {
+                out.put(new JSONObject().put("pkg", e.getValue()).put("label", e.getKey().split("\u0000")[0]));
+            }
+        } catch (Exception ignored) {
+        }
+        return out.toString();
     }
 }

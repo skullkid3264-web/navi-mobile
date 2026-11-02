@@ -288,6 +288,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onStart() {
         super.onStart();
+        ParentListener.rebindIfNeeded(this);
         GlyphHelper.start(this);
     }
 
@@ -613,6 +614,7 @@ public class MainActivity extends Activity {
                 JSONObject o = ParentListener.config(MainActivity.this);
                 o.put("access", ParentListener.accessEnabled(MainActivity.this));
                 o.put("pending", ParentListener.pendingCount(MainActivity.this));
+                o.put("connected", ParentListener.connected(MainActivity.this));
                 return o.toString();
             } catch (Exception e) {
                 return "{}";
@@ -620,6 +622,11 @@ public class MainActivity extends Activity {
         }
 
         /** 最近通知を出したアプリ [{pkg,label}]（アプリ名だけ。通知の中身は含まない） */
+        @JavascriptInterface
+        public String getInstalledApps() {
+            return ParentListener.installedApps(MainActivity.this);
+        }
+
         @JavascriptInterface
         public String getSeenApps() {
             return ParentListener.seenApps(MainActivity.this);
