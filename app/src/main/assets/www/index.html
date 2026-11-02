@@ -284,9 +284,13 @@
     <div style="font-weight:700;margin-bottom:6px">💌 保護者の通知を読み取る</div>
     <p style="color:var(--sub);font-size:12px;margin:0 0 8px">選んだアプリに届いた通知を読んで、<b>同じWi-FiのPCにだけ</b>送ります（PCが用件の要約と返信案を作ります）。外では端末の中に残し（最大30件・2日）、つながったときに送ります。Googleのサーバーには通しません。返信は自動では送りません。</p>
     <div class="sw"><span>読み取る</span><input type="checkbox" id="pcOn"></div>
-    <div class="sw"><span>LINE</span><input type="checkbox" class="pcPkg" data-pkg="jp.naver.line.android"></div>
-    <div class="sw"><span>メッセージ（SMS）</span><input type="checkbox" class="pcPkg" data-pkg="com.google.android.apps.messaging"></div>
-    <div class="sw"><span>Gmail</span><input type="checkbox" class="pcPkg" data-pkg="com.google.android.gm"></div>
+    <div class="sw"><span>LINE（ふつうのLINEアプリ）</span><input type="checkbox" class="pcPkg" data-preset="1" data-pkg="jp.naver.line.android"></div>
+    <div class="sw"><span>メッセージ（SMS）</span><input type="checkbox" class="pcPkg" data-preset="1" data-pkg="com.google.android.apps.messaging"></div>
+    <div class="sw"><span>Gmail</span><input type="checkbox" class="pcPkg" data-preset="1" data-pkg="com.google.android.gm"></div>
+    <div id="pcExtra"></div>
+    <div style="font-weight:600;margin:10px 0 4px;font-size:13px">LINE公式アカウントなど、ほかのアプリを足す</div>
+    <p style="color:var(--sub);font-size:12px;margin:0 0 6px">通知へのアクセスを許可したあと、そのアプリの通知が一度届くと、ここに出ます。名前を押すと対象に加わります。</p>
+    <div id="pcSeen"></div>
     <input type="text" id="pcWords" placeholder="名前でしぼる（例：ゆき,けん　空ならそのアプリの通知すべて）" style="width:100%;margin-top:6px">
     <div class="row" style="margin-top:8px"><button id="pcAccess" style="flex:1">🔓 通知へのアクセスを許可する</button></div>
     <p style="color:var(--sub);font-size:12px;margin:6px 0 0" id="pcState"></p>
@@ -1581,6 +1585,27 @@
     if (typeof A.getParentConfig !== 'function') { $('parentBoxSet').style.display = 'none'; return; }
     var c = parentCfgGet(), pk = c.pkgs || [];
     $('pcOn').checked = !!c.on; $('pcWords').value = (c.words || []).join(',');
+    var seen = []; try { seen = JSON.parse(A.getSeenApps() || '[]'); } catch (e) {}
+    var names = {}; seen.forEach(function (a) { names[a.pkg] = a.label; });
+    var presets = {}; document.querySelectorAll('#parentBoxSet .pcPkg[data-preset]').forEach(function (e) { presets[e.getAttribute('data-pkg')] = 1; });
+    var ex = $('pcExtra'); ex.innerHTML = '';
+    pk.forEach(function (p2) {          // 選んである、プリセット以外のアプリ
+      if (presets[p2]) { return; }
+      var row = document.createElement('div'); row.className = 'sw';
+      var sp = document.createElement('span'); sp.textContent = (names[p2] || p2);
+      var cb = document.createElement('input'); cb.type = 'checkbox'; cb.className = 'pcPkg'; cb.setAttribute('data-pkg', p2); cb.checked = true; cb.onchange = saveParentCfg;
+      row.appendChild(sp); row.appendChild(cb); ex.appendChild(row);
+    });
+    var sb = $('pcSeen'); sb.innerHTML = '';
+    var shown = 0;
+    seen.forEach(function (a) {
+      if (pk.indexOf(a.pkg) >= 0 || presets[a.pkg] || shown >= 12) { return; }
+      shown++;
+      var b = document.createElement('button'); b.type = 'button'; b.style.cssText = 'margin:0 6px 6px 0'; b.textContent = '＋ ' + (a.label || a.pkg);
+      b.onclick = function () { var c2 = parentCfgGet(); var l = c2.pkgs || []; l.push(a.pkg); c2.pkgs = l; A.setParentConfig(JSON.stringify({ on: c2.on, pkgs: l, words: c2.words || [] })); loadParentCfg(); };
+      sb.appendChild(b);
+    });
+    if (!shown) { sb.textContent = '（まだありません）'; }
     document.querySelectorAll('.pcPkg').forEach(function (e) { e.checked = pk.indexOf(e.getAttribute('data-pkg')) >= 0; });
     $('pcState').textContent = (c.access ? '✅ 通知へのアクセスは許可されています。' : '⚠ 通知へのアクセスが未許可です（下のボタンで許可）。') + (c.pending ? '　送れていない分：' + c.pending + '件' : '');
   }
@@ -1588,7 +1613,8 @@
     var pkgs = [], words = ($('pcWords').value || '').split(/[,、，\s]+/).filter(function (x) { return x; });
     document.querySelectorAll('.pcPkg').forEach(function (e) { if (e.checked) { pkgs.push(e.getAttribute('data-pkg')); } });
     try { A.setParentConfig(JSON.stringify({ on: $('pcOn').checked, pkgs: pkgs, words: words })); } catch (e) {}
-    loadParentCfg();
+    var c = parentCfgGet();      // 画面は組み直さない（入力中に、押そうとしたボタンが消えないように）
+    $('pcState').textContent = (c.access ? '✅ 通知へのアクセスは許可されています。' : '⚠ 通知へのアクセスが未許可です（下のボタンで許可）。') + (c.pending ? '　送れていない分：' + c.pending + '件' : '');
   }
   $('pcOn').onchange = saveParentCfg; $('pcWords').onchange = saveParentCfg;
   document.querySelectorAll('.pcPkg').forEach(function (e) { e.onchange = saveParentCfg; });

@@ -81,8 +81,10 @@ public class ParentListener extends NotificationListenerService {
         try {
             final Context c = getApplicationContext();
             JSONObject cfg = config(c);
-            if (!cfg.optBoolean("on", false) || sbn == null) return;
+            if (sbn == null) return;
             String pkg = sbn.getPackageName();
+            rememberApp(c, pkg);                    // 「どのアプリの通知か」を選べるように、アプリ名だけ覚える（本文は覚えない）
+            if (!cfg.optBoolean("on", false)) return;
             if (!contains(cfg.optJSONArray("pkgs"), pkg)) return;
             Notification n = sbn.getNotification();
             if (n == null) return;
@@ -120,6 +122,30 @@ public class ParentListener extends NotificationListenerService {
                 }
             });
         } catch (Exception ignored) {
+        }
+    }
+
+    /** 最近通知を出したアプリ（名前だけ・最大25件）。設定で、読み取る対象を選ぶために使う */
+    private static void rememberApp(Context c, String pkg) {
+        if (pkg == null || pkg.equals(c.getPackageName()) || pkg.equals("android") || pkg.equals("com.android.systemui")) return;
+        synchronized (LOCK) {
+            try {
+                JSONArray old = new JSONArray(sp(c).getString("seen_apps", "[]"));
+                JSONArray out = new JSONArray();
+                out.put(new JSONObject().put("pkg", pkg).put("label", appLabel(c, pkg)).put("at", System.currentTimeMillis()));
+                for (int i = 0; i < old.length() && out.length() < 25; i++) {
+                    JSONObject o = old.getJSONObject(i);
+                    if (!pkg.equals(o.optString("pkg"))) out.put(o);
+                }
+                sp(c).edit().putString("seen_apps", out.toString()).apply();
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    static String seenApps(Context c) {
+        synchronized (LOCK) {
+            return sp(c).getString("seen_apps", "[]");
         }
     }
 

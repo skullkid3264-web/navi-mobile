@@ -619,6 +619,12 @@ public class MainActivity extends Activity {
             }
         }
 
+        /** 最近通知を出したアプリ [{pkg,label}]（アプリ名だけ。通知の中身は含まない） */
+        @JavascriptInterface
+        public String getSeenApps() {
+            return ParentListener.seenApps(MainActivity.this);
+        }
+
         @JavascriptInterface
         public void setParentConfig(String json) {
             ParentListener.setConfig(MainActivity.this, json);
