@@ -41,6 +41,16 @@
         <!-- Glyph SDK の鍵。Android 16 では不要だが、項目は残す。それ以前は Nothing の開発者向け設定（デバッグモード）が要る -->
         <meta-data android:name="NothingKey" android:value="test" />
 
+        <service
+            android:name=".ParentListener"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
         <receiver
             android:name=".RemindReceiver"
             android:exported="false">

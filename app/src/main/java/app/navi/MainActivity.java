@@ -606,6 +606,42 @@ public class MainActivity extends Activity {
             return Reminders.set(MainActivity.this, json);
         }
 
+        // ---- 保護者の通知の読み取り（同じWi-FiのPCへだけ送る） ----
+        @JavascriptInterface
+        public String getParentConfig() {
+            try {
+                JSONObject o = ParentListener.config(MainActivity.this);
+                o.put("access", ParentListener.accessEnabled(MainActivity.this));
+                o.put("pending", ParentListener.pendingCount(MainActivity.this));
+                return o.toString();
+            } catch (Exception e) {
+                return "{}";
+            }
+        }
+
+        @JavascriptInterface
+        public void setParentConfig(String json) {
+            ParentListener.setConfig(MainActivity.this, json);
+        }
+
+        /** 通知へのアクセスの許可画面を開く（許可は、自分でここで入れる） */
+        @JavascriptInterface
+        public void openListenerSettings() {
+            main.post(() -> {
+                try {
+                    startActivity(new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS));
+                } catch (Exception ignored) {
+                }
+            });
+        }
+
+        /** 同じWi-Fiで直接つなげるPCのアドレスを、通知の読み取りにも教える。つながっているときに呼ぶと、溜めた分を送る */
+        @JavascriptInterface
+        public void setLanUrl(String url, boolean reachable) {
+            ParentListener.setLan(MainActivity.this, url);
+            if (reachable) ParentListener.flush(MainActivity.this);
+        }
+
         @JavascriptInterface
         public void pageReady() {
             main.post(() -> {
