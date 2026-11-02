@@ -611,7 +611,8 @@
       var u = (r && r.lan) ? String(r.lan) : '';
       if (u !== lanUrl) { lanUrl = u; lanDownUntil = 0; }
       try { if (typeof A.setLanUrl === 'function') { A.setLanUrl(lanUrl, false); } } catch (e) {}
-      if (lanUrl && typeof A.callLan === 'function' && Date.now() >= lanDownUntil) {      // 同じWi-Fiでつながるなら、溜めた通知を送る
+      var pendingParents = 0; try { pendingParents = (typeof A.getParentConfig === 'function' ? (parentCfgGet().pending || 0) : 0); } catch (e) {}
+      if (pendingParents > 0 && lanUrl && typeof A.callLan === 'function' && Date.now() >= lanDownUntil) {      // 溜めた通知があり、同じWi-Fiでつながるなら送る
         callLanP('ping', '').then(function () { try { A.setLanUrl(lanUrl, true); } catch (e) {} }, function () {});
       }
       pcState(!!(r && r.pcOnline));
