@@ -20,8 +20,8 @@
   .ib.active { background:var(--card2); }
   #banner { display:none; background:var(--pink); color:#2b1020; padding:8px 12px; font-size:14px; }
   #banner button { margin-left:8px; background:#2b1020; color:#fff; font-size:13px; padding:6px 10px; }
-  .tabs { display:flex; gap:4px; margin:4px 12px 8px; padding:4px; background:var(--card); border:1px solid var(--line); border-radius:999px; }
-  .tabs button { flex:1; background:none; color:var(--sub); border-radius:999px; font-size:12.5px; padding:9px 2px; font-weight:600; transition:background .15s,color .15s; }
+  .tabs { overflow-x:auto; scrollbar-width:none; display:flex; gap:4px; margin:4px 12px 8px; padding:4px; background:var(--card); border:1px solid var(--line); border-radius:999px; }
+  .tabs button { flex:1 0 auto; white-space:nowrap; padding-left:12px; padding-right:12px; background:none; color:var(--sub); border-radius:999px; font-size:12.5px; padding:9px 2px; font-weight:600; transition:background .15s,color .15s; }
   .tabs button.on { color:#fff; background:var(--grad); box-shadow:0 2px 10px rgba(143,120,232,.45); }
   .badge { background:var(--pink); color:#2b1020; font-size:11px; font-weight:700; border-radius:9px; padding:1px 6px; margin-left:4px; }
   .pane { flex:1; overflow-y:auto; padding:6px 14px 14px; display:none; }
@@ -125,6 +125,8 @@
 <div class="tabs">
   <button id="tabChat" class="on">💬 チャット</button>
   <button id="tabSched">📅 予定</button>
+  <button id="tabLesson">📓 レッスン</button>
+  <button id="tabTodo">✅ やること</button>
   <button id="tabOutbox">📝 書き溜め<span class="badge" id="obBadge" style="display:none">0</span></button>
   <button id="tabNotices">🔔 お知らせ<span class="badge" id="badge" style="display:none">0</span></button>
 </div>
@@ -149,6 +151,26 @@
     <div class="msg" id="evMsg"></div>
   </div>
   <button id="schedAdd" style="width:100%;margin-top:4px">＋ 予定を入れる</button>
+</div>
+<div class="pane" id="paneLesson">
+  <div id="lessonBox"></div>
+  <div class="form" id="lsForm" style="display:none">
+    <b id="lsTitle">レッスンの記録</b>
+    <label style="margin:10px 0 2px">クラス全体の様子</label>
+    <textarea id="lsNote" rows="2" placeholder="例：全体的に元気。発表の練習が盛り上がった"></textarea>
+    <label style="margin:10px 0 2px">このレッスンの目標（扱ったもの）</label>
+    <div id="lsGoals"></div>
+    <label style="margin:10px 0 2px">生徒ごと</label>
+    <div id="lsStudents"></div>
+    <div class="row" style="margin-top:10px"><button class="go" id="lsSave" style="flex:1">記録する</button><button id="lsCancel">やめる</button></div>
+    <div class="msg" id="lsMsg"></div>
+  </div>
+</div>
+<div class="pane" id="paneTodo">
+  <div class="form">
+    <div style="display:flex;gap:8px"><input type="text" id="tdNew" placeholder="やることを足す（書き溜めに入ります）"><button class="go" id="tdAdd" style="flex:none">足す</button></div>
+  </div>
+  <div id="todoBox"></div>
 </div>
 <div class="pane" id="paneOutbox">
   <p class="sub">つながらない場所でも、ここに書いておけます。PCにつながると自動で送ります（指示だけは、つながってから確認して実行します）。</p>
@@ -662,6 +684,8 @@
         lsSet('snapshot', txt);
         try { A.saveSnapshot(txt); } catch (e) {}
         if (curTab === 'sched') { renderSched(); }
+        if (curTab === 'lesson') { renderLessons(); }
+        if (curTab === 'todo') { renderTodos(); }
       }
     }).catch(function () {});
   }
@@ -874,12 +898,191 @@
   };
 
   // =====================================================
+  // レッスン記録・やること（本体につながらなくても使える。つながったときに送る）
+  // =====================================================
+  var STATUS = ['出席', '欠席', '欠席・録画を見た'];
+  var lsCtx = null;          // いま開いている記録 {date, cls, lesson, info}
+  function lessonInfo() { return (snap && snap.lessonInfo) || null; }
+  function pendingLog(date, cls) {
+    var r = null;
+    outbox.forEach(function (o) { if (o.type === 'lesson_log' && o.date === date && o.cls === cls) { r = o; } });
+    return r;
+  }
+  function renderLessons() {
+    var box = $('lessonBox'); box.innerHTML = '';
+    var li = lessonInfo();
+    if (!li || !(li.days || []).length) {
+      box.innerHTML = '<div class="empty">この前後のレッスンが、まだ届いていません。<br>PCのN.A.V.I.につながると届きます<br><small>（レッスン予定表と生徒の一覧が必要です）</small></div>';
+      return;
+    }
+    var today = ymd(new Date());
+    li.days.forEach(function (d) {
+      var h = document.createElement('div'); h.className = 'sub'; h.style.margin = '12px 0 4px';
+      h.textContent = d.date.slice(5).replace('-', '/') + (d.date === today ? '（今日）' : '');
+      box.appendChild(h);
+      d.lessons.forEach(function (l) {
+        var pend = pendingLog(d.date, l.cls);
+        var c = document.createElement('div'); c.className = 'it'; c.style.display = 'block';
+        var t = document.createElement('div'); t.className = 'tt';
+        t.textContent = (l.start || '') + '　' + l.cls + (l.done ? '　✅記録済み' : '') + (pend ? '　⏳未送信' : '');
+        c.appendChild(t);
+        if (l.plan) { var p = document.createElement('div'); p.className = 'sub'; p.textContent = '計画：' + l.plan.replace(/\n/g, ' ').slice(0, 90); c.appendChild(p); }
+        var abs = Object.keys(l.students || {}).filter(function (sid) { return l.students[sid].status === '欠席' || l.students[sid].status === 'absent'; });
+        var row = document.createElement('div'); row.className = 'row'; row.style.marginTop = '6px';
+        row.appendChild(mkBtn(l.done || pend ? '✎ 記録を直す' : '📝 記録する', function () { openLsForm(d.date, l); }));
+        c.appendChild(row);
+        abs.forEach(function (sid) {
+          var nm = nameOf(l.cls, sid);
+          var b = mkBtn('🎬 ' + nm + 'さんが録画を見た', function () {
+            queueItem({ type: 'lesson_log', date: d.date, cls: l.cls, students: [{ id: sid, name: nm, status: '欠席・録画を見た' }] });
+            if (pcOnline) { flushOutbox(); }
+            renderLessons();
+          });
+          b.style.marginTop = '6px'; c.appendChild(b);
+        });
+        box.appendChild(c);
+      });
+    });
+  }
+  function nameOf(cls, sid) {
+    var li = lessonInfo(), r = sid;
+    if (li && li.classes && li.classes[cls]) { li.classes[cls].students.forEach(function (s) { if (String(s.id) === String(sid)) { r = s.name; } }); }
+    return r;
+  }
+  function openLsForm(date, l) {
+    var li = lessonInfo(), ci = (li.classes || {})[l.cls] || { students: [], goals: [] };
+    var pend = pendingLog(date, l.cls);
+    var cur = { class_note: l.class_note || '', goals: (l.goals || []).slice(), students: JSON.parse(JSON.stringify(l.students || {})) };
+    if (pend) {
+      cur.class_note = pend.class_note != null ? pend.class_note : cur.class_note;
+      cur.goals = pend.goals || cur.goals;
+      (pend.students || []).forEach(function (s) { cur.students[s.id] = { status: s.status || '出席', note: s.note || '', achieved: s.achieved || [] }; });
+    }
+    lsCtx = { date: date, cls: l.cls, ci: ci };
+    $('lsTitle').textContent = '📓 ' + date.slice(5).replace('-', '/') + '　' + l.cls + (l.start ? '（' + l.start + '）' : '');
+    $('lsNote').value = cur.class_note; $('lsMsg').textContent = '';
+    var gb = $('lsGoals'); gb.innerHTML = '';
+    if (!ci.goals.length) { gb.innerHTML = '<div class="sub">このクラスの目標はまだありません（PCで「計画から目標を作って」と言うと作れます）</div>'; }
+    ci.goals.forEach(function (g) {
+      var lab = document.createElement('label'); lab.style.cssText = 'display:flex;gap:8px;align-items:center;margin:4px 0;font-size:14px;color:var(--text)';
+      var cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = g.id; cb.checked = cur.goals.indexOf(String(g.id)) >= 0 || cur.goals.indexOf(g.id) >= 0;
+      cb.onchange = refreshLsAch;
+      lab.appendChild(cb); lab.appendChild(document.createTextNode(g.title + (g.coin ? '（' + g.coin + '×' + (g.qty || 1) + '）' : '')));
+      gb.appendChild(lab);
+    });
+    var sb = $('lsStudents'); sb.innerHTML = '';
+    ci.students.forEach(function (s) {
+      var st = cur.students[s.id] || { status: '出席', note: '', achieved: [] };
+      var stLabel = { present: '出席', absent: '欠席', absent_watched: '欠席・録画を見た' }[st.status] || st.status;
+      var box = document.createElement('div'); box.className = 'ob'; box.setAttribute('data-sid', s.id); box.setAttribute('data-name', s.name);
+      box.style.cssText = 'display:block;margin-top:8px';
+      var b = document.createElement('b'); b.textContent = s.name; box.appendChild(b);
+      var sel = document.createElement('select'); sel.className = 'lsStat'; sel.style.marginTop = '4px';
+      STATUS.forEach(function (o) { var op = document.createElement('option'); op.textContent = o; if (o === stLabel) { op.selected = true; } sel.appendChild(op); });
+      sel.onchange = refreshLsAch; box.appendChild(sel);
+      var nt = document.createElement('input'); nt.type = 'text'; nt.className = 'lsNoteS'; nt.placeholder = '一言（なくてもOK）'; nt.value = st.note || ''; nt.style.marginTop = '4px'; box.appendChild(nt);
+      var ach = document.createElement('div'); ach.className = 'lsAch'; ach.setAttribute('data-ach', JSON.stringify(st.achieved || [])); box.appendChild(ach);
+      sb.appendChild(box);
+    });
+    if (!ci.students.length) { sb.innerHTML = '<div class="sub">このクラスの生徒が届いていません</div>'; }
+    refreshLsAch();
+    $('lsForm').style.display = ''; $('lessonBox').style.display = 'none';
+    try { $('lsForm').scrollIntoView({ block: 'start' }); } catch (e) {}
+  }
+  // 生徒ごとの「達成」のチェック欄を、選んだ目標と出欠に合わせて作り直す
+  function refreshLsAch() {
+    var goals = [];
+    $('lsGoals').querySelectorAll('input:checked').forEach(function (c) { goals.push(c.value); });
+    var titles = {}; (lsCtx.ci.goals || []).forEach(function (g) { titles[g.id] = g.title; });
+    $('lsStudents').querySelectorAll('.ob').forEach(function (box) {
+      var stat = box.querySelector('.lsStat').value, area = box.querySelector('.lsAch');
+      var keep = [];
+      area.querySelectorAll('input').forEach(function (c) { if (c.checked) { keep.push(c.value); } });
+      var prev = keep.length ? keep : JSON.parse(area.getAttribute('data-ach') || '[]').map(String);
+      area.innerHTML = ''; area.removeAttribute('data-ach');
+      if (stat === '欠席') {
+        area.innerHTML = '<div class="sub" style="margin-top:4px">欠席：録画を見たら達成になります</div>'; return;
+      }
+      if (stat === '欠席・録画を見た') {
+        area.innerHTML = '<div class="sub" style="margin-top:4px">🎬 録画を見たので、選んだ目標が全部達成になります</div>'; return;
+      }
+      goals.forEach(function (gid) {
+        var lab = document.createElement('label'); lab.style.cssText = 'display:flex;gap:8px;align-items:center;margin:3px 0;font-size:13px;color:var(--text)';
+        var cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = gid; cb.checked = prev.indexOf(String(gid)) >= 0;
+        lab.appendChild(cb); lab.appendChild(document.createTextNode('達成：' + (titles[gid] || gid)));
+        area.appendChild(lab);
+      });
+    });
+  }
+  $('lsCancel').onclick = function () { $('lsForm').style.display = 'none'; $('lessonBox').style.display = ''; lsCtx = null; };
+  $('lsSave').onclick = function () {
+    if (!lsCtx) { return; }
+    var goals = [];
+    $('lsGoals').querySelectorAll('input:checked').forEach(function (c) { goals.push(c.value); });
+    var students = [];
+    $('lsStudents').querySelectorAll('.ob').forEach(function (box) {
+      var stat = box.querySelector('.lsStat').value, ach = [];
+      box.querySelectorAll('.lsAch input:checked').forEach(function (c) { ach.push(c.value); });
+      students.push({ id: box.getAttribute('data-sid'), name: box.getAttribute('data-name'), status: stat, note: box.querySelector('.lsNoteS').value.trim(), achieved: ach });
+    });
+    var note = $('lsNote').value.trim();
+    if (!note && !students.some(function (s) { return s.note || s.status !== '出席' || s.achieved.length; })) { $('lsMsg').textContent = 'クラスの様子か、生徒の様子を1つは書いてください'; return; }
+    outbox = outbox.filter(function (o) { return !(o.type === 'lesson_log' && o.date === lsCtx.date && o.cls === lsCtx.cls); });
+    queueItem({ type: 'lesson_log', date: lsCtx.date, cls: lsCtx.cls, class_note: note, goals: goals, students: students });
+    lsCtx = null;
+    $('lsForm').style.display = 'none'; $('lessonBox').style.display = '';
+    renderLessons();
+    if (pcOnline) { flushOutbox(); }
+  };
+
+  // ---- やること ----
+  var todoDone = {};
+  try { todoDone = JSON.parse(lsGet('todoDone', '{}')) || {}; } catch (e) { todoDone = {}; }
+  function renderTodos() {
+    var box = $('todoBox'); box.innerHTML = '';
+    var list = ((snap && snap.todosInfo) || []).filter(function (t) { return !todoDone[t.id]; });
+    var pend = outbox.filter(function (o) { return o.type === 'todo'; });
+    if (!list.length && !pend.length) { box.innerHTML = '<div class="empty">やることが、まだ届いていません。<br>PCのN.A.V.I.につながると届きます</div>'; return; }
+    var groups = [['今日やること', function (t) { return t.today && !t.wait; }], ['進行中', function (t) { return t.doing && !t.today && !t.wait; }],
+                  ['そのほか', function (t) { return !t.today && !t.doing && !t.wait; }], ['待ち中', function (t) { return !!t.wait; }]];
+    var today = ymd(new Date());
+    groups.forEach(function (g) {
+      var rows = list.filter(g[1]);
+      if (g[0] === 'そのほか' && pend.length) { rows = rows.concat(pend.map(function (o) { return { id: '', text: o.text, due: o.date || '', pending: true, tags: [] }; })); }
+      if (!rows.length) { return; }
+      var h = document.createElement('div'); h.className = 'sub'; h.style.margin = '12px 0 4px'; h.textContent = g[0] + '（' + rows.length + '）'; box.appendChild(h);
+      rows.forEach(function (t) {
+        var d = document.createElement('div'); d.className = 'it'; d.style.alignItems = 'center';
+        var cb = document.createElement('input'); cb.type = 'checkbox'; cb.style.cssText = 'width:24px;height:24px;margin-right:10px;flex:none'; cb.disabled = !!t.pending;
+        cb.onchange = function () {
+          if (!cb.checked) { return; }
+          todoDone[t.id] = 1; lsSet('todoDone', JSON.stringify(todoDone));
+          queueItem({ type: 'todo_done', tid: t.id, title: t.text });
+          if (pcOnline) { flushOutbox(); }
+          renderTodos();
+        };
+        var tt = document.createElement('div'); tt.className = 'tt'; tt.style.flex = '1';
+        var due = t.due ? '（' + (t.due < today ? '期限切れ ' : '期限 ') + t.due.slice(5).replace('-', '/') + '）' : '';
+        tt.textContent = (t.today ? '★ ' : '') + t.text + due + (t.pending ? '　⏳未送信' : '') + (t.wait ? '　⏳' + t.wait + '待ち' : '');
+        if ((t.tags || []).length) { var sm = document.createElement('div'); sm.className = 'sub'; sm.textContent = t.tags.join(' '); tt.appendChild(sm); }
+        d.appendChild(cb); d.appendChild(tt); box.appendChild(d);
+      });
+    });
+  }
+  $('tdAdd').onclick = function () {
+    var v = $('tdNew').value.trim(); if (!v) { return; }
+    queueItem({ type: 'todo', text: v, date: '' }); $('tdNew').value = '';
+    if (pcOnline) { flushOutbox(); }
+    renderTodos();
+  };
+
+  // =====================================================
   // 書き溜め（つながらないとき用）
   // =====================================================
   var outbox = [];
   try { outbox = JSON.parse(lsGet('outbox', '[]')) || []; } catch (e) { outbox = []; }
   var flushing = false;
-  var TYPE_LABEL = { memo: '📒 メモ', todo: '✅ Todo', event: '📅 予定', event_edit: '✏️ 予定の変更', event_delete: '🗑 予定の削除', snote: '🧑‍🎓 生徒メモ', journal: '📔 日記', send: '💬 指示' };
+  var TYPE_LABEL = { lesson_log: '📓 レッスン記録', todo_done: '☑ やること完了', memo: '📒 メモ', todo: '✅ Todo', event: '📅 予定', event_edit: '✏️ 予定の変更', event_delete: '🗑 予定の削除', snote: '🧑‍🎓 生徒メモ', journal: '📔 日記', send: '💬 指示' };
 
   function saveOutbox() { lsSet('outbox', JSON.stringify(outbox)); updateBadges(); }
 
@@ -926,6 +1129,7 @@
     total = total || all.length;
     flushing = true;
     var payload = items.map(function (o) { return { cid: o.cid, type: o.type, student: o.student, text: o.text, due: o.date && o.type === 'todo' ? o.date : '', date: o.date, start: o.start, end: o.end, title: o.title, note: o.note, repeat: o.repeat, until: o.until, eid: o.eid, attrs: o.attrs, remind: o.remind,
+      cls: o.cls, class_note: o.class_note, goals: o.goals, students: o.students, tid: o.tid,
       time: o.time, place: o.place, area: o.area, effort: o.effort, state: o.state, due_kind: o.due_kind, wait_for: o.wait_for, kind: o.kind, review: o.review, keep: o.keep }; });
     var sent = 0, failed = false;
     talkToPC('sync', JSON.stringify(payload)).then(function (st) {
@@ -966,7 +1170,7 @@
     outbox.forEach(function (o, i) {
       var d = document.createElement('div'); d.className = 'ob';
       var b = document.createElement('div'); b.className = 'body';
-      var main = (o.type === 'event' || o.type === 'event_edit' || o.type === 'event_delete') ? (o.title || '') : (o.type === 'snote' ? o.student + '：' + o.text : o.text);
+      var main = (o.type === 'event' || o.type === 'event_edit' || o.type === 'event_delete' || o.type === 'todo_done') ? (o.title || '') : (o.type === 'lesson_log' ? (o.date.slice(5).replace('-', '/') + ' ' + o.cls + '：' + (o.class_note || (o.students || []).length + '人')) : (o.type === 'snote' ? o.student + '：' + o.text : o.text));
       b.textContent = TYPE_LABEL[o.type] + '　' + main;
       var sm = document.createElement('small');
       var bits = [];
@@ -1068,8 +1272,8 @@
   }
 
   var curTab = 'chat';
-  var PANES = { chat: 'paneChat', sched: 'paneSched', outbox: 'paneOutbox', notices: 'paneNotices' };
-  var TABS = { chat: 'tabChat', sched: 'tabSched', outbox: 'tabOutbox', notices: 'tabNotices' };
+  var PANES = { chat: 'paneChat', sched: 'paneSched', lesson: 'paneLesson', todo: 'paneTodo', outbox: 'paneOutbox', notices: 'paneNotices' };
+  var TABS = { chat: 'tabChat', sched: 'tabSched', lesson: 'tabLesson', todo: 'tabTodo', outbox: 'tabOutbox', notices: 'tabNotices' };
   function showTab(t) {
     if (!PANES[t]) { t = 'chat'; }
     curTab = t;
@@ -1084,8 +1288,12 @@
     if (t === 'notices') { loadNotices(); }
     if (t === 'sched') { renderSched(); fetchSnapshot(); }
     if (t === 'outbox') { renderOutbox(); }
+    if (t === 'lesson') { renderLessons(); fetchSnapshot(); }
+    if (t === 'todo') { renderTodos(); fetchSnapshot(); }
   }
   $('tabSched').onclick = function () { showTab('sched'); };
+  $('tabLesson').onclick = function () { showTab('lesson'); };
+  $('tabTodo').onclick = function () { showTab('todo'); };
   $('tabOutbox').onclick = function () { showTab('outbox'); };
   $('tabChat').onclick = function () { showTab('chat'); };
   $('tabNotices').onclick = function () { showTab('notices'); };
