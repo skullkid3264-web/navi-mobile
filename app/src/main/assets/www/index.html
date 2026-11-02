@@ -239,7 +239,6 @@
   <button data-q="やることを全部見せて">📋 やること一覧</button>
   <button data-q="承認待ちの目標を見せて">🎯 承認待ち</button>
   <button data-q="Claudeへの相談リストを見せて">🙋 相談リスト</button>
-  <button data-q="今日のやることを3つ選んで">📝 今日の3つ</button>
   <button data-q="夕方の振り返りをして">🌙 振り返り</button>
 </div>
 <footer><div class="inner">
@@ -280,6 +279,12 @@
   <div class="sw"><span>予定の前の知らせを、このスマホでも鳴らす ⏰</span><input type="checkbox" id="optLocalRemind"></div>
   <p style="color:var(--sub);font-size:12px;margin:-4px 0 8px">PCにつながっていなくても鳴ります。PCからも同じ知らせが届くので、二重に鳴るのが気になるときはオフにしてください。</p>
   <div class="sw"><span>背面ライト（Glyph）の演出 ✨</span><input type="checkbox" id="optGlyph"></div>
+  <div style="margin-top:12px;padding:12px;border-radius:14px;background:var(--card)">
+    <div style="font-weight:700;margin-bottom:6px">🩺 ログ（直近48時間）</div>
+    <p style="color:var(--sub);font-size:12px;margin:0 0 8px">会話・つながりの記録を、この端末の中に48時間だけ残します。トラブルのときや改善のとき、Claudeに見てもらうために使います。保護者の通知の本文と写真は記録しません。</p>
+    <div class="row"><button id="logSend" style="flex:1">PCに送る（同じWi-Fi）</button><button id="logCopy" style="flex:1">コピー</button></div>
+    <p style="color:var(--sub);font-size:12px;margin:6px 0 0" id="logMsg"></p>
+  </div>
   <div id="parentBoxSet" style="margin-top:12px;padding:12px;border-radius:14px;background:var(--card)">
     <div style="font-weight:700;margin-bottom:6px">💌 保護者の通知を読み取る</div>
     <p style="color:var(--sub);font-size:12px;margin:0 0 8px">選んだアプリに届いた通知を読んで、<b>同じWi-FiのPCにだけ</b>送ります（PCが用件の要約と返信案を作ります）。外では端末の中に残し（最大30件・2日）、つながったときに送ります。Googleのサーバーには通しません。返信は自動では送りません。</p>
@@ -358,6 +363,31 @@
 
   // ---- 保存（使えない環境でも動く） ----
   function lsGet(k, d) { try { var v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } }
+  // ---- 直近48時間の記録（トラブルのとき・改善のとき、Claudeに見てもらう用。端末の中にだけ置く） ----
+  var LOG_HOURS = 48, LOG_MAX = 700, LOG_CHARS = 1200, logRows = [];
+  try { logRows = JSON.parse(localStorage.getItem('convlog') || '[]') || []; } catch (e) { logRows = []; }
+  var logSaveT = 0;
+  function logEv(kind, text) {
+    try {
+      var t = String(text === undefined || text === null ? '' : text);
+      if (t.length > LOG_CHARS) { t = t.slice(0, LOG_CHARS) + '…（' + t.length + '文字のうち先頭だけ）'; }
+      var now = Date.now(), cut = now - LOG_HOURS * 3600000;
+      logRows.push([now, kind, t]);
+      while (logRows.length && (logRows[0][0] < cut || logRows.length > LOG_MAX)) { logRows.shift(); }
+      clearTimeout(logSaveT);
+      logSaveT = setTimeout(function () { try { localStorage.setItem('convlog', JSON.stringify(logRows)); } catch (e) { logRows = logRows.slice(-Math.floor(logRows.length / 2)); } }, 800);
+    } catch (e) {}
+  }
+  function logText() {
+    var cut = Date.now() - LOG_HOURS * 3600000;
+    return logRows.filter(function (r) { return r[0] >= cut; }).map(function (r) {
+      var d = new Date(r[0]), p = function (n) { return (n < 10 ? '0' : '') + n; };
+      return p(d.getMonth() + 1) + '/' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()) + ' [' + r[1] + '] ' + r[2];
+    }).join('\n');
+  }
+  window.addEventListener('error', function (e) { logEv('error', (e.message || '') + ' @' + (e.lineno || '')); });
+  window.addEventListener('unhandledrejection', function (e) { logEv('error', 'promise: ' + (e.reason && e.reason.message ? e.reason.message : e.reason)); });
+
   function lsSet(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } }
 
   // ---- PC(GAS)への呼び出し ----
@@ -423,6 +453,7 @@
 
   // ---- 表示 ----
   function say(who, text, cls) {
+    if (cls !== 'live') { logEv(who === 'me' ? 'あなた' : (cls === 'err' ? 'NAVI(エラー)' : 'NAVI'), text); }
     var d = document.createElement('div');
     d.className = 'bubble ' + who + (cls ? ' ' + cls : '');
     d.textContent = text;
@@ -626,6 +657,7 @@
   }
   function pcState(on) {
     var was = pcOnline;
+    if (was !== on) { logEv('接続', on ? 'PCにつながりました' + (viaLan ? '（Wi-Fi直結）' : '') : 'PCにつながらなくなりました'); }
     pcOnline = on;
     if (on) { flushOutbox(); }
     updatePendingBar();
@@ -1232,6 +1264,7 @@
       if (items.some(function (o) { return /^event/.test(o.type); })) { setTimeout(fetchSnapshot, 4000); setTimeout(fetchSnapshot, 10000); }
     }).catch(function (e) {
       failed = true;
+      logEv('送信エラー', e.message);
       if (manual) { $('obMsg').textContent = '❌ ' + e.message; }
     }).then(function () {
       flushing = false;
@@ -1240,7 +1273,7 @@
       if (!failed && (sent || total)) {
         var left = outbox.filter(function (o) { return o.type !== 'send' && o.type !== 'photo'; }).length;
         var done = total - Object.keys(skip).length;
-        if (done > 0) { glyphCue('ok'); flushPhotos(); say('ai', '📝 書き溜めを ' + done + ' 件、PCに送りました。' + (left ? '（' + left + '件は登録できませんでした）' : '')); }
+        if (done > 0) { logEv('送信', '書き溜め ' + done + ' 件をPCに送りました（残り ' + left + '件）'); glyphCue('ok'); flushPhotos(); say('ai', '📝 書き溜めを ' + done + ' 件、PCに送りました。' + (left ? '（' + left + '件は登録できませんでした）' : '')); }
         if (manual) { $('obMsg').textContent = done + '件、送りました'; }
       }
       // 送っている間に「送って」と頼まれていた分があれば、続けて送る（頼まれたときだけ。失敗のくり返しを避ける）
@@ -1422,7 +1455,7 @@
     var json = JSON.stringify(list);
     if (json === remindSig) { return; }
     remindSig = json;
-    try { A.setReminders(json); } catch (e) {}
+    try { var nrem = A.setReminders(json); logEv('通知予約', '端末の通知を ' + nrem + ' 件、予約しました'); } catch (e) { logEv('error', 'setReminders: ' + e.message); }
   }
   setInterval(syncLocalReminders, 600000);
 
@@ -1541,7 +1574,7 @@
   function openSettings() {
     $('optAuto').checked = lsGet('auto', '1') === '1';
     $('optSpeak').checked = lsGet('speak', '1') === '1';
-    loadParentCfg();
+    loadParentCfg(); logInfo();
     $('optLocalRemind').checked = lsGet('localRemind', '1') === '1';
     $('optGlyph').checked = lsGet('glyph', '1') === '1';
     var ga = false; try { ga = typeof A.glyphActive === 'function' && A.glyphActive(); } catch (e) {}
@@ -1611,6 +1644,13 @@
     document.querySelectorAll('.pcPkg').forEach(function (e) { e.checked = pk.indexOf(e.getAttribute('data-pkg')) >= 0; });
     $('pcState').textContent = parentStateText(c);
   }
+  function logInfo() { var n = logRows.length; $('logMsg').textContent = n + '件の記録があります。PCの「🩺 ログ」で、PCのログとまとめて書き出せます。'; }
+  $('logSend').onclick = function () {
+    if (!lanReady()) { $('logMsg').textContent = '同じWi-FiでPCにつながっているときだけ送れます（会話の内容を外に出さないため）'; return; }
+    $('logMsg').textContent = '送っています…';
+    callLanP('phone_log', '版 ' + (info.version || '') + '\n' + logText()).then(function () { $('logMsg').textContent = '✅ PCに送りました'; }, function (e) { $('logMsg').textContent = '❌ ' + e.message; });
+  };
+  $('logCopy').onclick = function () { $('logMsg').textContent = copyText(logText()) ? 'コピーしました' : 'コピーできませんでした'; };
   function parentStateText(c) {
     var t = !c.access ? '⚠ 通知へのアクセスが未許可です（下のボタンで許可）。'
           : (c.connected === false ? '⚠ 許可は入っていますが、まだつながっていません。通知へのアクセスの設定で、このアプリを一度オフ→オンにしてください。' : '✅ 通知を読める状態です。');
