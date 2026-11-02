@@ -188,10 +188,17 @@
       <option value="event">📅 予定</option>
       <option value="snote">🧑‍🎓 生徒メモ（月末の報告用）</option>
       <option value="journal">📔 日記</option>
+      <option value="photo">📷 写真（同じWi-Fiで送る）</option>
       <option value="send">💬 PCへの指示</option>
     </select>
     <div id="obStudentRow" style="margin-top:8px"><input type="text" id="obStudent" placeholder="生徒（名前・番号・クラス全員）"></div>
     <div style="display:flex;gap:8px;margin-top:8px;align-items:flex-end">
+      <div id="obPhotoRow" style="display:none;margin-bottom:8px">
+        <input type="file" id="obFile" accept="image/*" style="display:none">
+        <button id="obPhotoBtn" type="button">📷 撮る／選ぶ</button>
+        <img id="obPhotoPrev" alt="" style="display:none;max-width:100%;max-height:160px;border-radius:12px;margin-top:8px">
+        <div class="sub" style="margin-top:6px">写真は、同じWi-FiでPCにつながったときだけ送ります（外では端末に残ります）。</div>
+      </div>
       <textarea id="obText" rows="2" placeholder="内容"></textarea>
       <button id="obMic" style="width:52px;height:52px;border-radius:50%;padding:0;background:var(--pink);color:#2b1020;flex:none">🎤</button>
     </div>
@@ -269,6 +276,10 @@
   <p style="color:var(--sub);font-size:13px;margin-top:-6px">N.A.V.I. = Navigator of All Vital Information</p>
   <div class="sw"><span>話し終わったら自動で送る</span><input type="checkbox" id="optAuto"></div>
   <div class="sw"><span>返事を読み上げる 🔊</span><input type="checkbox" id="optSpeak"></div>
+  <div class="sw"><span>予定の前の知らせを、このスマホでも鳴らす ⏰</span><input type="checkbox" id="optLocalRemind"></div>
+  <p style="color:var(--sub);font-size:12px;margin:-4px 0 8px">PCにつながっていなくても鳴ります。PCからも同じ知らせが届くので、二重に鳴るのが気になるときはオフにしてください。</p>
+  <div class="sw"><span>背面ライト（Glyph）の演出 ✨</span><input type="checkbox" id="optGlyph"></div>
+  <p style="color:var(--sub);font-size:12px;margin:-4px 0 8px" id="glyphNote">Nothing Phone (2a) 専用。アプリを開いているときだけ光ります。</p>
   <div id="voiceBox" style="margin-top:12px;padding:12px;border-radius:14px;background:var(--card)">
     <div style="font-weight:700;margin-bottom:8px">🗣 読み上げの声</div>
     <select id="voiceSel" style="width:100%;font-family:inherit;font-size:16px;padding:10px;border-radius:12px;border:1px solid var(--card2);background:var(--bg);color:var(--text)"><option value="">端末の標準の声</option></select>
@@ -329,7 +340,7 @@
 
   // ---- 保存（使えない環境でも動く） ----
   function lsGet(k, d) { try { var v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } }
-  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } }
 
   // ---- PC(GAS)への呼び出し ----
   function call(action, params) {
@@ -606,6 +617,7 @@
   window.NAVI = {
     _cb: function (id, txt) { var f = cbs[id]; delete cbs[id]; if (f) { f(txt); } },
     onListening: function (on) {
+      glyphCue(on ? 'listen' : 'off');
       $('mic').className = on ? 'on' : '';
       $('mic').textContent = on ? '■' : '🎤';
       $('obMic').className = on ? 'on' : '';
@@ -649,6 +661,11 @@
     },
     autoListen: function () { if (info.paired && info.speech && $('mic').className !== 'on') { setTimeout(function () { A.listen(); }, 300); } },
     openTab: function (t) { showTab(t); },
+    openOb: function (t) {
+      showTab('outbox');
+      if (['memo', 'todo', 'event', 'snote', 'journal', 'photo', 'send'].indexOf(t) >= 0) { $('obType').value = t; obTypeChanged(); }
+      setTimeout(function () { try { $('obText').focus(); } catch (e) {} }, 300);
+    },
     onUpdateAvailable: function (ver, notes) { $('bannerText').textContent = '新しい版（第' + ver + '版）があります'; $('banner').style.display = 'block'; },
     onUpToDate: function () { $('setMsg2').textContent = '今が最新の版です'; },
     onUpdateError: function (m) { $('setMsg2').textContent = m; $('bannerBtn').disabled = false; },
@@ -690,6 +707,7 @@
         var txt = JSON.stringify(r);
         lsSet('snapshot', txt);
         try { A.saveSnapshot(txt); } catch (e) {}
+        syncLocalReminders();
         if (curTab === 'sched') { renderSched(); }
         if (curTab === 'lesson') { renderLessons(); }
         if (curTab === 'todo') { renderTodos(); }
@@ -1089,9 +1107,9 @@
   var outbox = [];
   try { outbox = JSON.parse(lsGet('outbox', '[]')) || []; } catch (e) { outbox = []; }
   var flushing = false;
-  var TYPE_LABEL = { lesson_log: '📓 レッスン記録', todo_done: '☑ やること完了', memo: '📒 メモ', todo: '✅ Todo', event: '📅 予定', event_edit: '✏️ 予定の変更', event_delete: '🗑 予定の削除', snote: '🧑‍🎓 生徒メモ', journal: '📔 日記', send: '💬 指示' };
+  var TYPE_LABEL = { lesson_log: '📓 レッスン記録', todo_done: '☑ やること完了', memo: '📒 メモ', todo: '✅ Todo', event: '📅 予定', event_edit: '✏️ 予定の変更', event_delete: '🗑 予定の削除', snote: '🧑‍🎓 生徒メモ', photo: '📷 写真', journal: '📔 日記', send: '💬 指示' };
 
-  function saveOutbox() { lsSet('outbox', JSON.stringify(outbox)); updateBadges(); }
+  function saveOutbox() { var ok = lsSet('outbox', JSON.stringify(outbox)); updateBadges(); syncLocalReminders(); return ok; }
 
   function queueItem(it) {
     it.cid = 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -1130,8 +1148,8 @@
   function flushOutbox(manual, skip, total) {
     if (flushing) { flushAgain = true; return; }
     skip = skip || {};
-    var all = outbox.filter(function (o) { return o.type !== 'send' && !skip[o.cid]; });
-    if (!all.length) { if (manual && !total) { $('obMsg').textContent = '送るものはありません'; } return; }
+    var all = outbox.filter(function (o) { return o.type !== 'send' && o.type !== 'photo' && !skip[o.cid]; });
+    if (!all.length) { flushPhotos(); if (manual && !total) { $('obMsg').textContent = outbox.some(function (o) { return o.type === 'photo'; }) ? '写真は、同じWi-Fiでつながったときに送ります' : '送るものはありません'; } return; }
     var items = all.slice(0, FLUSH_CHUNK);
     total = total || all.length;
     flushing = true;
@@ -1155,17 +1173,17 @@
       if (manual) { $('obMsg').textContent = '❌ ' + e.message; }
     }).then(function () {
       flushing = false;
-      var more = outbox.some(function (o) { return o.type !== 'send' && !skip[o.cid]; });
+      var more = outbox.some(function (o) { return o.type !== 'send' && o.type !== 'photo' && !skip[o.cid]; });
       if (!failed && more) { flushOutbox(manual, skip, total); return; }    // 続きがあれば、次の30件へ
       if (!failed && (sent || total)) {
-        var left = outbox.filter(function (o) { return o.type !== 'send'; }).length;
+        var left = outbox.filter(function (o) { return o.type !== 'send' && o.type !== 'photo'; }).length;
         var done = total - Object.keys(skip).length;
-        if (done > 0) { say('ai', '📝 書き溜めを ' + done + ' 件、PCに送りました。' + (left ? '（' + left + '件は登録できませんでした）' : '')); }
+        if (done > 0) { glyphCue('ok'); flushPhotos(); say('ai', '📝 書き溜めを ' + done + ' 件、PCに送りました。' + (left ? '（' + left + '件は登録できませんでした）' : '')); }
         if (manual) { $('obMsg').textContent = done + '件、送りました'; }
       }
       // 送っている間に「送って」と頼まれていた分があれば、続けて送る（頼まれたときだけ。失敗のくり返しを避ける）
       var again = flushAgain; flushAgain = false;
-      if (again && outbox.some(function (o) { return o.type !== 'send'; })) { flushOutbox(false); }
+      if (again && outbox.some(function (o) { return o.type !== 'send' && o.type !== 'photo'; })) { flushOutbox(false); }
     });
   }
   $('obFlush').onclick = function () { $('obMsg').textContent = '送っています…'; flushOutbox(true); };
@@ -1177,7 +1195,7 @@
     outbox.forEach(function (o, i) {
       var d = document.createElement('div'); d.className = 'ob';
       var b = document.createElement('div'); b.className = 'body';
-      var main = (o.type === 'event' || o.type === 'event_edit' || o.type === 'event_delete' || o.type === 'todo_done') ? (o.title || '') : (o.type === 'lesson_log' ? (o.date.slice(5).replace('-', '/') + ' ' + o.cls + '：' + (o.class_note || (o.students || []).length + '人')) : (o.type === 'snote' ? o.student + '：' + o.text : o.text));
+      var main = (o.type === 'event' || o.type === 'event_edit' || o.type === 'event_delete' || o.type === 'todo_done') ? (o.title || '') : (o.type === 'lesson_log' ? (o.date.slice(5).replace('-', '/') + ' ' + o.cls + '：' + (o.class_note || (o.students || []).length + '人')) : (o.type === 'snote' ? o.student + '：' + o.text : (o.type === 'photo' ? ((o.student ? o.student + '：' : '') + (o.text || '（写真）')) : o.text)));
       b.textContent = TYPE_LABEL[o.type] + '　' + main;
       var sm = document.createElement('small');
       var bits = [];
@@ -1196,13 +1214,14 @@
   function obTypeChanged() {
     var t = $('obType').value;
     $('obDateRow').style.display = (t === 'todo' || t === 'event' || t === 'snote' || t === 'journal') ? '' : 'none';
-    $('obStudentRow').style.display = t === 'snote' ? '' : 'none';
+    $('obStudentRow').style.display = (t === 'snote' || t === 'photo') ? '' : 'none';
+    $('obPhotoRow').style.display = t === 'photo' ? '' : 'none';
     $('obTimeRow').style.display = t === 'event' ? '' : 'none';
     $('obRepRow').style.display = t === 'event' ? '' : 'none';
     $('obTodoAttr').style.display = t === 'todo' ? '' : 'none';
     $('obMemoAttr').style.display = t === 'memo' ? '' : 'none';
     $('obDateLabel').textContent = t === 'todo' ? '期限（なくてもOK）' : (t === 'snote' || t === 'journal' ? '日付（今日でOK）' : '日付');
-    $('obText').placeholder = t === 'event' ? '予定の名前' : (t === 'send' ? 'PCのN.A.V.I.への指示（例：ゆきにゴールドを2枚）' : '内容');
+    $('obText').placeholder = t === 'photo' ? '一言（なくてもOK）' : t === 'event' ? '予定の名前' : (t === 'send' ? 'PCのN.A.V.I.への指示（例：ゆきにゴールドを2枚）' : '内容');
     if ((t === 'event' || t === 'snote' || t === 'journal') && !$('obDate').value) { $('obDate').value = ymd(new Date()); }
   }
   $('obType').onchange = obTypeChanged;
@@ -1212,6 +1231,7 @@
   };
   $('obAdd').onclick = function () {
     var t = $('obType').value, text = $('obText').value.trim();
+    if (t === 'photo') { addPhoto(text); return; }
     if (!text) { $('obMsg').textContent = '内容を入れてください'; return; }
     var it = { type: t };
     if (t === 'event') {
@@ -1246,6 +1266,103 @@
     $('obMsg').textContent = '書き溜めました' + (pcOnline ? '（まもなくPCに送ります）' : '（つながったら送ります）');
     if (pcOnline) { flushOutbox(); }
   };
+  // ---- 写真（端末で縮めて、同じWi-Fiのときだけ送る） ----
+  var photoData = '';
+  $('obPhotoBtn').onclick = function () { $('obFile').click(); };
+  $('obFile').onchange = function () {
+    var f = this.files && this.files[0]; if (!f) { return; }
+    $('obMsg').textContent = '写真を読み込み中…';
+    var rd = new FileReader();
+    rd.onerror = function () { $('obMsg').textContent = '写真を読み込めませんでした'; };
+    rd.onload = function () {
+      var im = new Image();
+      im.onerror = function () { $('obMsg').textContent = '写真を読み込めませんでした'; };
+      im.onload = function () {
+        var max = 1280, w = im.width, h = im.height, k = Math.min(1, max / Math.max(w, h));
+        var cv = document.createElement('canvas'); cv.width = Math.round(w * k); cv.height = Math.round(h * k);
+        cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+        photoData = cv.toDataURL('image/jpeg', 0.7);
+        $('obPhotoPrev').src = photoData; $('obPhotoPrev').style.display = '';
+        $('obMsg').textContent = '写真を用意しました（約' + Math.round(photoData.length * 0.75 / 1024) + 'KB）。「書き溜める」を押してください';
+      };
+      im.src = rd.result;
+    };
+    rd.readAsDataURL(f);
+    this.value = '';
+  };
+  function addPhoto(text) {
+    if (!photoData) { $('obMsg').textContent = '先に「撮る／選ぶ」で写真を用意してください'; return; }
+    if (outbox.filter(function (o) { return o.type === 'photo'; }).length >= 6) { $('obMsg').textContent = '写真の書き溜めは6枚までです。先にPCへ送ってください'; return; }
+    var it = { type: 'photo', text: text, img: photoData, student: $('obStudent').value.trim(), date: ymd(new Date()) };
+    it.cid = 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); it.at = Date.now();
+    outbox.push(it);
+    if (!saveOutbox()) {
+      outbox.pop(); saveOutbox();
+      $('obMsg').textContent = '端末の保存場所がいっぱいで、写真を書き溜められませんでした'; return;
+    }
+    photoData = ''; $('obPhotoPrev').style.display = 'none'; $('obPhotoPrev').src = ''; $('obText').value = '';
+    if (curTab === 'outbox') { renderOutbox(); }
+    $('obMsg').textContent = '写真を書き溜めました（同じWi-FiでPCにつながったら送ります）';
+    flushPhotos();
+  }
+  var photoSending = false;
+  function lanReady() { return !!(lanUrl && Date.now() >= lanDownUntil && typeof A.callLan === 'function'); }
+  function flushPhotos() {
+    if (photoSending || !lanReady()) { return; }
+    var it = outbox.filter(function (o) { return o.type === 'photo'; })[0];
+    if (!it) { return; }
+    photoSending = true;
+    var p = { cid: it.cid, type: 'photo', text: it.text, student: it.student, date: it.date, img: it.img };
+    var sentOk = false;
+    callLanP('sync', JSON.stringify([p])).then(function (st) {
+      sentOk = (st.results || []).some(function (r) { return r.ok && r.cid === it.cid; });
+      if (sentOk) { outbox = outbox.filter(function (o) { return o.cid !== it.cid; }); saveOutbox(); glyphCue('ok'); if (curTab === 'outbox') { renderOutbox(); } }
+    }).catch(function () {}).then(function () {
+      photoSending = false;
+      // 送れたときだけ、次の1枚へ（失敗をくり返さない）
+      if (sentOk && outbox.some(function (o) { return o.type === 'photo'; }) && lanReady()) { setTimeout(flushPhotos, 300); }
+    });
+  }
+
+  // ---- 背面ライト（Glyph。Nothing Phone (2a) のときだけ。対応していなければ何も起きない） ----
+  function glyphCue(kind) {
+    if (lsGet('glyph', '1') !== '1') { return; }
+    try { if (typeof A.glyph === 'function') { A.glyph(kind); } } catch (e) {}
+  }
+
+  // ---- 予定の前の知らせを、このスマホ自身で鳴らす（PCにつながっていなくても） ----
+  function localReminders() {
+    var out = [], now = Date.now();
+    function add(date, it) {
+      var attrs = it.attrs || [], rem = (it.remind || []).map(Number).filter(function (n) { return n > 0; });
+      if (!it.start || (!attrs.length && !rem.length)) { return; }
+      if (!rem.length && attrs.indexOf('お出かけ') >= 0) { rem = [90]; }
+      var a = String(date).split('-'), b = String(it.start).split(':');
+      if (a.length < 3 || b.length < 2) { return; }
+      var st = new Date(+a[0], +a[1] - 1, +a[2], +b[0], +b[1], 0).getTime();
+      rem.forEach(function (m) {
+        var at = st - m * 60000;
+        if (at > now && at < now + 8 * 86400000) {
+          out.push({ at: at, title: (attrs.indexOf('お出かけ') >= 0 ? '🚶 ' : '⏰ ') + it.title, body: it.start + ' から（' + (m >= 60 && m % 60 === 0 ? (m / 60) + '時間' : m + '分') + '前です）' });
+        }
+      });
+    }
+    ((snap && snap.days) || []).forEach(function (d) { (d.items || []).forEach(function (it) { if (it.kind === 'personal') { add(d.date, it); } }); });
+    outbox.forEach(function (o) { if (o.type === 'event' && o.date) { add(o.date, { title: o.title, start: o.start, attrs: o.attrs, remind: o.remind }); } });
+    out.sort(function (x, y) { return x.at - y.at; });
+    return out;
+  }
+  var remindSig = '';
+  function syncLocalReminders() {
+    if (typeof A.setReminders !== 'function') { return; }
+    var list = lsGet('localRemind', '1') === '1' ? localReminders() : [];
+    var json = JSON.stringify(list);
+    if (json === remindSig) { return; }
+    remindSig = json;
+    try { A.setReminders(json); } catch (e) {}
+  }
+  setInterval(syncLocalReminders, 600000);
+
   obTypeChanged();
   updateBadges();
 
@@ -1361,6 +1478,10 @@
   function openSettings() {
     $('optAuto').checked = lsGet('auto', '1') === '1';
     $('optSpeak').checked = lsGet('speak', '1') === '1';
+    $('optLocalRemind').checked = lsGet('localRemind', '1') === '1';
+    $('optGlyph').checked = lsGet('glyph', '1') === '1';
+    var ga = false; try { ga = typeof A.glyphActive === 'function' && A.glyphActive(); } catch (e) {}
+    $('glyphNote').textContent = ga ? 'Nothing Phone (2a) につながっています。アプリを開いているときだけ光ります。' : 'Nothing Phone (2a) 専用です（いまは使えない状態です。Nothingの開発者向け設定が要ることがあります）。';
     $('optWake').checked = !!info.wake;
     $('speakMode').value = lsGet('speakMode', 'clip');
     $('clipRate').value = lsGet('clipRate', '1.15');
@@ -1396,6 +1517,8 @@
   $('gear').onclick = openSettings;
   $('btnClose').onclick = closeSettings;
   $('optAuto').onchange = function () { lsSet('auto', this.checked ? '1' : '0'); };
+  $('optLocalRemind').onchange = function () { lsSet('localRemind', this.checked ? '1' : '0'); remindSig = ''; syncLocalReminders(); };
+  $('optGlyph').onchange = function () { lsSet('glyph', this.checked ? '1' : '0'); if (!this.checked) { try { A.glyph('off'); } catch (e) {} } };
   $('optSpeak').onchange = function () { lsSet('speak', this.checked ? '1' : '0'); $('spk').style.opacity = this.checked ? 1 : .4; };
   $('spk').onclick = function () {
     var on = lsGet('speak', '1') !== '1'; lsSet('speak', on ? '1' : '0'); $('spk').style.opacity = on ? 1 : .4; if (!on) { A.stopSpeak(); }
@@ -1438,7 +1561,7 @@
 
   var pollTimer = null;
   function startPolling() {
-    loadSnapshot(); fetchSnapshot();
+    loadSnapshot(); syncLocalReminders(); fetchSnapshot();
     clipLoad().then(function () { syncClips(false); });
     checkPc(); loadNotices();
     if (pollTimer) { clearInterval(pollTimer); }

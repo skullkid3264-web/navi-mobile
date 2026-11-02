@@ -58,4 +58,6 @@ dependencies {
     implementation 'androidx.core:core:1.13.1'
     implementation 'androidx.webkit:webkit:1.11.0'
     implementation 'androidx.work:work-runtime:2.9.1'
+    // Nothing公式のGlyph SDK（Phone (2a) の背面ライト用。Android 14以上の対応端末だけで動かす）
+    implementation files('libs/glyph-matrix-sdk-2.0.aar')
 }

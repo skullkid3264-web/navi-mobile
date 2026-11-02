@@ -3,4 +3,10 @@
     <string name="app_name">N.A.V.I.</string>
     <string name="shortcut_talk">N.A.V.I.に話す</string>
     <string name="tile_talk">ナビに話す</string>
+    <string name="shortcut_memo">メモ</string>
+    <string name="shortcut_memo_long">メモを書き溜める</string>
+    <string name="shortcut_todo">Todo</string>
+    <string name="shortcut_todo_long">Todoを書き溜める</string>
+    <string name="shortcut_photo">写真</string>
+    <string name="shortcut_photo_long">写真を撮って書き溜める</string>
 </resources>

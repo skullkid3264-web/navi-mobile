@@ -13,4 +13,43 @@
             <extra android:name="listen" android:value="true" />
         </intent>
     </shortcut>
+    <shortcut
+        android:shortcutId="memo"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_memo"
+        android:shortcutLongLabel="@string/shortcut_memo_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="app.navi"
+            android:targetClass="app.navi.MainActivity">
+            <extra android:name="ob" android:value="memo" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="todo"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_todo"
+        android:shortcutLongLabel="@string/shortcut_todo_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="app.navi"
+            android:targetClass="app.navi.MainActivity">
+            <extra android:name="ob" android:value="todo" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="photo"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_photo"
+        android:shortcutLongLabel="@string/shortcut_photo_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="app.navi"
+            android:targetClass="app.navi.MainActivity">
+            <extra android:name="ob" android:value="photo" />
+        </intent>
+    </shortcut>
 </shortcuts>

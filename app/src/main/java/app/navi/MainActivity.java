@@ -16,7 +16,10 @@ import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.Voice;
+import android.provider.MediaStore;
 import android.webkit.JavascriptInterface;
+import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
@@ -58,6 +61,10 @@ public class MainActivity extends Activity {
     private static final int REQ_NOTIFY = 21;
     private static final int REQ_AUDIO = 31;
     private static final int REQ_WAKE = 41;
+    private static final int REQ_FILE = 51;
+    private ValueCallback<Uri[]> fileCb;
+    private Uri camUri;
+    private String pendingOb;
 
     private WebView web;
     private final Handler main = new Handler(Looper.getMainLooper());
@@ -118,6 +125,39 @@ public class MainActivity extends Activity {
             }
         });
 
+        // 写真：「撮る／選ぶ」を出す（カメラの許可は、標準のカメラアプリが取るので、このアプリでは要らない）
+        web.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> cb, FileChooserParams params) {
+                if (fileCb != null) fileCb.onReceiveValue(null);
+                fileCb = cb;
+                try {
+                    Intent pick = new Intent(Intent.ACTION_GET_CONTENT);
+                    pick.addCategory(Intent.CATEGORY_OPENABLE);
+                    pick.setType("image/*");
+                    Intent chooser = Intent.createChooser(pick, "写真を選ぶ／撮る");
+                    try {
+                        File dir = new File(getCacheDir(), "camera");
+                        if (!dir.exists()) dir.mkdirs();
+                        File f = File.createTempFile("photo_", ".jpg", dir);
+                        camUri = FileProvider.getUriForFile(MainActivity.this, getPackageName() + ".files", f);
+                        Intent cam = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                        cam.putExtra(MediaStore.EXTRA_OUTPUT, camUri);
+                        cam.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[]{cam});
+                    } catch (Exception e) {
+                        camUri = null;
+                    }
+                    startActivityForResult(chooser, REQ_FILE);
+                } catch (Exception e) {
+                    fileCb = null;
+                    cb.onReceiveValue(null);
+                    return false;
+                }
+                return true;
+            }
+        });
+
         web.addJavascriptInterface(new Bridge(), "Android");
 
         Notices.ensureChannel(this);
@@ -165,6 +205,16 @@ public class MainActivity extends Activity {
                 callJs("NAVI.autoListen && NAVI.autoListen()");
             } else {
                 pendingListen = true;
+            }
+        }
+
+        String ob = intent.getStringExtra("ob");
+        if (ob != null) {
+            intent.removeExtra("ob");
+            if (pageIsReady) {
+                callJs("NAVI.openOb && NAVI.openOb(" + JSONObject.quote(ob) + ")");
+            } else {
+                pendingOb = ob;
             }
         }
 
@@ -236,6 +286,18 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        GlyphHelper.start(this);
+    }
+
+    @Override
+    protected void onStop() {
+        GlyphHelper.stop();
+        super.onStop();
+    }
+
+    @Override
     protected void onDestroy() {
         io.shutdownNow();
         if (recognizer != null) {
@@ -279,6 +341,21 @@ public class MainActivity extends Activity {
     @SuppressWarnings("deprecation")
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQ_FILE) {
+            ValueCallback<Uri[]> cb = fileCb;
+            fileCb = null;
+            if (cb == null) return;
+            Uri[] out = null;
+            if (resultCode == RESULT_OK) {
+                if (data != null && data.getData() != null) {
+                    out = new Uri[]{data.getData()};
+                } else if (camUri != null) {
+                    out = new Uri[]{camUri};     // カメラで撮ったとき（結果にアドレスが入らない）
+                }
+            }
+            cb.onReceiveValue(out);
+            return;
+        }
         if (requestCode == REQ_INSTALL_PERMISSION) {
             if (canInstall() && downloadedApk != null) {
                 installApk(downloadedApk);
@@ -512,6 +589,23 @@ public class MainActivity extends Activity {
             });
         }
 
+        /** 背面ライト（Nothing Phone (2a)）の演出。対応していない端末では何も起きない */
+        @JavascriptInterface
+        public void glyph(String kind) {
+            GlyphHelper.cue(kind);
+        }
+
+        @JavascriptInterface
+        public boolean glyphActive() {
+            return GlyphHelper.active();
+        }
+
+        /** 予定の前の知らせの時刻一覧 [{at, title, body}] を受け取って、アラームを仕掛ける。戻り値：仕掛けた数 */
+        @JavascriptInterface
+        public int setReminders(String json) {
+            return Reminders.set(MainActivity.this, json);
+        }
+
         @JavascriptInterface
         public void pageReady() {
             main.post(() -> {
@@ -527,6 +621,10 @@ public class MainActivity extends Activity {
                 if (pendingTab != null) {
                     callJs("NAVI.openTab && NAVI.openTab(" + JSONObject.quote(pendingTab) + ")");
                     pendingTab = null;
+                }
+                if (pendingOb != null) {
+                    callJs("NAVI.openOb && NAVI.openOb(" + JSONObject.quote(pendingOb) + ")");
+                    pendingOb = null;
                 }
                 if (!checkedOnLaunch) {
                     checkedOnLaunch = true;
