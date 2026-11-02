@@ -127,6 +127,7 @@
   <button id="tabSched">📅 予定</button>
   <button id="tabLesson">📓 レッスン</button>
   <button id="tabTodo">✅ やること</button>
+  <button id="tabParent">💌 保護者</button>
   <button id="tabOutbox">📝 書き溜め<span class="badge" id="obBadge" style="display:none">0</span></button>
   <button id="tabNotices">🔔 お知らせ<span class="badge" id="badge" style="display:none">0</span></button>
 </div>
@@ -171,6 +172,12 @@
     <div style="display:flex;gap:8px"><input type="text" id="tdNew" placeholder="やることを足す（書き溜めに入ります）"><button class="go" id="tdAdd" style="flex:none">足す</button></div>
   </div>
   <div id="todoBox"></div>
+</div>
+<div class="pane" id="paneParent">
+  <p class="sub">保護者から届いたメッセージと返信案です。個人情報を守るため、<b>同じWi-FiでPCに直接つながっているときだけ</b>見られます（外ではPCにだけ残ります）。返信は自動では送りません。案をコピーして、自分で送ってください。</p>
+  <div class="row" style="margin-bottom:8px"><button id="pnReload">🔄 読み込む</button></div>
+  <div class="msg" id="pnMsg"></div>
+  <div id="parentBox"></div>
 </div>
 <div class="pane" id="paneOutbox">
   <p class="sub">つながらない場所でも、ここに書いておけます。PCにつながると自動で送ります（指示だけは、つながってから確認して実行します）。</p>
@@ -1272,8 +1279,8 @@
   }
 
   var curTab = 'chat';
-  var PANES = { chat: 'paneChat', sched: 'paneSched', lesson: 'paneLesson', todo: 'paneTodo', outbox: 'paneOutbox', notices: 'paneNotices' };
-  var TABS = { chat: 'tabChat', sched: 'tabSched', lesson: 'tabLesson', todo: 'tabTodo', outbox: 'tabOutbox', notices: 'tabNotices' };
+  var PANES = { chat: 'paneChat', sched: 'paneSched', lesson: 'paneLesson', todo: 'paneTodo', parent: 'paneParent', outbox: 'paneOutbox', notices: 'paneNotices' };
+  var TABS = { chat: 'tabChat', sched: 'tabSched', lesson: 'tabLesson', todo: 'tabTodo', parent: 'tabParent', outbox: 'tabOutbox', notices: 'tabNotices' };
   function showTab(t) {
     if (!PANES[t]) { t = 'chat'; }
     curTab = t;
@@ -1290,10 +1297,54 @@
     if (t === 'outbox') { renderOutbox(); }
     if (t === 'lesson') { renderLessons(); fetchSnapshot(); }
     if (t === 'todo') { renderTodos(); fetchSnapshot(); }
+    if (t === 'parent') { loadParents(); }
   }
   $('tabSched').onclick = function () { showTab('sched'); };
   $('tabLesson').onclick = function () { showTab('lesson'); };
   $('tabTodo').onclick = function () { showTab('todo'); };
+  $('tabParent').onclick = function () { showTab('parent'); };
+
+  // ---- 保護者のメッセージ（同じWi-Fiの直結のときだけ。GASには通さない） ----
+  function copyText(t) {
+    try {
+      var ta2 = document.createElement('textarea'); ta2.value = t; document.body.appendChild(ta2);
+      ta2.select(); var ok = document.execCommand('copy'); document.body.removeChild(ta2); return ok;
+    } catch (e) { return false; }
+  }
+  function renderParents(list) {
+    var box = $('parentBox'); box.textContent = '';
+    if (!list.length) { $('pnMsg').textContent = 'まだ届いていません'; return; }
+    $('pnMsg').textContent = '';
+    list.forEach(function (m) {
+      var c = document.createElement('div'); c.className = 'form'; c.style.marginBottom = '10px';
+      if (m.done) { c.style.opacity = '.55'; }
+      var h = document.createElement('div'); h.style.fontWeight = '700';
+      h.textContent = (m.urgent ? '⚠ ' : '') + (m.student || m.sender || '送信者不明') + '　' + (m.kind || '') + '　' + (m.created || '').slice(5);
+      c.appendChild(h);
+      var sm = document.createElement('div'); sm.className = 'sub'; sm.textContent = m.summary || ''; c.appendChild(sm);
+      var tx = document.createElement('div'); tx.className = 'sub'; tx.style.whiteSpace = 'pre-wrap'; tx.textContent = '「' + m.text + '」'; c.appendChild(tx);
+      (m.replies || []).forEach(function (r) {
+        var b = document.createElement('button'); b.style.cssText = 'display:block;width:100%;text-align:left;margin-top:6px';
+        b.textContent = '📋 ' + r.label + '：' + r.text;
+        b.onclick = function () { $('pnMsg').textContent = copyText(r.text) ? '「' + r.label + '」をコピーしました' : 'コピーできませんでした（長押しで選んでください）'; };
+        c.appendChild(b);
+      });
+      var d = document.createElement('button'); d.style.marginTop = '6px'; d.textContent = m.done ? '↩ 対応済みを戻す' : '✔ 対応済みにする';
+      d.onclick = function () { callLanP(m.done ? 'parent_undone' : 'parent_done', m.id).then(function (r) { renderParents(r.parents || []); }, function (e) { $('pnMsg').textContent = e.message; }); };
+      c.appendChild(d);
+      box.appendChild(c);
+    });
+  }
+  function loadParents() {
+    $('parentBox').textContent = '';
+    if (!lanUrl || Date.now() < lanDownUntil || typeof A.callLan !== 'function') {
+      $('pnMsg').textContent = 'いまはPCに直接つながっていません。同じWi-Fiにつないで、チャットで一度やりとりしてから開いてください。';
+      return;
+    }
+    $('pnMsg').textContent = '読み込み中…';
+    callLanP('parent_list', '').then(function (r) { renderParents(r.parents || []); }, function (e) { $('pnMsg').textContent = e.message; });
+  }
+  $('pnReload').onclick = loadParents;
   $('tabOutbox').onclick = function () { showTab('outbox'); };
   $('tabChat').onclick = function () { showTab('chat'); };
   $('tabNotices').onclick = function () { showTab('notices'); };
