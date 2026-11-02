@@ -1653,7 +1653,7 @@
   };
   $('logCopy').onclick = function () { $('logMsg').textContent = copyText(logText()) ? 'コピーしました' : 'コピーできませんでした'; };
   function parentStateText(c) {
-    var t = !c.access ? '⚠ 通知へのアクセスが未許可です（下のボタンで許可）。'
+    var t = !c.access ? '⚠ 通知へのアクセスが未許可です（下のボタンで許可）。スイッチが灰色で押せないときは、端末の「設定 → アプリ → N.A.V.I. → 右上の︙ → 制限付きの設定を許可」を先にしてください。'
           : (c.connected === false ? '⚠ 許可は入っていますが、まだつながっていません。通知へのアクセスの設定で、このアプリを一度オフ→オンにしてください。' : '✅ 通知を読める状態です。');
     return t + (c.pending ? '　送れていない分：' + c.pending + '件' : '');
   }
