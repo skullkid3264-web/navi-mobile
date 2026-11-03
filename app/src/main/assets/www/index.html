@@ -650,6 +650,13 @@
     var el = $('plan'); el.innerHTML = '';
     var items = st.plan || [];
     planVisible = items.length > 0;
+    if (!planVisible && st.form_offer) {      // 「今日必要なフォーム」など：計画はなく、フォームだけ開く
+      el.style.display = 'block';
+      var fb0 = document.createElement('button'); fb0.textContent = '📝 フォームを開く'; fb0.className = 'run';
+      fb0.onclick = function () { openForm(st.form_offer.key, st.form_offer.prefill || {}); };
+      el.appendChild(fb0);
+      speakIt(); return;
+    }
     if (!planVisible) { el.style.display = 'none'; speakIt(); return; }
     el.style.display = 'block';
     items.forEach(function (it, i) {
