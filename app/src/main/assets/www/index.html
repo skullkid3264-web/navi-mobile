@@ -135,6 +135,9 @@
   .fqb { flex:1; min-width:0; font-size:14px; }
   .fqs { color:var(--sub); font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .fqe { color:var(--ng); font-size:13px; margin-top:2px; }
+  .memrow { padding:6px 0; border-top:1px solid var(--line, #ddd); }
+  .memrow:first-child { border-top:none; }
+  .memrow input[type=text] { width:100%; margin-top:4px; }
 </style>
 </head>
 <body>
@@ -666,6 +669,7 @@
   }
 
   function showState(st) {
+    if (pendingDraftKey && st && st.results && st.results.length && st.results.every(function (r) { return r.ok !== false; })) { draftClear(pendingDraftKey); pendingDraftKey = ''; }
     if (st.reply) { say('ai', st.reply); }
     var speakIt = function () { speakFor(st.reply || '', st.clip, st.clip_only, st.can_execute ? '内容を確認して、実行と言うか、ボタンを押してください' : ''); };
     var el = $('plan'); el.innerHTML = '';
@@ -1740,7 +1744,7 @@
 
   // ---- フォーム ----
   var formInfo = null, formKey = 'lesson_goal', formPre = {};
-  var FORM_LIST = [['lesson_goal', '目標（レッスン）'], ['todo', 'Todo'], ['event', '予定'], ['student_note', '生徒メモ'], ['parent_message', '保護者連絡'], ['report', '月の報告書'], ['job', '依頼箱（任せる）'], ['todo_manage', 'Todo管理'], ['memo', 'メモ'], ['lesson_skip', 'レッスンのお休み'], ['lesson_add', '毎週のレッスン'], ['lesson_setup', 'レッスンの登録'], ['student_add', '生徒を追加']];
+  var FORM_LIST = [['lesson_goal', 'レッスン記録'], ['todo', 'Todo'], ['event', '予定'], ['student_note', '生徒メモ'], ['parent_message', '保護者連絡'], ['report', '月の報告書'], ['job', '依頼箱（任せる）'], ['todo_manage', 'Todo管理'], ['memo', 'メモ'], ['lesson_skip', 'レッスンのお休み'], ['lesson_add', '毎週のレッスン'], ['lesson_setup', 'レッスンの登録'], ['student_add', '生徒を追加']];
   var sel = $('formSel');
   FORM_LIST.forEach(function (f) { sel.appendChild(el('option', { value: f[0], text: f[1] })); });
   sel.onchange = function () { formKey = sel.value; formPre = {}; renderForm(); };
@@ -1790,10 +1794,16 @@
       }
       inputs[f.name] = node; body.appendChild(field(f.label, node, f.required));
     });
+    var drs = Object.keys(formPre).length ? null : draftGet(formKey);
+    if (drs) { Object.keys(inputs).forEach(function (k) { if (drs[k] !== undefined && drs[k] !== '') { inputs[k].value = drs[k]; } }); $('formMsg').textContent = '📄 前回の途中保存を開きました（登録すると消えます）'; }
+    function collectSimple() { var values = {}; Object.keys(inputs).forEach(function (k) { values[k] = inputs[k].value; }); return values; }
+    wireAutosave(body, formKey, collectSimple);
     var dl = el('datalist', { id: 'stuList' });
     (formInfo.students || []).forEach(function (s) { dl.appendChild(el('option', { value: s.name })); });
     body.appendChild(dl);
-    body.appendChild(el('div', { className: 'tools' }, [el('span', { className: 'grow' }), el('button', { text: '📥 ためる', onclick: function () {
+    body.appendChild(el('div', { className: 'tools' }, [el('button', { text: '💾 途中保存', onclick: function () {
+      $('formMsg').textContent = draftPut(formKey, collectSimple()) ? '💾 途中保存しました。閉じても、次に開くと続きから始められます' : '（まだ何も書かれていないので、保存しませんでした）';
+    } }), el('span', { className: 'grow' }), el('button', { text: '📥 ためる', onclick: function () {
       var values = {}; Object.keys(inputs).forEach(function (k) { values[k] = inputs[k].value; });
       queueForm(formKey, values);
     } }), el('button', { className: 'go', text: '確認へ', onclick: function () {
@@ -1836,34 +1846,49 @@
   }
   function renderGoalForm(body) {
     var today = isoOf2(new Date());
-    body.appendChild(el('div', { className: 'msg', text: 'クラス・日付・内容を入れて、目標を決める。出席の生徒は、そのまま達成にできます（レッスンのあとでもOK）' }));
+    var dr = Object.keys(formPre).length ? null : draftGet('lesson_goal');
+    var P = dr || formPre;
+    body.appendChild(el('div', { className: 'msg', text: '①レッスンの前：クラス・日付・内容を入れて、目標を立てて保存（「レッスンはもう終わった」を外す）。②レッスンのあと：出席・達成・様子・生徒ごとのメモを残す。書きかけは「💾 途中保存」（自動でも残ります）' }));
     var cls = el('select'); cls.appendChild(el('option', { value: '', text: '（選んでください）' }));
     formInfo.classes.forEach(function (c) { cls.appendChild(el('option', { value: c, text: c })); });
-    if (formPre.cls) { cls.value = formPre.cls; }
-    var date = el('input', { type: 'date', value: formPre.date || today });
-    var act = el('textarea', { className: 'f', rows: 3, value: formPre.activity || '' });
-    var done = el('input', { type: 'checkbox', checked: true });
-    var goals = el('textarea', { className: 'f', rows: 5, value: Array.isArray(formPre.goals) ? formPre.goals.join('\n') : (formPre.goals || '') });
-    var checks = el('div', { className: 'checks' });
+    if (P.cls) { cls.value = P.cls; }
+    var date = el('input', { type: 'date', value: P.date || today });
+    var act = el('textarea', { className: 'f', rows: 3, value: P.activity || '' });
+    var done = el('input', { type: 'checkbox', checked: P.done !== false });
+    var goals = el('textarea', { className: 'f', rows: 5, value: Array.isArray(P.goals) ? P.goals.join('\n') : (P.goals || '') });
+    var classNote = el('textarea', { className: 'f', rows: 3, value: P.class_note || '' });
+    var notes = {};  // 生徒ID → メモの欄
+    var keepNotes = (P.notes && typeof P.notes === 'object') ? P.notes : {};
+    var checks = el('div', { className: 'fq-members' });
     var boxes = {};
+    var checkedInit = Array.isArray(P.attendees) ? P.attendees.map(String) : null;
     function fillMembers() {
-      checks.innerHTML = ''; boxes = {};
+      Object.keys(notes).forEach(function (k) { if (notes[k].value.trim()) { keepNotes[k] = notes[k].value; } });   // クラスを選び直しても、書いたメモは消さない
+      checks.innerHTML = ''; boxes = {}; notes = {};
       var ms = (formInfo.students || []).filter(function (s) { return s.class === cls.value; });
       if (!ms.length) { checks.appendChild(el('span', { text: '（クラスを選ぶと、生徒が出ます）' })); }
       ms.forEach(function (s) {
-        var cb = el('input', { type: 'checkbox', checked: true }); boxes[s.id] = cb;
-        checks.appendChild(el('label', {}, [cb, document.createTextNode(s.name)]));
+        var cb = el('input', { type: 'checkbox', checked: checkedInit ? checkedInit.indexOf(String(s.id)) >= 0 : true }); boxes[s.id] = cb;
+        var nt = el('input', { type: 'text', placeholder: 'この子のメモ（任意）', value: keepNotes[s.id] || '' }); notes[s.id] = nt;
+        checks.appendChild(el('div', { className: 'memrow' }, [el('label', {}, [cb, document.createTextNode(s.name)]), nt]));
       });
     }
-    cls.onchange = fillMembers; fillMembers();
-    var ach = el('input', { type: 'checkbox', checked: formPre.achieve !== false });
+    cls.onchange = function () { checkedInit = null; fillMembers(); }; fillMembers();
+    var ach = el('input', { type: 'checkbox', checked: P.achieve !== false });
     var coin = el('select'); ['なし'].concat(formInfo.coins || []).forEach(function (c) { coin.appendChild(el('option', { value: c, text: c })); });
     coin.value = (formInfo.default_coin && (formInfo.coins || []).indexOf(formInfo.default_coin) >= 0) ? formInfo.default_coin : 'なし';
     var qty = el('input', { type: 'text', value: String(formInfo.default_qty || 1) });
     var pub = el('input', { type: 'checkbox' });
+    function collectGoal() {
+      var at = Object.keys(boxes).filter(function (k) { return boxes[k].checked; });
+      var nn = {}; Object.keys(keepNotes).forEach(function (k) { if (String(keepNotes[k]).trim()) { nn[k] = keepNotes[k]; } });
+      Object.keys(notes).forEach(function (k) { if (notes[k].value.trim()) { nn[k] = notes[k].value; } else { delete nn[k]; } });
+      return { cls: cls.value, date: date.value, activity: act.value, goals: goals.value, attendees: at, achieve: ach.checked, coin: coin.value, qty: qty.value, publish: pub.checked,
+               done: done.checked, class_note: classNote.value, notes: nn };
+    }
     body.appendChild(field('クラス', cls, true)); body.appendChild(field('日付', date, true));
     body.appendChild(field('やった（やる）内容：教科書の単元・活動', act));
-    body.appendChild(el('label', { className: 'f' }, [done, document.createTextNode(' レッスンはもう終わった（「〜した」の形にする）')]));
+    body.appendChild(el('label', { className: 'f' }, [done, document.createTextNode(' レッスンはもう終わった（✓：出席・達成・様子・メモも残す／外す：目標を立てるだけ）')]));
     var draft = el('button', { text: '🤖 内容から、目標の下書きを作る', onclick: function () {
       guarded(function () {
         return jcall('form_draft', { cls: cls.value, activity: act.value, done: done.checked }).then(function (r) {
@@ -1874,19 +1899,48 @@
       }, $('formMsg'));
     } });
     body.appendChild(el('div', { className: 'tools' }, [draft]));
-    body.appendChild(field('目標（1行に1つ。「〜する」「〜した」の形）', goals, true));
-    body.appendChild(el('label', { className: 'f', text: '出席の生徒（チェックした生徒が対象）' }));
+    body.appendChild(field('目標（1行に1つ。「〜する」「〜した」の形）', goals));
+    body.appendChild(el('label', { className: 'f', text: '生徒（チェック＝出席。下の欄に、その子のメモ）' }));
     body.appendChild(checks);
     body.appendChild(el('label', { className: 'f' }, [ach, document.createTextNode(' 出席の生徒を、この目標の達成にする（コインが付きます）')]));
+    body.appendChild(field('レッスンの様子（クラス全体。レッスンのあとに）', classNote));
     body.appendChild(field('コイン', coin)); body.appendChild(field('枚数', qty));
     body.appendChild(el('label', { className: 'f' }, [pub, document.createTextNode(' すぐ公開')]));
-    body.appendChild(el('div', { className: 'tools' }, [el('span', { className: 'grow' }), el('button', { text: '📥 ためる', onclick: function () {
-      var at = Object.keys(boxes).filter(function (k) { return boxes[k].checked; });
-      queueForm('lesson_goal', { cls: cls.value, date: date.value, goals: goals.value, attendees: at, achieve: ach.checked, coin: coin.value, qty: qty.value, publish: pub.checked });
-    } }), el('button', { className: 'go', text: '確認へ', onclick: function () {
-      var at = Object.keys(boxes).filter(function (k) { return boxes[k].checked; });
-      submitForm('lesson_goal', { cls: cls.value, date: date.value, goals: goals.value, attendees: at, achieve: ach.checked, coin: coin.value, qty: qty.value, publish: pub.checked });
-    } })]));
+    body.appendChild(el('div', { className: 'tools' }, [
+      el('button', { text: '💾 途中保存', onclick: function () {
+        $('formMsg').textContent = draftPut('lesson_goal', collectGoal()) ? '💾 途中保存しました。閉じても、次に開くと続きから始められます' : '（まだ何も書かれていないので、保存しませんでした）';
+      } }),
+      el('span', { className: 'grow' }),
+      el('button', { text: '📥 ためる', onclick: function () { queueForm('lesson_goal', collectGoal()); } }),
+      el('button', { className: 'go', text: '確認へ', onclick: function () { submitForm('lesson_goal', collectGoal()); } })]));
+    wireAutosave(body, 'lesson_goal', collectGoal);
+    if (dr) { $('formMsg').textContent = '📄 前回の途中保存を開きました（登録すると消えます）'; }
+  }
+
+
+  // ---- 途中保存（このスマホの中に残る。登録したら消える）----
+  function draftKeyOf(k) { return 'navi_draft_' + k; }
+  var DRAFT_SKIP = { date: 1, coin: 1, qty: 1, publish: 1, achieve: 1, done: 1, repeat: 1, attendees: 1 };
+  function draftHasContent(v) {
+    return Object.keys(v || {}).some(function (k) {
+      if (DRAFT_SKIP[k]) { return false; }
+      var x = v[k];
+      if (x && typeof x === 'object') { return Object.keys(x).some(function (y) { return String(Array.isArray(x) ? x[y] : x[y]).trim(); }); }
+      return String(x == null ? '' : x).trim() !== '';
+    });
+  }
+  function draftGet(k) { try { return JSON.parse(localStorage.getItem(draftKeyOf(k)) || 'null'); } catch (e) { return null; } }
+  function draftPut(k, v) {
+    try {
+      if (!draftHasContent(v)) { localStorage.removeItem(draftKeyOf(k)); return false; }
+      localStorage.setItem(draftKeyOf(k), JSON.stringify(v)); return true;
+    } catch (e) { return false; }
+  }
+  function draftClear(k) { try { localStorage.removeItem(draftKeyOf(k)); } catch (e) { } }
+  var draftTimer = null;
+  function wireAutosave(root, key, collect) {      // 書くたびに、少し待ってから自動で途中保存
+    var go = function () { clearTimeout(draftTimer); draftTimer = setTimeout(function () { draftPut(key, collect()); }, 400); };
+    root.addEventListener('input', go); root.addEventListener('change', go);
   }
 
   // ---- ためて送る（フォームをためておいて、あとでまとめて・順番に送る）----
@@ -1901,6 +1955,7 @@
     return String(t).replace(/\s+/g, ' ').slice(0, 40);
   }
   function queueForm(key, values) {
+    draftClear(key); pendingDraftKey = '';
     formQ.push({ cid: 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), key: key, values: values, at: Date.now() });
     saveFormQ();
     $('formMsg').textContent = '📥 ためました（' + formQ.length + '件）。下の「まとめて送る」で、順番にPCへ送ります';
@@ -1944,7 +1999,9 @@
     guarded(function () { return round(); }, msg);
   }
 
+  var pendingDraftKey = '';
   function submitForm(key, values) {
+    draftPut(key, values); pendingDraftKey = key;      // 確認でやめても書いた内容が残る（実行できたら消える）
     var msg = $('formMsg');
     if (pcOnline === false) {   // PCにつながっていない → 自動でためる
       queueForm(key, values);
