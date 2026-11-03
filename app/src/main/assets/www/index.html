@@ -123,6 +123,18 @@
   .tools { display:flex; gap:8px; margin-top:8px; align-items:center; }
   .tools .grow { flex:1; }
   .msg { color:var(--note); font-size:14px; min-height:20px; margin-top:8px; }
+  .secTitle { font-size:12px; letter-spacing:.08em; color:var(--sub); margin:18px 2px 8px; font-weight:700; }
+  .secGrid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .secGrid button { display:flex; flex-direction:column; align-items:flex-start; gap:6px; text-align:left; font-size:14px; font-weight:600; min-height:78px; line-height:1.35; padding:12px 12px; background:var(--card); border:1px solid var(--line); box-shadow:var(--shadow); border-radius:16px; color:var(--text); }
+  .secGrid .ico { font-size:22px; line-height:1; }
+  .secHome { background:var(--card); border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:16px; padding:12px 14px; margin-top:6px; box-shadow:var(--shadow); }
+  .secHomeT { font-size:13px; font-weight:800; color:var(--accent); margin-bottom:6px; }
+  .secHomeB { font-size:14px; line-height:1.6; white-space:pre-wrap; word-break:break-word; color:var(--text); }
+  .fq { display:flex; gap:8px; align-items:center; padding:8px 0; border-top:1px solid var(--line); }
+  .fq:first-of-type { border-top:none; }
+  .fqb { flex:1; min-width:0; font-size:14px; }
+  .fqs { color:var(--sub); font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .fqe { color:var(--ng); font-size:13px; margin-top:2px; }
 </style>
 </head>
 <body>
@@ -142,6 +154,7 @@
   <button id="tabParent">💌 保護者</button>
   <button id="tabOutbox">📝 書き溜め<span class="badge" id="obBadge" style="display:none">0</span></button>
   <button id="tabList">📋 一覧</button>
+  <button id="tabSec">🧭 秘書</button>
   <button id="tabDate">🔎 日付</button>
   <button id="tabForm">📝 フォーム</button>
   <button id="tabNotices">🔔 お知らせ<span class="badge" id="badge" style="display:none">0</span></button>
@@ -262,6 +275,13 @@
   </div>
   <div class="msg" id="panelMsg"></div>
 </div>
+  <div class="pane" id="paneSec">
+    <div id="secBody"></div>
+    <div id="secOut" class="panelText" style="display:none"></div>
+    <div id="secForm" style="margin-top:8px"></div>
+    <div class="msg" style="font-size:13px;color:var(--sub);margin-top:12px">名前が必要なものは、💬会話で話しかけてください：「ゆきは最近どう？」「Aクラスの進み具合」「ゆきの振替」。外から（Wi-Fiなし）のときは、生徒の名前は出ません。</div>
+  </div>
+
 <div class="pane" id="paneDate">
   <div class="row" style="align-items:center;gap:6px">
     <button id="dPrev">◀</button><input type="date" id="dDate" style="flex:1"><button id="dNext">▶</button>
@@ -278,7 +298,8 @@
 <div class="pane" id="paneForm">
   <label>フォーム</label><select id="formSel"></select>
   <div id="formBody"></div>
-  <div class="msg" id="formMsg"></div>
+  <div id="formQ"></div>
+    <div class="msg" id="formMsg"></div>
 </div>
 
 <div id="pendingBar"><span id="pendingText"></span><button id="pendingGo">確認して送る</button></div>
@@ -1564,8 +1585,8 @@
   }
 
   var curTab = 'chat';
-  var PANES = { chat: 'paneChat', sched: 'paneSched', lesson: 'paneLesson', todo: 'paneTodo', parent: 'paneParent', outbox: 'paneOutbox', notices: 'paneNotices', list: 'paneList', date: 'paneDate', form: 'paneForm' };
-  var TABS = { chat: 'tabChat', sched: 'tabSched', lesson: 'tabLesson', todo: 'tabTodo', parent: 'tabParent', outbox: 'tabOutbox', notices: 'tabNotices', list: 'tabList', date: 'tabDate', form: 'tabForm' };
+  var PANES = { chat: 'paneChat', sched: 'paneSched', lesson: 'paneLesson', todo: 'paneTodo', parent: 'paneParent', outbox: 'paneOutbox', notices: 'paneNotices', list: 'paneList', sec: 'paneSec', date: 'paneDate', form: 'paneForm' };
+  var TABS = { chat: 'tabChat', sched: 'tabSched', lesson: 'tabLesson', todo: 'tabTodo', parent: 'tabParent', outbox: 'tabOutbox', notices: 'tabNotices', list: 'tabList', sec: 'tabSec', date: 'tabDate', form: 'tabForm' };
   function showTab(t) {
     if (!PANES[t]) { t = 'chat'; }
     curTab = t;
@@ -1577,6 +1598,7 @@
     $('chips').style.display = chat ? '' : 'none';
     document.querySelector('footer').style.display = chat ? '' : 'none';
     updatePendingBar();
+    try { $(TABS[t]).scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); } catch (e) { }
     if (t === 'notices') { loadNotices(); }
     if (t === 'sched') { renderSched(); fetchSnapshot(); }
     if (t === 'outbox') { renderOutbox(); }
@@ -1584,13 +1606,15 @@
     if (t === 'todo') { renderTodos(); fetchSnapshot(); }
     if (t === 'parent') { loadParents(); }
     if (t === 'list') { loadPanel('panel', ''); }
-    if (t === 'form') { sel.value = formKey; loadFormInfo(function () { renderForm(); }); }
+    if (t === 'sec') { buildSecretary(); }
+    if (t === 'form') { sel.value = formKey; loadFormInfo(function () { renderForm(); renderFormQ(); }); }
   }
   $('tabSched').onclick = function () { showTab('sched'); };
   $('tabLesson').onclick = function () { showTab('lesson'); };
   $('tabTodo').onclick = function () { showTab('todo'); };
   $('tabParent').onclick = function () { showTab('parent'); };
   $('tabList').onclick = function () { showTab('list'); };
+  $('tabSec').onclick = function () { showTab('sec'); };
   $('tabDate').onclick = function () { showTab('date'); };
   $('tabForm').onclick = function () { showTab('form'); };
 
@@ -1645,6 +1669,55 @@
     var t = $('jobText').value.trim(); if (!t) { return; }
     loadPanel('job_add', t).then(function () { $('jobText').value = ''; panelTab = 'shelf'; renderPanel(); });
   };
+
+
+  // ---- 秘書（ボタンを押すだけで、秘書の機能を呼ぶ）----
+  var SEC_GROUPS = [
+    ['いま', [['👉 次、何する？', '次、何する？'], ['📝 今日必要なフォーム', '今日必要なフォーム出して'], ['🧹 たまっているもの', 'たまってるものある？']]],
+    ['レッスン・予定', [['📘 次のレッスンの準備', '次のレッスンの準備'], ['🗓 今週の見通し', '今週の見通し'], ['📆 来週への準備', '来週の準備'], ['🕐 あいている時間', '来週で1時間あいてる日は？']]],
+    ['生徒・保護者', [['👀 気になる生徒', '気になる生徒は？'], ['📮 欠席の子へのフォロー', '欠席の子にフォローしたい'], ['✉ 連絡もれチェック', '連絡忘れてない？'], ['💬 返事待ちの保護者', '返信してない保護者は？'], ['🤝 面談の候補日（LINE文）', '面談の候補日を出して']]],
+    ['ふりかえり・健康', [['🗒 今月のふりかえり', '今月のふりかえり'], ['🛌 働きすぎチェック', '働きすぎてない？'], ['📣 インスタの材料', 'インスタに何載せよう'], ['🩺 動作点検', '点検して']]]
+  ];
+  var secBuilt = false;
+  function buildSecretary() {
+    if (secBuilt) { return; }
+    secBuilt = true;
+    var body = $('secBody');
+    var home = el('div', { className: 'secHome' });
+    home.appendChild(el('div', { className: 'secHomeT', text: '☀ 今日の要点' }));
+    var homeTxt = el('div', { className: 'secHomeB', text: '読み込み中…' });
+    home.appendChild(homeTxt);
+    body.appendChild(home);
+    jcall('panel', '').then(function (r) {
+      var t = (r && r.texts && r.texts.today) || '';
+      var lines = t.split('\n').filter(function (x) { return x.trim(); });
+      homeTxt.textContent = lines.slice(0, 9).join('\n') + (lines.length > 9 ? '\n…（「📋 一覧」の★今日で、全部見られます）' : '');
+    }).catch(function () { homeTxt.textContent = '（PCにつながると、ここに今日の要点が出ます）'; });
+    SEC_GROUPS.forEach(function (g) {
+      body.appendChild(el('div', { className: 'secTitle', text: g[0] }));
+      var grid = el('div', { className: 'secGrid' });
+      g[1].forEach(function (b) {
+        var i = b[0].indexOf(' ');
+        var btn = el('button', { onclick: function () { secCall(b[1]); } }, [el('span', { className: 'ico', text: b[0].slice(0, i) }), el('span', { className: 'lab', text: b[0].slice(i + 1) })]);
+        grid.appendChild(btn);
+      });
+      body.appendChild(grid);
+    });
+  }
+  function secCall(phrase) {
+    var out = $('secOut'); out.style.display = 'block'; out.textContent = '考え中…（PCが読んでいます）';
+    $('secForm').innerHTML = '';
+    return guarded(function () {
+      return jcall('send', phrase).then(function (st) {
+        out.textContent = (st && st.reply) || '（答えがありませんでした）';
+        if (st && st.form_offer) {
+          var b = el('button', { className: 'go', text: '📝 フォームを開く' });
+          b.onclick = function () { openForm(st.form_offer.key, st.form_offer.prefill || {}); };
+          $('secForm').appendChild(b);
+        }
+      });
+    }, out);
+  }
 
   // ---- 日付 ----
   function isoOf2(d) { var m = ('0' + (d.getMonth() + 1)).slice(-2), dd = ('0' + d.getDate()).slice(-2); return d.getFullYear() + '-' + m + '-' + dd; }
@@ -1707,7 +1780,10 @@
     var dl = el('datalist', { id: 'stuList' });
     (formInfo.students || []).forEach(function (s) { dl.appendChild(el('option', { value: s.name })); });
     body.appendChild(dl);
-    body.appendChild(el('div', { className: 'tools' }, [el('span', { className: 'grow' }), el('button', { className: 'go', text: '確認へ', onclick: function () {
+    body.appendChild(el('div', { className: 'tools' }, [el('span', { className: 'grow' }), el('button', { text: '📥 ためる', onclick: function () {
+      var values = {}; Object.keys(inputs).forEach(function (k) { values[k] = inputs[k].value; });
+      queueForm(formKey, values);
+    } }), el('button', { className: 'go', text: '確認へ', onclick: function () {
       var values = {}; Object.keys(inputs).forEach(function (k) { values[k] = inputs[k].value; });
       submitForm(formKey, values);
     } })]));
@@ -1791,13 +1867,77 @@
     body.appendChild(el('label', { className: 'f' }, [ach, document.createTextNode(' 出席の生徒を、この目標の達成にする（コインが付きます）')]));
     body.appendChild(field('コイン', coin)); body.appendChild(field('枚数', qty));
     body.appendChild(el('label', { className: 'f' }, [pub, document.createTextNode(' すぐ公開')]));
-    body.appendChild(el('div', { className: 'tools' }, [el('span', { className: 'grow' }), el('button', { className: 'go', text: '確認へ', onclick: function () {
+    body.appendChild(el('div', { className: 'tools' }, [el('span', { className: 'grow' }), el('button', { text: '📥 ためる', onclick: function () {
+      var at = Object.keys(boxes).filter(function (k) { return boxes[k].checked; });
+      queueForm('lesson_goal', { cls: cls.value, date: date.value, goals: goals.value, attendees: at, achieve: ach.checked, coin: coin.value, qty: qty.value, publish: pub.checked });
+    } }), el('button', { className: 'go', text: '確認へ', onclick: function () {
       var at = Object.keys(boxes).filter(function (k) { return boxes[k].checked; });
       submitForm('lesson_goal', { cls: cls.value, date: date.value, goals: goals.value, attendees: at, achieve: ach.checked, coin: coin.value, qty: qty.value, publish: pub.checked });
     } })]));
   }
+
+  // ---- ためて送る（フォームをためておいて、あとでまとめて・順番に送る）----
+  var FORMQ_KEY = 'navi_formq';
+  var formQ = [];
+  try { formQ = JSON.parse(localStorage.getItem(FORMQ_KEY) || '[]') || []; } catch (e) { formQ = []; }
+  function saveFormQ() { try { localStorage.setItem(FORMQ_KEY, JSON.stringify(formQ)); } catch (e) { } renderFormQ(); }
+  function formTitle(key) { var f = FORM_LIST.filter(function (x) { return x[0] === key; })[0]; return f ? f[1] : key; }
+  function formGist(key, v) {
+    var t = v.title || v.text || v.request || v.notes || v.cls || v.students || '';
+    if (key === 'lesson_goal') { t = (v.cls || '') + '　' + String(v.goals || '').split('\n')[0]; }
+    return String(t).replace(/\s+/g, ' ').slice(0, 40);
+  }
+  function queueForm(key, values) {
+    formQ.push({ cid: 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), key: key, values: values, at: Date.now() });
+    saveFormQ();
+    $('formMsg').textContent = '📥 ためました（' + formQ.length + '件）。下の「まとめて送る」で、順番にPCへ送ります';
+  }
+  function renderFormQ() {
+    var box = $('formQ'); if (!box) { return; }
+    box.innerHTML = '';
+    if (!formQ.length) { return; }
+    var card = el('div', { className: 'card' });
+    card.appendChild(el('div', { className: 'secHomeT', text: '📥 ためたフォーム：' + formQ.length + '件（古い順に送ります）' }));
+    formQ.forEach(function (it, i) {
+      var row = el('div', { className: 'fq' });
+      row.appendChild(el('div', { className: 'fqb' }, [
+        el('b', { text: (i + 1) + '. ' + formTitle(it.key) }),
+        el('div', { className: 'fqs', text: formGist(it.key, it.values || {}) }),
+        it.err ? el('div', { className: 'fqe', text: '⚠ ' + it.err }) : el('span')
+      ]));
+      row.appendChild(el('button', { text: '✕', onclick: function () { formQ.splice(i, 1); saveFormQ(); } }));
+      card.appendChild(row);
+    });
+    var tools = el('div', { className: 'tools' }, [el('span', { className: 'grow' }), el('button', { className: 'go', text: '📤 まとめて送る（' + formQ.length + '件）', onclick: sendFormQ })]);
+    card.appendChild(tools);
+    box.appendChild(card);
+  }
+  function sendFormQ() {
+    if (!formQ.length) { return; }
+    var msg = $('formMsg'), sentOk = 0, bad = 0, skip = {};
+    function round() {
+      var chunk = formQ.filter(function (x) { return !skip[x.cid]; }).slice(0, 5);
+      if (!chunk.length) { msg.textContent = (sentOk ? '✅ ' + sentOk + '件を、順番に登録しました。' : '') + (bad ? bad + '件は直す所があります（↑の ⚠ を見て、✕で消して入れ直してください）' : ''); return Promise.resolve(); }
+      return jcall('form_batch', { items: chunk.map(function (x) { return { cid: x.cid, key: x.key, values: x.values }; }) }).then(function (r) {
+        (r.batch || []).forEach(function (b) {
+          var it = formQ.filter(function (x) { return x.cid === b.cid; })[0];
+          if (b.ok) { sentOk++; formQ = formQ.filter(function (x) { return x.cid !== b.cid; }); }
+          else { bad++; skip[b.cid] = true; if (it) { it.err = b.message; } }
+        });
+        saveFormQ();
+        return round();
+      });
+    }
+    guarded(function () { return round(); }, msg);
+  }
+
   function submitForm(key, values) {
     var msg = $('formMsg');
+    if (pcOnline === false) {   // PCにつながっていない → 自動でためる
+      queueForm(key, values);
+      msg.textContent = '📥 PCにつながっていないので、ためました（' + formQ.length + '件）。つながったら「まとめて送る」を押してください';
+      return;
+    }
     guarded(function () {
       return jcall('form_submit', { key: key, values: values }).then(function (st) { showTab('chat'); showState(st); });
     }, msg);
