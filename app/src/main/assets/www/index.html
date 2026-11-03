@@ -110,6 +110,18 @@
   label { display:block; font-size:13px; color:var(--sub); margin:12px 0 4px; }
   .sw { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--card2); }
   .sw input { width:24px; height:24px; }
+  .panelText { background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:12px; font-size:14px; line-height:1.55; white-space:pre-wrap; word-break:break-word; margin-top:8px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:12px; margin-top:8px; }
+  .card .q { color:var(--ng); font-weight:700; margin-bottom:8px; white-space:pre-wrap; }
+  .opts { display:flex; flex-wrap:wrap; gap:8px; }
+  label.f { display:block; margin-top:12px; font-size:14px; color:var(--sub); }
+  label.f b { color:var(--ng); font-weight:normal; font-size:12px; }
+  select, input[type=date] { width:100%; font-family:inherit; font-size:16px; padding:10px; border-radius:14px; border:1px solid var(--line); background:var(--bg); color:var(--text); margin-top:4px; }
+  textarea.f { flex:none; }
+  .checks { display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:6px; font-size:16px; }
+  .checks label { display:flex; align-items:center; gap:6px; margin:0; color:var(--text); font-size:16px; }
+  .tools { display:flex; gap:8px; margin-top:8px; align-items:center; }
+  .tools .grow { flex:1; }
   .msg { color:var(--note); font-size:14px; min-height:20px; margin-top:8px; }
 </style>
 </head>
@@ -129,6 +141,9 @@
   <button id="tabTodo">✅ やること</button>
   <button id="tabParent">💌 保護者</button>
   <button id="tabOutbox">📝 書き溜め<span class="badge" id="obBadge" style="display:none">0</span></button>
+  <button id="tabList">📋 一覧</button>
+  <button id="tabDate">🔎 日付</button>
+  <button id="tabForm">📝 フォーム</button>
   <button id="tabNotices">🔔 お知らせ<span class="badge" id="badge" style="display:none">0</span></button>
 </div>
 
@@ -231,6 +246,39 @@
 </div>
 <div class="pane" id="paneNotices">
   <div id="noticeList"></div>
+</div>
+
+<div class="pane" id="paneList">
+  <div class="row" style="flex-wrap:wrap;gap:6px">
+    <button data-p="today">★今日</button><button data-p="todo">✅Todo</button><button data-p="week">📅予定</button><button data-p="shelf">📥依頼箱</button>
+    <button id="panelReload">🔄</button>
+  </div>
+  <div id="panelQ"></div>
+  <div id="panelText" class="panelText">読み込み中…</div>
+  <div class="form" id="jobAddCard" style="margin-top:10px">
+    <div class="sub">NAVIに任せたいことを、依頼箱に入れる（複数行は1行に1件。「以下の内容を〜」で始めると全部で1件）</div>
+    <textarea id="jobText" class="f" rows="3" style="margin-top:6px"></textarea>
+    <div class="row" style="margin-top:6px"><span style="flex:1"></span><button class="go" id="jobAddBtn">📥 入れる</button></div>
+  </div>
+  <div class="msg" id="panelMsg"></div>
+</div>
+<div class="pane" id="paneDate">
+  <div class="row" style="align-items:center;gap:6px">
+    <button id="dPrev">◀</button><input type="date" id="dDate" style="flex:1"><button id="dNext">▶</button>
+  </div>
+  <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:8px">
+    <button data-w="今日">今日</button><button data-w="昨日">昨日</button><button data-w="今週">今週</button><button data-w="先週">先週</button><button data-w="今月">今月</button><button data-w="先月">先月</button>
+  </div>
+  <label>言葉がいつ出てくるか</label><input type="text" id="dKw" placeholder="例：保護者面談">
+  <div class="row" style="margin-top:6px"><span style="flex:1"></span><button id="dFind">いつ？</button></div>
+  <label>生徒の経過（同じWi-Fiのときだけ）</label><input type="text" id="dStu" placeholder="例：ゆき">
+  <div class="row" style="margin-top:6px"><span style="flex:1"></span><button id="dStuBtn">経過</button></div>
+  <div id="dateOut" class="panelText" style="display:none"></div>
+</div>
+<div class="pane" id="paneForm">
+  <label>フォーム</label><select id="formSel"></select>
+  <div id="formBody"></div>
+  <div class="msg" id="formMsg"></div>
 </div>
 
 <div id="pendingBar"><span id="pendingText"></span><button id="pendingGo">確認して送る</button></div>
@@ -617,6 +665,11 @@
     var cancel = document.createElement('button'); cancel.textContent = 'やめる';
     cancel.onclick = function () { send('cancel', ''); };
     row.appendChild(run); row.appendChild(cancel); el.appendChild(row);
+    if (st.form_offer) {
+      var fb = document.createElement('button'); fb.textContent = '📝 フォームで入力'; fb.style.marginTop = '8px';
+      fb.onclick = function () { openForm(st.form_offer.key, st.form_offer.prefill || {}); };
+      el.appendChild(fb);
+    }
     $('paneChat').scrollTop = $('paneChat').scrollHeight;
     speakIt();
   }
@@ -1504,8 +1557,8 @@
   }
 
   var curTab = 'chat';
-  var PANES = { chat: 'paneChat', sched: 'paneSched', lesson: 'paneLesson', todo: 'paneTodo', parent: 'paneParent', outbox: 'paneOutbox', notices: 'paneNotices' };
-  var TABS = { chat: 'tabChat', sched: 'tabSched', lesson: 'tabLesson', todo: 'tabTodo', parent: 'tabParent', outbox: 'tabOutbox', notices: 'tabNotices' };
+  var PANES = { chat: 'paneChat', sched: 'paneSched', lesson: 'paneLesson', todo: 'paneTodo', parent: 'paneParent', outbox: 'paneOutbox', notices: 'paneNotices', list: 'paneList', date: 'paneDate', form: 'paneForm' };
+  var TABS = { chat: 'tabChat', sched: 'tabSched', lesson: 'tabLesson', todo: 'tabTodo', parent: 'tabParent', outbox: 'tabOutbox', notices: 'tabNotices', list: 'tabList', date: 'tabDate', form: 'tabForm' };
   function showTab(t) {
     if (!PANES[t]) { t = 'chat'; }
     curTab = t;
@@ -1523,11 +1576,226 @@
     if (t === 'lesson') { renderLessons(); fetchSnapshot(); }
     if (t === 'todo') { renderTodos(); fetchSnapshot(); }
     if (t === 'parent') { loadParents(); }
+    if (t === 'list') { loadPanel('panel', ''); }
+    if (t === 'form') { sel.value = formKey; loadFormInfo(function () { renderForm(); }); }
   }
   $('tabSched').onclick = function () { showTab('sched'); };
   $('tabLesson').onclick = function () { showTab('lesson'); };
   $('tabTodo').onclick = function () { showTab('todo'); };
   $('tabParent').onclick = function () { showTab('parent'); };
+  $('tabList').onclick = function () { showTab('list'); };
+  $('tabDate').onclick = function () { showTab('date'); };
+  $('tabForm').onclick = function () { showTab('form'); };
+
+  function el(tag, props, kids) {
+    var e = document.createElement(tag);
+    Object.keys(props || {}).forEach(function (k) { if (k === 'text') { e.textContent = props[k]; } else { e[k] = props[k]; } });
+    (kids || []).forEach(function (c) { e.appendChild(c); });
+    return e;
+  }
+  function jcall(kind, obj) { return talkToPC(kind, typeof obj === 'string' ? obj : JSON.stringify(obj || {})); }
+  function guarded(fn, msgEl) {      // 通信中の二重押しを防ぐ
+    if (busy) { return; }
+    setBusy(true);
+    if (msgEl) { msgEl.textContent = '少し待ってください…（PCが処理しています）'; }
+    return fn().catch(function (e) { if (msgEl) { msgEl.textContent = '❌ ' + e.message; } }).then(function () { setBusy(false); });
+  }
+
+  // ---- 一覧・依頼箱 ----
+  var panelTab = 'today', panelData = null;
+  function renderPanel() {
+    document.querySelectorAll('[data-p]').forEach(function (b) { b.className = (b.getAttribute('data-p') === panelTab) ? 'go' : ''; });
+    $('panelText').textContent = (panelData && panelData.texts && panelData.texts[panelTab]) || '（まだありません）';
+    var qEl = $('panelQ'); qEl.innerHTML = '';
+    var q = panelData && panelData.question;
+    $('jobAddCard').style.display = '';
+    if (q) {
+      var card = el('div', { className: 'card' }, [el('div', { className: 'q', text: '❓ ' + q.id + '：' + q.message })]);
+      var opts = el('div', { className: 'opts' });
+      (q.options || []).forEach(function (o) {
+        opts.appendChild(el('button', { text: o, onclick: function () { answerQ(q.id, o); } }));
+      });
+      if (/目標/.test(q.category || '') || /目標/.test(q.message || '')) {
+        opts.appendChild(el('button', { text: '📝 フォームで入力', onclick: function () { openForm('lesson_goal', {}); } }));
+      }
+      opts.appendChild(el('button', { text: '✕ 取りやめ', onclick: function () { answerQ(q.id, null); } }));
+      card.appendChild(opts);
+      qEl.appendChild(card);
+    }
+  }
+  function loadPanel(kind, text) {
+    return guarded(function () {
+      return talkToPC(kind, text || '').then(function (r) {
+        panelData = r; renderPanel();
+        $('panelMsg').textContent = r.reply || '';
+      });
+    }, $('panelMsg'));
+  }
+  function answerQ(id, ans) { loadPanel('answer', JSON.stringify({ id: id, answer: ans })); }
+  document.querySelectorAll('[data-p]').forEach(function (b) { b.onclick = function () { panelTab = b.getAttribute('data-p'); renderPanel(); }; });
+  $('panelReload').onclick = function () { loadPanel('panel', ''); };
+  $('jobAddBtn').onclick = function () {
+    var t = $('jobText').value.trim(); if (!t) { return; }
+    loadPanel('job_add', t).then(function () { $('jobText').value = ''; panelTab = 'shelf'; renderPanel(); });
+  };
+
+  // ---- 日付 ----
+  function isoOf2(d) { var m = ('0' + (d.getMonth() + 1)).slice(-2), dd = ('0' + d.getDate()).slice(-2); return d.getFullYear() + '-' + m + '-' + dd; }
+  $('dDate').value = isoOf2(new Date());
+  function dayCall(mode, value) {
+    var out = $('dateOut'); out.style.display = 'block'; out.textContent = '調べています…';
+    return guarded(function () {
+      return jcall('day', { mode: mode, value: value }).then(function (r) { out.textContent = r.reply || ''; });
+    }, out);
+  }
+  $('dDate').onchange = function () { dayCall('day', $('dDate').value); };
+  function shiftDay(n) { var d = new Date($('dDate').value || new Date()); d.setDate(d.getDate() + n); $('dDate').value = isoOf2(d); dayCall('day', $('dDate').value); }
+  $('dPrev').onclick = function () { shiftDay(-1); };
+  $('dNext').onclick = function () { shiftDay(1); };
+  document.querySelectorAll('[data-w]').forEach(function (b) { b.onclick = function () { dayCall('when', b.getAttribute('data-w')); }; });
+  $('dFind').onclick = function () { var v = $('dKw').value.trim(); if (v) { dayCall('find', v); } };
+  $('dStuBtn').onclick = function () { var v = $('dStu').value.trim(); if (v) { dayCall('student', v); } };
+
+  // ---- フォーム ----
+  var formInfo = null, formKey = 'lesson_goal', formPre = {};
+  var FORM_LIST = [['lesson_goal', '目標（レッスン）'], ['todo', 'Todo'], ['event', '予定'], ['student_note', '生徒メモ'], ['parent_message', '保護者連絡'], ['report', '月の報告書'], ['job', '依頼箱（任せる）'], ['todo_manage', 'Todo管理']];
+  var sel = $('formSel');
+  FORM_LIST.forEach(function (f) { sel.appendChild(el('option', { value: f[0], text: f[1] })); });
+  sel.onchange = function () { formKey = sel.value; formPre = {}; renderForm(); };
+  function loadFormInfo(then) {
+    if (formInfo) { then(); return; }
+    guarded(function () {
+      return jcall('form_info', {}).then(function (r) { formInfo = r; then(); });
+    }, $('formMsg')).then(function () { if (formInfo) { $('formMsg').textContent = ''; } });
+  }
+  function openForm(key, pre) { formKey = key; formPre = pre || {}; showTab('form'); }
+
+  function field(label, node, required) {
+    var l = el('label', { className: 'f' }); l.appendChild(document.createTextNode(label + ' '));
+    if (required) { l.appendChild(el('b', { text: '＊必須' })); }
+    l.appendChild(node); return l;
+  }
+  function renderForm() {
+    var body = $('formBody'); body.innerHTML = ''; $('formMsg').textContent = '';
+    if (!formInfo) { return; }
+    sel.value = formKey;
+    if (formKey === 'lesson_goal') { renderGoalForm(body); return; }
+    if (formKey === 'todo_manage') { renderTodoManage(body); return; }
+    var spec = formInfo.forms[formKey]; if (!spec) { return; }
+    body.appendChild(el('div', { className: 'msg', text: spec.hint }));
+    var inputs = {};
+    spec.fields.forEach(function (f) {
+      var node;
+      if (f.kind === 'lines') { node = el('textarea', { className: 'f', rows: 4 }); }
+      else if (f.kind === 'choice') {
+        node = el('select'); (f.options || []).forEach(function (o) { node.appendChild(el('option', { value: o, text: o || '（選ばない）' })); });
+      } else { node = el('input', { type: 'text' }); if (f.kind === 'student') { node.setAttribute('list', 'stuList'); } }
+      if (f.kind === 'choice' && f.default) { node.value = f.default; }
+      var pv = formPre[f.name]; if (pv) {
+        if (f.kind === 'choice') { var hit = (f.options || []).filter(function (o) { return o === pv || o.split('：')[0] === pv; })[0]; if (hit !== undefined) { node.value = hit; } }
+        else { node.value = Array.isArray(pv) ? pv.join('、') : String(pv); }
+      }
+      inputs[f.name] = node; body.appendChild(field(f.label, node, f.required));
+    });
+    var dl = el('datalist', { id: 'stuList' });
+    (formInfo.students || []).forEach(function (s) { dl.appendChild(el('option', { value: s.name })); });
+    body.appendChild(dl);
+    body.appendChild(el('div', { className: 'tools' }, [el('span', { className: 'grow' }), el('button', { className: 'go', text: '確認へ', onclick: function () {
+      var values = {}; Object.keys(inputs).forEach(function (k) { values[k] = inputs[k].value; });
+      submitForm(formKey, values);
+    } })]));
+  }
+
+  function renderTodoManage(body) {
+    body.appendChild(el('div', { className: 'msg', text: '未完了のTodo（期限の近い順）。チェックして、下のボタンで操作します' }));
+    var list = el('div', { className: 'checks', style: 'flex-direction:column;flex-wrap:nowrap;gap:8px' });
+    body.appendChild(list);
+    var boxes = {}, rows = [];
+    function draw(items) {
+      rows = items || []; list.innerHTML = ''; boxes = {};
+      if (!rows.length) { list.appendChild(el('span', { text: 'いま、未完了のTodoはありません' })); }
+      rows.forEach(function (r) {
+        var cb = el('input', { type: 'checkbox' }); boxes[r.id] = cb;
+        var t = r.text + (r.due ? '　〆' + r.due.slice(5).replace('-', '/') : '') + (r.today ? '　★今日' : '') + (r.doing ? '　▶進行中' : '');
+        list.appendChild(el('label', {}, [cb, document.createTextNode(t)]));
+      });
+    }
+    function ids() { return Object.keys(boxes).filter(function (k) { return boxes[k].checked; }); }
+    function act(op, value) {
+      var sel = ids(); if (!sel.length) { $('formMsg').textContent = '⚠ Todoを選んでください'; return; }
+      if (op === 'delete' && !confirm(sel.length + '件のTodoを消しますか？（ゴミ箱に30日残ります）')) { return; }
+      guarded(function () {
+        return jcall('todo_act', { op: op, ids: sel, value: value || '' }).then(function (r) { draw(r.todos); $('formMsg').textContent = '✅ ' + (r.reply || ''); });
+      }, $('formMsg'));
+    }
+    var bar = el('div', { className: 'opts' });
+    [['✔ 完了', 'done'], ['★ 今日やる', 'today'], ['▶ 進行中', 'doing'], ['○ 未着手', 'plain'], ['🗑 消す', 'delete']].forEach(function (b) {
+      bar.appendChild(el('button', { text: b[0], onclick: function () { act(b[1]); } }));
+    });
+    body.appendChild(bar);
+    var due = el('input', { type: 'text', placeholder: '例：あした／11/5（空＝期限なし）' });
+    body.appendChild(field('期限を変える', due));
+    body.appendChild(el('div', { className: 'tools' }, [el('span', { className: 'grow' }), el('button', { text: '期限を変える', onclick: function () { act('due', due.value); } })]));
+    guarded(function () { return jcall('todo_list', {}).then(function (r) { draw(r.todos); $('formMsg').textContent = ''; }); }, $('formMsg'));
+  }
+  function renderGoalForm(body) {
+    var today = isoOf2(new Date());
+    body.appendChild(el('div', { className: 'msg', text: 'クラス・日付・内容を入れて、目標を決める。出席の生徒は、そのまま達成にできます（レッスンのあとでもOK）' }));
+    var cls = el('select'); cls.appendChild(el('option', { value: '', text: '（選んでください）' }));
+    formInfo.classes.forEach(function (c) { cls.appendChild(el('option', { value: c, text: c })); });
+    if (formPre.cls) { cls.value = formPre.cls; }
+    var date = el('input', { type: 'date', value: formPre.date || today });
+    var act = el('textarea', { className: 'f', rows: 3, value: formPre.activity || '' });
+    var done = el('input', { type: 'checkbox', checked: true });
+    var goals = el('textarea', { className: 'f', rows: 5, value: Array.isArray(formPre.goals) ? formPre.goals.join('\n') : (formPre.goals || '') });
+    var checks = el('div', { className: 'checks' });
+    var boxes = {};
+    function fillMembers() {
+      checks.innerHTML = ''; boxes = {};
+      var ms = (formInfo.students || []).filter(function (s) { return s.class === cls.value; });
+      if (!ms.length) { checks.appendChild(el('span', { text: '（クラスを選ぶと、生徒が出ます）' })); }
+      ms.forEach(function (s) {
+        var cb = el('input', { type: 'checkbox', checked: true }); boxes[s.id] = cb;
+        checks.appendChild(el('label', {}, [cb, document.createTextNode(s.name)]));
+      });
+    }
+    cls.onchange = fillMembers; fillMembers();
+    var ach = el('input', { type: 'checkbox', checked: formPre.achieve !== false });
+    var coin = el('select'); ['なし'].concat(formInfo.coins || []).forEach(function (c) { coin.appendChild(el('option', { value: c, text: c })); });
+    coin.value = (formInfo.default_coin && (formInfo.coins || []).indexOf(formInfo.default_coin) >= 0) ? formInfo.default_coin : 'なし';
+    var qty = el('input', { type: 'text', value: String(formInfo.default_qty || 1) });
+    var pub = el('input', { type: 'checkbox' });
+    body.appendChild(field('クラス', cls, true)); body.appendChild(field('日付', date, true));
+    body.appendChild(field('やった（やる）内容：教科書の単元・活動', act));
+    body.appendChild(el('label', { className: 'f' }, [done, document.createTextNode(' レッスンはもう終わった（「〜した」の形にする）')]));
+    var draft = el('button', { text: '🤖 内容から、目標の下書きを作る', onclick: function () {
+      guarded(function () {
+        return jcall('form_draft', { cls: cls.value, activity: act.value, done: done.checked }).then(function (r) {
+          var cur = goals.value.split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
+          (r.goals || []).forEach(function (g) { if (cur.indexOf(g) < 0) { cur.push(g); } });
+          goals.value = cur.join('\n'); $('formMsg').textContent = '下書きを入れました。直してから「確認へ」を押してください';
+        });
+      }, $('formMsg'));
+    } });
+    body.appendChild(el('div', { className: 'tools' }, [draft]));
+    body.appendChild(field('目標（1行に1つ。「〜する」「〜した」の形）', goals, true));
+    body.appendChild(el('label', { className: 'f', text: '出席の生徒（チェックした生徒が対象）' }));
+    body.appendChild(checks);
+    body.appendChild(el('label', { className: 'f' }, [ach, document.createTextNode(' 出席の生徒を、この目標の達成にする（コインが付きます）')]));
+    body.appendChild(field('コイン', coin)); body.appendChild(field('枚数', qty));
+    body.appendChild(el('label', { className: 'f' }, [pub, document.createTextNode(' すぐ公開')]));
+    body.appendChild(el('div', { className: 'tools' }, [el('span', { className: 'grow' }), el('button', { className: 'go', text: '確認へ', onclick: function () {
+      var at = Object.keys(boxes).filter(function (k) { return boxes[k].checked; });
+      submitForm('lesson_goal', { cls: cls.value, date: date.value, goals: goals.value, attendees: at, achieve: ach.checked, coin: coin.value, qty: qty.value, publish: pub.checked });
+    } })]));
+  }
+  function submitForm(key, values) {
+    var msg = $('formMsg');
+    guarded(function () {
+      return jcall('form_submit', { key: key, values: values }).then(function (st) { showTab('chat'); showState(st); });
+    }, msg);
+  }
+
 
   // ---- 保護者のメッセージ（同じWi-Fiの直結のときだけ。GASには通さない） ----
   function copyText(t) {
