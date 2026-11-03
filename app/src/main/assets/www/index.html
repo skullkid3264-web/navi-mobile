@@ -1590,6 +1590,7 @@
   function showTab(t) {
     if (!PANES[t]) { t = 'chat'; }
     curTab = t;
+    try { localStorage.setItem('navi_tab', t); } catch (e) { }
     Object.keys(PANES).forEach(function (k) {
       $(PANES[k]).className = 'pane' + (k === t ? ' on' : '');
       $(TABS[k]).className = k === t ? 'on' : '';
@@ -1744,10 +1745,12 @@
   sel.onchange = function () { formKey = sel.value; formPre = {}; renderForm(); };
   function loadFormInfo(then) {
     if (formInfo) { then(); return; }
+    if (busy) { setTimeout(function () { loadFormInfo(then); }, 300); return; }   // 通信中なら、終わるのを待ってからやり直す
     var cached = null;
     try { cached = JSON.parse(localStorage.getItem('navi_forminfo') || 'null'); } catch (e) { cached = null; }
     guarded(function () {
       return jcall('form_info', {}).then(function (r) {
+        if (!r || !r.forms) { throw new Error('フォームの形を受け取れませんでした'); }
         formInfo = r; try { localStorage.setItem('navi_forminfo', JSON.stringify(r)); } catch (e) { }
         then();
       }).catch(function (e) {
@@ -2003,6 +2006,16 @@
   document.querySelectorAll('#chips button').forEach(function (b) {
     b.onclick = function () { send('send', b.getAttribute('data-q')); };
   });
+
+  // ---- 書きかけを残す／最後のタブを覚える ----
+  (function () {
+    var tx = document.getElementById('text');
+    if (!tx) { return; }
+    try { var d = localStorage.getItem('navi_draft'); if (d && !tx.value) { tx.value = d; } } catch (e) { }
+    tx.addEventListener('input', function () { try { localStorage.setItem('navi_draft', tx.value); } catch (e) { } });
+    var sb = document.getElementById('sendBtn');
+    if (sb) { sb.addEventListener('click', function () { setTimeout(function () { if (!tx.value) { try { localStorage.removeItem('navi_draft'); } catch (e) { } } }, 0); }); }
+  })();
   var ta = $('text');
   ta.addEventListener('input', function () { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 120) + 'px'; });
 
@@ -2178,6 +2191,7 @@
   }
 
   refreshInfo();
+  try { var lt = localStorage.getItem('navi_tab'); if (lt && lt !== 'chat' && PANES[lt] && info.paired && ['list', 'sec', 'form'].indexOf(lt) < 0) { showTab(lt); } } catch (e) { }   // 通信が要るタブは、起動直後に自動で開かない
   if (info.paired) {
     say('ai', 'N.A.V.I.です。🎤を押して話しかけてください。内容を確認して「実行」と言うか、ボタンを押すと動きます。');
     if (!info.canNotify) { A.requestNotify(); }
