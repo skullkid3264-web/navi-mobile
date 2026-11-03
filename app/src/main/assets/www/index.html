@@ -135,6 +135,7 @@
   .fqb { flex:1; min-width:0; font-size:14px; }
   .fqs { color:var(--sub); font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .fqe { color:var(--ng); font-size:13px; margin-top:2px; }
+.pickrow{display:flex;gap:6px;align-items:center}.pickrow input[type=text]{flex:1;min-width:0}.pickrow .pick{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}.pickrow{position:relative}.pickbtn{flex:none;padding:8px 12px;font-size:18px;border-radius:12px}.quick{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.quick button{padding:4px 10px;font-size:.85em}
   .memrow { padding:6px 0; border-top:1px solid var(--line, #ddd); }
   .memrow:first-child { border-top:none; }
   .memrow input[type=text] { width:100%; margin-top:4px; }
@@ -1681,6 +1682,7 @@
     ['いま', [['👉 次、何する？', '次、何する？'], ['📝 今日必要なフォーム', '今日必要なフォーム出して'], ['🧹 たまっているもの', 'たまってるものある？']]],
     ['レッスン・予定', [['📘 次のレッスンの準備', '次のレッスンの準備'], ['🗓 今週の見通し', '今週の見通し'], ['📆 来週への準備', '来週の準備'], ['🕐 あいている時間', '来週で1時間あいてる日は？']]],
     ['生徒・保護者', [['👀 気になる生徒', '気になる生徒は？'], ['📮 欠席の子へのフォロー', '欠席の子にフォローしたい'], ['✉ 連絡もれチェック', '連絡忘れてない？'], ['💬 返事待ちの保護者', '返信してない保護者は？'], ['🤝 面談の候補日（LINE文）', '面談の候補日を出して']]],
+    ['見る（一覧）', [['📋 Todo一覧', 'Todo一覧を見せて'], ['📒 メモ一覧', 'メモを見せて'], ['🗓 今日の予定', '今日の予定を見せて'], ['🧑‍🏫 毎週のレッスン', '時間割を見せて'], ['👥 レッスンと生徒の名簿', 'レッスンと生徒の一覧を見せて'], ['📄 書きかけのフォーム', '途中保存の一覧']]],
     ['登録', [['❓ レッスン・生徒の登録のしかた', 'レッスンってどうやって登録するの？']]],
     ['ふりかえり・健康', [['🗒 今月のふりかえり', '今月のふりかえり'], ['🛌 働きすぎチェック', '働きすぎてない？'], ['📣 インスタの材料', 'インスタに何載せよう'], ['🩺 動作点検', '点検して']]]
   ];
@@ -1744,7 +1746,7 @@
 
   // ---- フォーム ----
   var formInfo = null, formKey = 'lesson_goal', formPre = {};
-  var FORM_LIST = [['lesson_goal', 'レッスン記録'], ['todo', 'Todo'], ['event', '予定'], ['student_note', '生徒メモ'], ['parent_message', '保護者連絡'], ['report', '月の報告書'], ['job', '依頼箱（任せる）'], ['todo_manage', 'Todo管理'], ['memo', 'メモ'], ['lesson_skip', 'レッスンのお休み'], ['lesson_add', '毎週のレッスン'], ['lesson_setup', 'レッスンの登録'], ['student_add', '生徒を追加']];
+  var FORM_LIST = [['lesson_goal', 'レッスン記録'], ['todo', 'Todo'], ['event', '予定'], ['event_move', '予定を動かす'], ['event_delete', '予定を消す'], ['student_note', '生徒メモ'], ['parent_message', '保護者連絡'], ['report', '月の報告書'], ['job', '依頼箱（任せる）'], ['todo_manage', 'Todo管理'], ['memo', 'メモ'], ['lesson_skip', 'レッスンのお休み'], ['lesson_add', '毎週のレッスン'], ['lesson_setup', 'レッスンの登録'], ['student_add', '生徒を追加']];
   var sel = $('formSel');
   FORM_LIST.forEach(function (f) { sel.appendChild(el('option', { value: f[0], text: f[1] })); });
   sel.onchange = function () { formKey = sel.value; formPre = {}; renderForm(); };
@@ -1772,6 +1774,34 @@
     if (required) { l.appendChild(el('b', { text: '＊必須' })); }
     l.appendChild(node); return l;
   }
+  /* 日付・時間を「えらべる」ようにする：文字で打つ（あした／3時）のも、そのままできる */
+  function pickerRow(node, kind) {
+    var pick = el('input', { type: kind === 'date' ? 'date' : 'time', className: 'pick' });
+    if (kind === 'time') { pick.step = 900; }
+    pick.title = kind === 'date' ? 'カレンダーからえらぶ' : '時刻をえらぶ';
+    pick.addEventListener('change', function () { if (pick.value) { node.value = pick.value; node.dispatchEvent(new Event('input', { bubbles: true })); } });
+    var btn = el('button', { type: 'button', className: 'pickbtn', text: kind === 'date' ? '📅' : '🕒', onclick: function () {
+      try { if (pick.showPicker) { pick.showPicker(); } else { pick.focus(); pick.click(); } } catch (e) { pick.focus(); pick.click(); }
+    } });
+    var row = el('div', { className: 'pickrow' }, [node, btn, pick]);
+    if (kind === 'date') {
+      var q = el('div', { className: 'quick' });
+      [['今日', 0], ['あした', 1], ['あさって', 2], ['1週間後', 7]].forEach(function (b) {
+        q.appendChild(el('button', { type: 'button', text: b[0], onclick: function () {
+          var d = new Date(); d.setDate(d.getDate() + b[1]);
+          node.value = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+          node.dispatchEvent(new Event('input', { bubbles: true }));
+        } }));
+      });
+      return el('div', {}, [row, q]);
+    }
+    return row;
+  }
+  function timeList() {
+    var dl = el('datalist', { id: 'timeList' });
+    for (var m = 6 * 60; m <= 22 * 60 + 45; m += 15) { dl.appendChild(el('option', { value: ('0' + Math.floor(m / 60)).slice(-2) + ':' + ('0' + (m % 60)).slice(-2) })); }
+    return dl;
+  }
   function renderForm() {
     var body = $('formBody'); body.innerHTML = ''; $('formMsg').textContent = '';
     if (!formInfo) { return; }
@@ -1786,13 +1816,16 @@
       if (f.kind === 'lines') { node = el('textarea', { className: 'f', rows: 4 }); }
       else if (f.kind === 'choice') {
         node = el('select'); (f.options || []).forEach(function (o) { node.appendChild(el('option', { value: o, text: o || '（選ばない）' })); });
-      } else { node = el('input', { type: 'text' }); if (f.kind === 'student') { node.setAttribute('list', 'stuList'); } }
+      } else { node = el('input', { type: 'text' }); if (f.kind === 'student') { node.setAttribute('list', 'stuList'); } if (f.kind === 'time') { node.setAttribute('list', 'timeList'); node.placeholder = '15:00'; } }
       if (f.kind === 'choice' && f.default) { node.value = f.default; }
       var pv = formPre[f.name]; if (pv) {
         if (f.kind === 'choice') { var hit = (f.options || []).filter(function (o) { return o === pv || o.split('：')[0] === pv; })[0]; if (hit !== undefined) { node.value = hit; } }
         else { node.value = Array.isArray(pv) ? pv.join('、') : String(pv); }
       }
-      inputs[f.name] = node; body.appendChild(field(f.label, node, f.required));
+      inputs[f.name] = node;
+      var wrap = node;
+      if (f.kind === 'date' || f.kind === 'time') { wrap = pickerRow(node, f.kind); }
+      body.appendChild(field(f.label, wrap, f.required));
     });
     var drs = Object.keys(formPre).length ? null : draftGet(formKey);
     if (drs) { Object.keys(inputs).forEach(function (k) { if (drs[k] !== undefined && drs[k] !== '') { inputs[k].value = drs[k]; } }); $('formMsg').textContent = '📄 前回の途中保存を開きました（登録すると消えます）'; }
@@ -1801,6 +1834,7 @@
     var dl = el('datalist', { id: 'stuList' });
     (formInfo.students || []).forEach(function (s) { dl.appendChild(el('option', { value: s.name })); });
     body.appendChild(dl);
+    body.appendChild(timeList());
     body.appendChild(el('div', { className: 'tools' }, [el('button', { text: '💾 途中保存', onclick: function () {
       $('formMsg').textContent = draftPut(formKey, collectSimple()) ? '💾 途中保存しました。閉じても、次に開くと続きから始められます' : '（まだ何も書かれていないので、保存しませんでした）';
     } }), el('span', { className: 'grow' }), el('button', { text: '📥 ためる', onclick: function () {
