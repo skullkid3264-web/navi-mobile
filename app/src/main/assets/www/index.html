@@ -1744,9 +1744,18 @@
   sel.onchange = function () { formKey = sel.value; formPre = {}; renderForm(); };
   function loadFormInfo(then) {
     if (formInfo) { then(); return; }
+    var cached = null;
+    try { cached = JSON.parse(localStorage.getItem('navi_forminfo') || 'null'); } catch (e) { cached = null; }
     guarded(function () {
-      return jcall('form_info', {}).then(function (r) { formInfo = r; then(); });
-    }, $('formMsg')).then(function () { if (formInfo) { $('formMsg').textContent = ''; } });
+      return jcall('form_info', {}).then(function (r) {
+        formInfo = r; try { localStorage.setItem('navi_forminfo', JSON.stringify(r)); } catch (e) { }
+        then();
+      }).catch(function (e) {
+        if (!cached) { throw e; }        // PCにつながらない → 前回の形（フォーム・生徒・クラス）で書ける
+        formInfo = cached; then();
+        $('formMsg').textContent = '📴 PCにつながっていません。前回の形で書けます（「ためる」で貯めて、つながったら送れます）';
+      });
+    }, $('formMsg')).then(function () { if (formInfo && !cached) { $('formMsg').textContent = ''; } });
   }
   function openForm(key, pre) { formKey = key; formPre = pre || {}; showTab('form'); }
 
