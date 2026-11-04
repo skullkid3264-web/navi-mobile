@@ -139,7 +139,25 @@
   .memrow { padding:6px 0; border-top:1px solid var(--line, #ddd); }
   .memrow:first-child { border-top:none; }
   .memrow input[type=text] { width:100%; margin-top:4px; }
+
+  .tools input[type=text] { flex:1; min-width:0; margin-top:0; }
+  .tools button { white-space:nowrap; }
+  /* ===== ファンタジーのデザイン（🎨で切りかえ。端末に覚えさせる） ===== */
+  :root[data-theme=fantasy] { --bg:#17131f; --card:#241d30; --card2:#2f2640; --line:#6b5a2e; --text:#f5ead0; --sub:#c8b88a; --me:#f5ead0; --ai:#f5ead0; --ng:#ff7a6b; --note:#ffd98a; --accent:#e8b84a; --pink:#e8b84a; --grad:linear-gradient(135deg,#b8862a,#e8b84a); --shadow:0 4px 18px rgba(0,0,0,.5); --r:10px; --ok:#5fae82; }
+  :root[data-theme=fantasy] body { font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP","Georgia",serif; background:radial-gradient(ellipse at 20% 0%,#2a2040 0,#17131f 55%) fixed; }
+  :root[data-theme=fantasy] h1, :root[data-theme=fantasy] header > span:first-child { color:#e8b84a; letter-spacing:.08em; text-shadow:0 0 10px rgba(232,184,74,.45); }
+  :root[data-theme=fantasy] h1::before, :root[data-theme=fantasy] header > span:first-child::before { content:'⚜ '; }
+  :root[data-theme=fantasy] .card, :root[data-theme=fantasy] .bubble, :root[data-theme=fantasy] #plan, :root[data-theme=fantasy] footer, :root[data-theme=fantasy] .secGrid button, :root[data-theme=fantasy] .secHome { border:1px solid var(--line); border-radius:10px; }
+  :root[data-theme=fantasy] button { color:#f5ead0; background:#33293f; border:1px solid #6b5a2e; border-radius:8px; }
+  :root[data-theme=fantasy] button.go, :root[data-theme=fantasy] button.on { background:var(--grad); color:#2a1a05; border-color:#e8b84a; }
+  :root[data-theme=fantasy] button.run { background:linear-gradient(135deg,#3f7d5a,#5fae82); color:#fff; border-color:#5fae82; }
+  :root[data-theme=fantasy] nav button.on, :root[data-theme=fantasy] .tabs button.on { background:var(--grad); color:#2a1a05; }
+  :root[data-theme=fantasy] input[type=text], :root[data-theme=fantasy] input[type=date], :root[data-theme=fantasy] select, :root[data-theme=fantasy] textarea { background:#1d1728; color:#f5ead0; border:1px solid #6b5a2e; border-radius:8px; }
+  :root[data-theme=fantasy] a.link, :root[data-theme=fantasy] .secTitle, :root[data-theme=fantasy] .secHomeT { color:#e8b84a; }
+  :root[data-theme=fantasy] .secTitle::before { content:'✦ '; }
 </style>
+<script>try{var __t=localStorage.getItem('navi_theme');if(__t){document.documentElement.setAttribute('data-theme',__t);}}catch(e){}</script>
+
 </head>
 <body>
 
@@ -147,8 +165,18 @@
   <h1>✦ N.A.V.I.<small id="ver"></small></h1>
   <span style="font-size:12px;color:var(--sub)"><span class="dot" id="dot"></span><span id="pcText">…</span></span>
   <button class="ib" id="spk" title="返事を読み上げる">🔊</button>
+  <button class="ib" id="themeBtn" title="デザインを切りかえる">🎨</button>
   <button class="ib" id="gear" title="設定">⚙️</button>
 </header>
+<script>
+(function () {
+  var b = document.getElementById('themeBtn'); if (!b) { return; }
+  function get() { try { return localStorage.getItem('navi_theme') || ''; } catch (e) { return ''; } }
+  function apply(v) { if (v) { document.documentElement.setAttribute('data-theme', v); } else { document.documentElement.removeAttribute('data-theme'); } b.title = v ? 'ファンタジー（タップで標準に戻す）' : '標準（タップでファンタジーに）'; }
+  b.addEventListener('click', function (e) { e.preventDefault(); var n = get() ? '' : 'fantasy'; try { localStorage.setItem('navi_theme', n); } catch (x) {} apply(n); });
+  apply(get());
+})();
+</script>
 <div id="banner"><span id="bannerText">新しい版があります</span><button id="bannerBtn">更新する</button></div>
 <div class="tabs">
   <button id="tabChat" class="on">💬 チャット</button>
@@ -1683,6 +1711,7 @@
     ['レッスン・予定', [['📘 次のレッスンの準備', '次のレッスンの準備'], ['🗓 今週の見通し', '今週の見通し'], ['📆 来週への準備', '来週の準備'], ['🕐 あいている時間', '来週で1時間あいてる日は？']]],
     ['生徒・保護者', [['👀 気になる生徒', '気になる生徒は？'], ['📮 欠席の子へのフォロー', '欠席の子にフォローしたい'], ['✉ 連絡もれチェック', '連絡忘れてない？'], ['💬 返事待ちの保護者', '返信してない保護者は？'], ['🤝 面談の候補日（LINE文）', '面談の候補日を出して']]],
     ['見る（一覧）', [['📋 Todo一覧', 'Todo一覧を見せて'], ['📒 メモ一覧', 'メモを見せて'], ['🗓 今日の予定', '今日の予定を見せて'], ['🧑‍🏫 毎週のレッスン', '時間割を見せて'], ['👥 レッスンと生徒の名簿', 'レッスンと生徒の一覧を見せて'], ['📄 書きかけのフォーム', '途中保存の一覧']]],
+    ['データ', [['💾 バックアップを書き出す', 'バックアップを取って']]],
     ['登録', [['❓ レッスン・生徒の登録のしかた', 'レッスンってどうやって登録するの？']]],
     ['ふりかえり・健康', [['🗒 今月のふりかえり', '今月のふりかえり'], ['🛌 働きすぎチェック', '働きすぎてない？'], ['📣 インスタの材料', 'インスタに何載せよう'], ['🩺 動作点検', '点検して']]]
   ];
@@ -1695,7 +1724,11 @@
     home.appendChild(el('div', { className: 'secHomeT', text: '☀ 今日の要点' }));
     var homeTxt = el('div', { className: 'secHomeB', text: '読み込み中…' });
     home.appendChild(homeTxt);
+    home.appendChild(el('div', { className: 'tools' }, [el('button', { text: '✏ 今日の予定を直す（動かす・消す）', onclick: function () { $('dDate').value = isoOf(new Date()); showTab('date'); dayCall('day', $('dDate').value); } })]));
     body.appendChild(home);
+    var kwIn = el('input', { type: 'text', placeholder: '言葉で絞る（例：保護者）' });
+    body.appendChild(el('div', { className: 'secTitle', text: '絞り込んで見る' }));
+    body.appendChild(el('div', { className: 'tools' }, [kwIn, el('button', { text: 'Todo', onclick: function () { if (kwIn.value.trim()) { secCall(kwIn.value.trim() + 'のTodo'); } } }), el('button', { text: 'メモ', onclick: function () { if (kwIn.value.trim()) { secCall(kwIn.value.trim() + 'のメモ'); } } })]));
     jcall('panel', '').then(function (r) {
       var t = (r && r.texts && r.texts.today) || '';
       var lines = t.split('\n').filter(function (x) { return x.trim(); });
@@ -1724,9 +1757,9 @@
           $('secForm').appendChild(b);
         }
         var nexts = [];       // 見た結果から、そのまま操作へ進める
-        if (/予定|スケジュール/.test(phrase)) { nexts = [['event', '＋ 予定を入れる'], ['event_move', '↔ 動かす'], ['event_delete', '🗑 消す']]; }
+        if (/予定|スケジュール/.test(phrase)) { nexts = [['event', '＋ 予定を入れる'], ['event_move', '↔ 動かす'], ['event_copy', '📋 コピー'], ['event_delete', '🗑 消す']]; }
         else if (/Todo|やること/i.test(phrase)) { nexts = [['todo', '＋ Todoを入れる'], ['todo_manage', '🗂 Todo管理（完了・期限）']]; }
-        else if (/時間割|毎週のレッスン/.test(phrase)) { nexts = [['lesson_add', '＋ 毎週のレッスンを登録'], ['lesson_skip', '🌴 お休みにする']]; }
+        else if (/時間割|毎週のレッスン/.test(phrase)) { nexts = [['lesson_add', '＋ 毎週のレッスンを登録'], ['lesson_change', '✏ 曜日・時間を変える'], ['lesson_delete', '🛑 やめる'], ['lesson_skip', '🌴 お休みにする']]; }
         else if (/生徒|名簿|レッスンと/.test(phrase)) { nexts = [['lesson_setup', '🏫 レッスンの登録・生徒を入れる'], ['student_add', '➕ 生徒を追加']]; }
         else if (/メモ/.test(phrase)) { nexts = [['memo', '＋ メモを残す']]; }
         nexts.forEach(function (n) { var nb = el('button', { text: n[1], onclick: function () { openForm(n[0], {}); } }); $('secForm').appendChild(nb); });
@@ -1737,10 +1770,29 @@
   // ---- 日付 ----
   function isoOf2(d) { var m = ('0' + (d.getMonth() + 1)).slice(-2), dd = ('0' + d.getDate()).slice(-2); return d.getFullYear() + '-' + m + '-' + dd; }
   $('dDate').value = isoOf2(new Date());
+  function drawDayActions(evs) {
+    var box = $('dateAct');
+    if (!box) { box = el('div', { id: 'dateAct' }); $('dateOut').parentNode.insertBefore(box, $('dateOut').nextSibling); }
+    box.innerHTML = '';
+    if (!evs.length) { return; }
+    box.appendChild(el('div', { className: 'secHomeT', text: '✏ この予定を直す（タップ → 確認の画面）' }));
+    evs.forEach(function (e) {
+      var rowEl = el('div', { className: 'fq' });
+      var label = e.date.slice(5).replace('-', '/') + ' ' + (e.start || '終日') + ' ' + e.title + (e.lesson ? '（レッスン）' : (e.repeat && e.repeat !== 'none' ? '（くり返し）' : ''));
+      rowEl.appendChild(el('div', { className: 'fqb' }, [el('b', { text: label })]));
+      if (e.lesson) {
+        rowEl.appendChild(el('button', { text: '🌴 お休み', onclick: function () { openForm('lesson_skip', { 'class': e.title, date: e.date }); } }));
+      } else {
+        rowEl.appendChild(el('button', { text: '↔', onclick: function () { openForm('event_move', { keyword: e.title }); } }));
+        rowEl.appendChild(el('button', { text: '🗑', onclick: function () { openForm('event_delete', { keyword: e.title, date: e.date, scope: e.repeat && e.repeat !== 'none' ? 'この日だけ消す' : '' }); } }));
+      }
+      box.appendChild(rowEl);
+    });
+  }
   function dayCall(mode, value) {
     var out = $('dateOut'); out.style.display = 'block'; out.textContent = '調べています…';
     return guarded(function () {
-      return jcall('day', { mode: mode, value: value }).then(function (r) { out.textContent = r.reply || ''; });
+      return jcall('day', { mode: mode, value: value }).then(function (r) { out.textContent = r.reply || ''; drawDayActions(r.events || []); });
     }, out);
   }
   $('dDate').onchange = function () { dayCall('day', $('dDate').value); };
@@ -1753,7 +1805,7 @@
 
   // ---- フォーム ----
   var formInfo = null, formKey = 'lesson_goal', formPre = {};
-  var FORM_LIST = [['lesson_goal', 'レッスン記録'], ['todo', 'Todo'], ['event', '予定'], ['event_move', '予定を動かす'], ['event_delete', '予定を消す'], ['student_note', '生徒メモ'], ['parent_message', '保護者連絡'], ['report', '月の報告書'], ['job', '依頼箱（任せる）'], ['todo_manage', 'Todo管理'], ['memo', 'メモ'], ['lesson_skip', 'レッスンのお休み'], ['lesson_add', '毎週のレッスン'], ['lesson_setup', 'レッスンの登録'], ['student_add', '生徒を追加']];
+  var FORM_LIST = [['lesson_goal', 'レッスン記録'], ['todo', 'Todo'], ['event', '予定'], ['event_move', '予定を動かす'], ['event_delete', '予定を消す'], ['event_copy', '予定をコピー'], ['student_note', '生徒メモ'], ['parent_message', '保護者連絡'], ['report', '月の報告書'], ['job', '依頼箱（任せる）'], ['todo_manage', 'Todo管理'], ['memo', 'メモ'], ['lesson_skip', 'レッスンのお休み'], ['lesson_add', '毎週のレッスン'], ['lesson_change', 'レッスンを変える'], ['lesson_delete', 'レッスンをやめる'], ['lesson_setup', 'レッスンの登録'], ['student_add', '生徒を追加']];
   var sel = $('formSel');
   FORM_LIST.forEach(function (f) { sel.appendChild(el('option', { value: f[0], text: f[1] })); });
   sel.onchange = function () { formKey = sel.value; formPre = {}; renderForm(); };
