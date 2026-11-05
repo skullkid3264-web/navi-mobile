@@ -23,6 +23,10 @@ public class NoticeWorker extends Worker {
         if (!Store.isPaired(c)) return Result.success();
 
         fetchSnapshot(c);
+        try {
+            Focus.sync(c);                 // 伴走・宿題のようすも、ついでに取り直す（目覚ましの予約を整える）
+        } catch (Exception ignored) {
+        }
 
         try {
             long last = Store.lastNotice(c);

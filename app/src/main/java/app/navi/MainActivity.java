@@ -65,6 +65,8 @@ public class MainActivity extends Activity {
     private ValueCallback<Uri[]> fileCb;
     private Uri camUri;
     private String pendingOb;
+    private String pendingForm;
+    private String pendingCls;
 
     private WebView web;
     private final Handler main = new Handler(Looper.getMainLooper());
@@ -218,6 +220,18 @@ public class MainActivity extends Activity {
             }
         }
 
+        String form = intent.getStringExtra("form");
+        if (form != null && !form.isEmpty()) {
+            String cls = intent.getStringExtra("cls");
+            intent.removeExtra("form");
+            if (pageIsReady) {
+                callJs("NAVI.openFormKey && NAVI.openFormKey(" + JSONObject.quote(form) + "," + JSONObject.quote(cls == null ? "" : cls) + ")");
+            } else {
+                pendingForm = form;
+                pendingCls = cls == null ? "" : cls;
+            }
+        }
+
         String tab = intent.getStringExtra("tab");
         if (tab != null) {
             if (pageIsReady) {
@@ -261,6 +275,8 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         WakeService.setAppVisible(true);
+        final android.content.Context app = getApplicationContext();
+        io.execute(() -> Focus.sync(app));          // 伴走・宿題のようすを取り直す
     }
 
     private void startWakeService() {
@@ -632,6 +648,71 @@ public class MainActivity extends Activity {
             return ParentListener.installedApps(MainActivity.this);
         }
 
+        // ---------- 伴走・宿題（スマホの目覚まし・アプリにかぶせる） ----------
+        @JavascriptInterface
+        public String focusInfo() {
+            boolean a11y = false;
+            try {
+                String on = Settings.Secure.getString(getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+                a11y = on != null && on.contains(getPackageName() + "/");
+            } catch (Exception ignored) {
+            }
+            boolean full = true;
+            if (Build.VERSION.SDK_INT >= 34) {
+                try {
+                    android.app.NotificationManager nm = getSystemService(android.app.NotificationManager.class);
+                    full = nm != null && nm.canUseFullScreenIntent();
+                } catch (Exception ignored) {
+                }
+            }
+            return Focus.info(MainActivity.this, a11y, full);
+        }
+
+        @JavascriptInterface
+        public void setFocusOptions(boolean alarm, boolean block) {
+            Focus.setOptions(MainActivity.this, alarm, block);
+            final android.content.Context app = getApplicationContext();
+            io.execute(() -> Focus.evaluate(app));
+        }
+
+        @JavascriptInterface
+        public void setFocusBlocked(String csv) {
+            Focus.setBlocked(MainActivity.this, csv);
+        }
+
+        @JavascriptInterface
+        public void focusSync() {
+            final android.content.Context app = getApplicationContext();
+            io.execute(() -> {
+                Focus.sync(app);
+                callJs("NAVI.onFocus && NAVI.onFocus()");
+            });
+        }
+
+        @JavascriptInterface
+        public void openA11ySettings() {
+            main.post(() -> {
+                try {
+                    startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+                } catch (Exception ignored) {
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void openFullScreenSettings() {
+            main.post(() -> {
+                try {
+                    if (Build.VERSION.SDK_INT >= 34) {
+                        startActivity(new Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse("package:" + getPackageName())));
+                    } else {
+                        startActivity(new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName()));
+                    }
+                } catch (Exception ignored) {
+                }
+            });
+        }
+
         @JavascriptInterface
         public String getSeenApps() {
             return ParentListener.seenApps(MainActivity.this);
@@ -679,6 +760,10 @@ public class MainActivity extends Activity {
                 if (pendingOb != null) {
                     callJs("NAVI.openOb && NAVI.openOb(" + JSONObject.quote(pendingOb) + ")");
                     pendingOb = null;
+                }
+                if (pendingForm != null) {
+                    callJs("NAVI.openFormKey && NAVI.openFormKey(" + JSONObject.quote(pendingForm) + "," + JSONObject.quote(pendingCls == null ? "" : pendingCls) + ")");
+                    pendingForm = null;
                 }
                 if (!checkedOnLaunch) {
                     checkedOnLaunch = true;

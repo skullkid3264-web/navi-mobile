@@ -19,6 +19,7 @@ public class RemindReceiver extends BroadcastReceiver {
         String action = intent == null ? null : intent.getAction();
         if (Intent.ACTION_BOOT_COMPLETED.equals(action) || Intent.ACTION_MY_PACKAGE_REPLACED.equals(action)) {
             Reminders.restore(c);
+            Focus.scheduleTick(c, System.currentTimeMillis() + 60_000L);      // 伴走・宿題の確かめも、1分後に再開
             return;
         }
         if (!Notices.canNotify(c)) return;

@@ -11,6 +11,9 @@
     <!-- 予定の前の知らせを、決まった時刻に鳴らす／再起動のあとに仕掛け直す -->
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- 伴走・宿題の目覚まし：鍵がかかっていても全画面で出す／振動 -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Nothing Phone (2a) の背面ライト（Glyph） -->
     <uses-permission android:name="com.nothing.ketchum.permission.ENABLE" />
 
@@ -83,6 +86,42 @@
                 <data android:scheme="navi" android:host="pair" />
             </intent-filter>
         </activity>
+
+        <!-- 伴走・宿題：目覚まし・確かめる時刻・アプリにかぶせる -->
+        <receiver
+            android:name=".FocusReceiver"
+            android:exported="false" />
+
+        <activity
+            android:name=".FocusAlarmActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:taskAffinity="app.navi.focus"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:theme="@style/AppTheme" />
+
+        <activity
+            android:name=".FocusBlockActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:taskAffinity="app.navi.block"
+            android:theme="@style/AppTheme" />
+
+        <service
+            android:name=".FocusGuard"
+            android:exported="true"
+            android:label="@string/focus_guard_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/focus_guard" />
+        </service>
 
         <service
             android:name=".WakeService"

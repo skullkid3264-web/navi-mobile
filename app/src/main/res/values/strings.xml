@@ -9,4 +9,6 @@
     <string name="shortcut_todo_long">Todoを書き溜める</string>
     <string name="shortcut_photo">写真</string>
     <string name="shortcut_photo_long">写真を撮って書き溜める</string>
+    <string name="focus_guard_label">N.A.V.I. 伴走のガード</string>
+    <string name="focus_guard_desc">伴走中・宿題が残っている間に、NAVIの設定で選んだアプリ（SNS・動画など）を開くと、NAVIの画面をかぶせます。どのアプリが前に出たかだけを見て、画面の中身は読みません。電話・設定・NAVIは止めません。NAVIの設定、またはここでいつでも止められます。</string>
 </resources>

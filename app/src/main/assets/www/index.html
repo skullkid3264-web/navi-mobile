@@ -404,6 +404,22 @@
     <div class="row" style="margin-top:8px"><button id="pcAccess" style="flex:1">🔓 通知へのアクセスを許可する</button></div>
     <p style="color:var(--sub);font-size:12px;margin:6px 0 0" id="pcState"></p>
   </div>
+  <div id="focusBox" style="margin-top:12px;padding:12px;border-radius:14px;background:var(--card)">
+    <div style="font-weight:700;margin-bottom:6px">🎯 伴走と宿題（スマホを乗っ取る強さ）</div>
+    <p style="color:var(--sub);font-size:12px;margin:0 0 8px">PCのN.A.V.I.で「伴走して」「指導を始めて」を使っている間、このスマホでも追いかけます。電話・設定・NAVIは止めません。夜23時〜朝6時は鳴らしません。</p>
+    <div class="sw"><span>⏰ 目覚まし並みに知らせる（全画面・音・振動）</span><input type="checkbox" id="fcAlarm"></div>
+    <div class="sw"><span>🛡 決めたアプリを開いたら、NAVIの画面をかぶせる</span><input type="checkbox" id="fcBlock"></div>
+    <div style="font-weight:600;margin:10px 0 4px;font-size:13px">かぶせるアプリ</div>
+    <div id="fcList"></div>
+    <input type="text" id="fcFind" placeholder="入っているアプリから探す（例：YouTube）" style="width:100%;margin-top:4px">
+    <div id="fcFound" style="margin-top:6px"></div>
+    <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:6px">
+      <button id="fcA11y" style="flex:1">🛡 かぶせる許可（ユーザー補助）</button>
+      <button id="fcFull" style="flex:1">⏰ 全画面で出す許可</button>
+    </div>
+    <div class="row" style="margin-top:6px"><button id="fcSync" style="flex:1">🔄 いまのようすを取り直す</button></div>
+    <p style="color:var(--sub);font-size:12px;margin:6px 0 0" id="fcState"></p>
+  </div>
   <div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:6px" id="glyphTests">
     <button data-g="ok">✅できた</button><button data-g="err">⚠️エラー</button><button data-g="think">💭考え中</button>
     <button data-g="parent">💌保護者</button><button data-g="queued">📝書き溜め</button><button data-g="remind">⏰知らせ</button>
@@ -838,6 +854,8 @@
     },
     autoListen: function () { if (info.paired && info.speech && $('mic').className !== 'on') { setTimeout(function () { A.listen(); }, 300); } },
     openTab: function (t) { showTab(t); },
+    openFormKey: function (k, c) { openForm(k, c ? { 'class': c, date: '今日' } : {}); },
+    onFocus: function () { try { fcRender(); } catch (e) {} },
     openOb: function (t) {
       showTab('outbox');
       if (['memo', 'todo', 'event', 'snote', 'journal', 'photo', 'send'].indexOf(t) >= 0) { $('obType').value = t; obTypeChanged(); }
@@ -2201,6 +2219,7 @@
     $('setInfo').textContent = '接続先：' + (info.host || '未登録') + ' ／ 版：' + (info.version || '') + ' ／ 通知：' + (info.canNotify ? '許可済み' : '未許可');
     $('setMsg2').textContent = '';
     $('settings').className = 'on';
+    try { if (window.NAVI && NAVI.onFocus) { NAVI.onFocus(); } } catch (e) {}
     A.listVoices();
   }
   function applyVoiceSettings() {
@@ -2291,6 +2310,62 @@
     if (!n) { box.textContent = '見つかりません'; }
   }
   $('pcFind').oninput = findParentApps;
+
+  /* ---------- 伴走と宿題（スマホの目覚まし・アプリにかぶせる） ---------- */
+  var FC_PRESET = [['com.google.android.youtube', 'YouTube'], ['com.instagram.android', 'Instagram'], ['com.zhiliaoapp.musically', 'TikTok'], ['com.ss.android.ugc.trill', 'TikTok'],
+                   ['com.twitter.android', 'X（Twitter）'], ['com.facebook.katana', 'Facebook'], ['com.netflix.mediaclient', 'Netflix'], ['jp.co.abematv', 'ABEMA'], ['com.amazon.avod.thirdpartyclient', 'Prime Video']];
+  function fcInfo() { try { return JSON.parse((A && A.focusInfo) ? A.focusInfo() : '{}'); } catch (e) { return {}; } }
+  function fcRender() {
+    if (!A || !A.focusInfo) { $('focusBox').style.display = 'none'; return; }
+    var o = fcInfo(), list = o.blocked || [];
+    $('fcAlarm').checked = o.alarm !== false; $('fcBlock').checked = o.block !== false;
+    var apps = []; try { apps = JSON.parse(A.getInstalledApps() || '[]'); } catch (e) {}
+    var names = {}; apps.forEach(function (a) { names[a.pkg] = a.label; }); FC_PRESET.forEach(function (p) { if (!names[p[0]]) { names[p[0]] = p[1]; } });
+    var box = $('fcList'); box.innerHTML = '';
+    var shown = {};
+    FC_PRESET.concat(list.map(function (p) { return [p, names[p] || p]; })).forEach(function (p) {
+      if (shown[p[0]] || (apps.length && !apps.some(function (a) { return a.pkg === p[0]; }) && list.indexOf(p[0]) < 0)) { return; }
+      shown[p[0]] = 1;
+      var row = el('div', { className: 'sw' }, [el('span', { text: names[p[0]] || p[1] })]);
+      var cb = el('input', { type: 'checkbox' }); cb.checked = list.indexOf(p[0]) >= 0;
+      cb.onchange = function () { fcSet(p[0], cb.checked); };
+      row.appendChild(cb); box.appendChild(row);
+    });
+    if (!box.children.length) { box.textContent = '下の欄で、かぶせたいアプリを探して足してください'; }
+    var st = o.state || {}, msgs = [];
+    msgs.push(o.a11y ? '🛡 かぶせる許可：オン' : '⚠ かぶせる許可がまだです（上のボタン →「N.A.V.I. 伴走のガード」をオン。灰色で押せないときは、端末の「設定 → アプリ → N.A.V.I. → ︙ → 制限付きの設定を許可」を先に）');
+    msgs.push(o.fullScreen ? '⏰ 全画面の許可：オン' : '⚠ 全画面で出す許可がまだです（上のボタンから）');
+    if (st.drive) { msgs.push('🎯 伴走中：' + st.drive.task); }
+    var left = (st.homework || []).filter(function (h) { return !h.done; });
+    if (st.mentor) { msgs.push('📘 指導中：まだの宿題 ' + left.length + '件'); }
+    if (o.blockedToday) { msgs.push('今日かぶせた回数：' + o.blockedToday); }
+    $('fcState').innerHTML = ''; msgs.forEach(function (m) { $('fcState').appendChild(el('div', { text: m })); });
+  }
+  function fcSet(pkg, on) {
+    var l = fcInfo().blocked || [];
+    if (on && l.indexOf(pkg) < 0) { l.push(pkg); }
+    if (!on) { l = l.filter(function (x) { return x !== pkg; }); }
+    A.setFocusBlocked(l.join(',')); fcRender();
+  }
+  if ($('focusBox')) {
+    $('fcAlarm').onchange = $('fcBlock').onchange = function () { A.setFocusOptions($('fcAlarm').checked, $('fcBlock').checked); };
+    $('fcA11y').onclick = function () { A.openA11ySettings(); };
+    $('fcFull').onclick = function () { A.openFullScreenSettings(); };
+    $('fcSync').onclick = function () { $('fcState').textContent = '取り直しています…'; A.focusSync(); };
+    $('fcFind').oninput = function () {
+      var q = ($('fcFind').value || '').trim().toLowerCase(), box = $('fcFound'); box.innerHTML = '';
+      if (!q) { return; }
+      var apps = []; try { apps = JSON.parse(A.getInstalledApps() || '[]'); } catch (e) {}
+      var n = 0;
+      apps.forEach(function (a) {
+        if (n >= 10 || (String(a.label).toLowerCase().indexOf(q) < 0 && String(a.pkg).toLowerCase().indexOf(q) < 0)) { return; }
+        n++;
+        box.appendChild(el('button', { type: 'button', text: '＋ ' + a.label, onclick: function () { fcSet(a.pkg, true); $('fcFind').value = ''; box.innerHTML = ''; } }));
+      });
+      if (!n) { box.textContent = '見つかりません'; }
+    };
+    try { fcRender(); } catch (e) {}
+  }
   function saveParentCfg() {
     var pkgs = [], words = ($('pcWords').value || '').split(/[,、，\s]+/).filter(function (x) { return x; });
     document.querySelectorAll('.pcPkg').forEach(function (e) { if (e.checked) { pkgs.push(e.getAttribute('data-pkg')); } });
