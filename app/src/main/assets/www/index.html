@@ -406,7 +406,7 @@
   </div>
   <div id="focusBox" style="margin-top:12px;padding:12px;border-radius:14px;background:var(--card)">
     <div style="font-weight:700;margin-bottom:6px">🎯 伴走と宿題（スマホを乗っ取る強さ）</div>
-    <p style="color:var(--sub);font-size:12px;margin:0 0 8px">PCのN.A.V.I.で「伴走して」「指導を始めて」を使っている間、このスマホでも追いかけます。電話・設定・NAVIは止めません。夜23時〜朝6時は鳴らしません。</p>
+    <p style="color:var(--sub);font-size:12px;margin:0 0 8px">PCのN.A.V.I.で「伴走して」「指導を始めて」を使っている間、このスマホでも追いかけます。電話・設定・NAVIは止めません。夜23時〜朝6時・電話中・レッスン中・予定の間・「静かにして」と言った間は鳴らさず、アプリにもかぶせません。</p>
     <div class="sw"><span>⏰ 目覚まし並みに知らせる（全画面・音・振動）</span><input type="checkbox" id="fcAlarm"></div>
     <div class="sw"><span>🛡 決めたアプリを開いたら、NAVIの画面をかぶせる</span><input type="checkbox" id="fcBlock"></div>
     <div style="font-weight:600;margin:10px 0 4px;font-size:13px">かぶせるアプリ</div>
@@ -2336,6 +2336,7 @@
     msgs.push(o.a11y ? '🛡 かぶせる許可：オン' : '⚠ かぶせる許可がまだです（上のボタン →「N.A.V.I. 伴走のガード」をオン。灰色で押せないときは、端末の「設定 → アプリ → N.A.V.I. → ︙ → 制限付きの設定を許可」を先に）');
     msgs.push(o.fullScreen ? '⏰ 全画面の許可：オン' : '⚠ 全画面で出す許可がまだです（上のボタンから）');
     if (st.drive) { msgs.push('🎯 伴走中：' + st.drive.task); }
+    if (st.quiet && st.quiet.until > Date.now()) { var qd = new Date(st.quiet.until); msgs.push('🔕 いまは静かにしています：' + st.quiet.reason + '（〜' + ('0' + qd.getHours()).slice(-2) + ':' + ('0' + qd.getMinutes()).slice(-2) + '）'); }
     var left = (st.homework || []).filter(function (h) { return !h.done; });
     if (st.mentor) { msgs.push('📘 指導中：まだの宿題 ' + left.length + '件'); }
     if (o.blockedToday) { msgs.push('今日かぶせた回数：' + o.blockedToday); }

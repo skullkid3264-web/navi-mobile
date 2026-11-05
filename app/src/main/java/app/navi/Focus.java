@@ -133,6 +133,48 @@ final class Focus {
         return best;
     }
 
+    /** PCが決めた「邪魔しない時間」（レッスン中・予定の間・静かにしてと言われた間）の、いま続いている分の終わり（0＝いまは違う） */
+    static long quietUntil(Context c, long now) {
+        JSONObject st = state(c);
+        long until = 0;
+        JSONObject q = st.optJSONObject("quiet");
+        if (q != null && q.optLong("until", 0) > now) until = q.optLong("until");
+        JSONArray w = st.optJSONArray("quietWindows");
+        if (w != null) {
+            for (int i = 0; i < w.length(); i++) {
+                JSONArray x = w.optJSONArray(i);
+                if (x == null || x.length() < 2) continue;
+                if (x.optLong(0) <= now && now < x.optLong(1)) until = Math.max(until, x.optLong(1));
+            }
+        }
+        return until;
+    }
+
+    private static long nextQuietStart(Context c, long now) {
+        JSONArray w = state(c).optJSONArray("quietWindows");
+        long best = 0;
+        if (w == null) return 0;
+        for (int i = 0; i < w.length(); i++) {
+            JSONArray x = w.optJSONArray(i);
+            if (x == null || x.length() < 2) continue;
+            long a = x.optLong(0);
+            if (a > now && (best == 0 || a < best)) best = a;
+        }
+        return best;
+    }
+
+    /** 電話中（通話・ビデオ通話）か */
+    static boolean inCall(Context c) {
+        try {
+            android.media.AudioManager am = (android.media.AudioManager) c.getSystemService(Context.AUDIO_SERVICE);
+            if (am == null) return false;
+            int m = am.getMode();
+            return m == android.media.AudioManager.MODE_IN_CALL || m == android.media.AudioManager.MODE_IN_COMMUNICATION || m == android.media.AudioManager.MODE_RINGTONE;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     /** 伴走中か、出していない宿題があるか（アプリにかぶせる・常駐の知らせを出す条件） */
     static boolean active(Context c) {
         return drive(c) != null || overdue(c, System.currentTimeMillis()) != null;
@@ -168,7 +210,9 @@ final class Focus {
         JSONObject hw = overdue(c, now);
         updateOngoing(c, d, hw);
 
-        if (alarmOn(c) && !quietNow()) {
+        long quiet = quietUntil(c, now);
+        boolean call = inCall(c);
+        if (alarmOn(c) && !quietNow() && quiet == 0 && !call) {
             if (d != null && now >= d.optLong("endAt")) {
                 String key = "drive:" + d.optLong("endAt");
                 if (!sp(c).getBoolean("rang:" + key, false) && now - d.optLong("endAt") < 30 * MIN) {
@@ -187,10 +231,10 @@ final class Focus {
                 }
             }
         }
-        scheduleNext(c, now, d, hw);
+        scheduleNext(c, now, d, hw, quiet > 0 ? quiet + 30_000L : (call ? now + 2 * MIN : 0));
     }
 
-    private static void scheduleNext(Context c, long now, JSONObject d, JSONObject hw) {
+    private static void scheduleNext(Context c, long now, JSONObject d, JSONObject hw, long wakeAfter) {
         long next = 0;
         if (d != null) {
             long end = d.optLong("endAt");
@@ -200,6 +244,9 @@ final class Focus {
         long fut = nextFutureDue(c, now);
         if (fut > 0) next = next == 0 ? fut : Math.min(next, fut);
         if (d == null && hw == null && fut == 0 && state(c).optBoolean("mentor")) next = now + 60 * MIN;   // 指導中は、1時間おきに新しい宿題を見に行く
+        if (wakeAfter > 0) next = Math.max(next, wakeAfter);       // 邪魔しない時間・電話中は、終わってから確かめる
+        long qs = nextQuietStart(c, now);
+        if (qs > 0 && (d != null || hw != null) && (next == 0 || qs < next)) next = qs + 5_000L;   // 静かな時間が始まったら、常駐の知らせを整え直す
         if (next == 0) {
             cancelTick(c);
             return;
@@ -310,7 +357,7 @@ final class Focus {
             java.text.SimpleDateFormat f = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.JAPAN);
             body = d.optString("task") + "（" + f.format(new java.util.Date(d.optLong("endAt"))) + "まで）";
         } else {
-            title = "📝 宿題がまだです";
+            title = quietUntil(c, System.currentTimeMillis()) > 0 ? "📝 宿題がまだです（いまは静かにしています）" : "📝 宿題がまだです";
             body = hw.optString("title") + "　タップしてフォームを開く";
             open.putExtra("form", hw.optString("form"));
             open.putExtra("cls", hw.optString("cls"));
@@ -384,6 +431,7 @@ final class Focus {
 
     static boolean shouldBlock(Context c, String pkg) {
         if (!blockOn(c) || exempt(pkg) || !blocked(c).contains(pkg) || !active(c)) return false;
+        if (quietUntil(c, System.currentTimeMillis()) > 0 || inCall(c)) return false;   // レッスン中などは、教材に使うこともあるので止めない
         return System.currentTimeMillis() >= sp(c).getLong("allow:" + pkg, 0);
     }
 
