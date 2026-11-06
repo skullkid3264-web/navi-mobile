@@ -155,6 +155,98 @@
   :root[data-theme=fantasy] input[type=text], :root[data-theme=fantasy] input[type=date], :root[data-theme=fantasy] select, :root[data-theme=fantasy] textarea { background:#1d1728; color:#f5ead0; border:1px solid #6b5a2e; border-radius:8px; }
   :root[data-theme=fantasy] a.link, :root[data-theme=fantasy] .secTitle, :root[data-theme=fantasy] .secHomeT { color:#e8b84a; }
   :root[data-theme=fantasy] .secTitle::before { content:'✦ '; }
+/* BOARD-UI:CSS:START */
+  /* ===== やることボード（カンバン） ===== */
+  main.wide { max-width: 1180px; }
+  #kb { --kb-mark:#ffe27a; --kb-mark-ink:#463800; --kb-ink:#fff; --kb-warn:#9a5600; --kb-g0:#d9731a; --kb-g1:#2f6fb5; --kb-g2:#2e8b57; --kb-g3:#7a55c7; --kb-g4:#7b8794; }
+  @media (prefers-color-scheme: dark) { #kb { --kb-mark:#5d4e10; --kb-mark-ink:#ffeeb0; --kb-ink:#1a1330; --kb-warn:#f0b35a; --kb-g0:#f0975a; --kb-g1:#7ab0ea; --kb-g2:#6fcf97; --kb-g3:#b59af0; --kb-g4:#9babb9; } }
+  :root[data-theme=fantasy] #kb { --kb-ink:#241d30; }
+  .kb { display:flex; flex-direction:column; gap:14px; }
+  .kb [hidden] { display:none !important; }
+  .kb-mapview { display:flex; flex-direction:column; gap:12px; }
+  .kb h2 { margin:0; font-size:16px; }
+  .kb-sum { display:flex; flex-wrap:wrap; gap:6px 22px; padding:10px 0; border-block:1px solid var(--line); margin:0; font-variant-numeric:tabular-nums; }
+  .kb-sum dt { font-size:12px; color:var(--sub); letter-spacing:.06em; }
+  .kb-sum dd { margin:0; font-weight:700; font-size:18px; }
+  .kb-sum dd small { font-weight:400; font-size:13px; color:var(--sub); }
+  .kb-sum .over { color:var(--kb-warn); }
+  .kb details { font-size:14px; color:var(--sub); }
+  .kb details summary { cursor:pointer; color:var(--accent); width:fit-content; }
+  .kb details ol { margin:8px 0 0; padding-left:1.4em; }
+  .kb-add { display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; }
+  .kb-add .fld { display:flex; flex-direction:column; gap:3px; min-width:0; }
+  .kb-add .fld.grow { flex:1 1 220px; } .kb-add .fld.mid { flex:0 1 160px; }
+  .kb-add label, .kb .lab { font-size:12px; color:var(--sub); letter-spacing:.06em; }
+  .kb input[type=text], .kb input[type=date], .kb select, .kb textarea { font:inherit; font-size:15px; color:var(--text); background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:8px 10px; min-width:0; width:100%; }
+  .kb textarea { min-height:76px; resize:vertical; display:block; }
+  .kb button { font-size:14px; padding:6px 12px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--text); }
+  .kb button.pri { background:var(--accent); color:var(--kb-ink); border-color:var(--accent); font-weight:700; }
+  .kb button.quiet { border-color:transparent; background:transparent; color:var(--sub); padding-inline:8px; }
+  .kb button.danger { color:var(--ng); }
+  .kb button:disabled { opacity:.5; }
+  .kb-msg { min-height:1.4em; font-size:14px; color:var(--ng); margin:0; }
+  .kb-msg.info { color:var(--sub); }
+  .kb-tabs { display:flex; gap:4px; border-bottom:1px solid var(--line); }
+  .kb-tabs button { border:0; border-bottom:3px solid transparent; border-radius:0; background:transparent; color:var(--sub); font-weight:700; font-size:15px; padding:8px 14px; }
+  .kb-tabs button[aria-selected=true] { color:var(--text); border-bottom-color:var(--accent); }
+  .kb-filters { display:flex; flex-wrap:wrap; gap:6px; }
+  .kb-filters button { border-radius:999px; padding:3px 12px; font-size:13px; display:inline-flex; align-items:center; gap:6px; }
+  .kb-filters button[aria-pressed=true] { background:var(--text); color:var(--bg); border-color:var(--text); }
+  .kb-dot { width:8px; height:8px; border-radius:50%; flex:none; background:var(--kb-g4); display:inline-block; }
+  .kb-dot.g0 { background:var(--kb-g0); } .kb-dot.g1 { background:var(--kb-g1); } .kb-dot.g2 { background:var(--kb-g2); } .kb-dot.g3 { background:var(--kb-g3); }
+  .kb-board { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px; align-items:start; }
+  .kb-col, .kb-proj { background:var(--card2); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:10px; min-width:0; }
+  .kb-col.today { background:var(--kb-mark); color:var(--kb-mark-ink); }
+  .kb-head { display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+  .kb-head h2 { display:flex; align-items:center; gap:8px; min-width:0; overflow-wrap:anywhere; }
+  .kb-head span { font-size:13px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .kb-hint { font-size:12px; margin:-6px 0 0; opacity:.8; }
+  .kb-cards { display:flex; flex-direction:column; gap:8px; list-style:none; margin:0; padding:0; }
+  .kb-empty { font-size:13px; opacity:.75; margin:0; padding:8px 2px; list-style:none; }
+  .kb-plist { display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%,300px),1fr)); gap:12px; align-items:start; }
+  .kb-bar { height:6px; border-radius:3px; background:var(--card); overflow:hidden; }
+  .kb-bar i { display:block; height:100%; background:var(--accent); border-radius:3px; }
+  .kb-card { background:var(--card); color:var(--text); border:1px solid var(--line); border-radius:10px; padding:10px; display:flex; flex-direction:column; gap:6px; min-width:0; }
+  .kb-card .ttl { font-weight:600; margin:0; overflow-wrap:anywhere; font-size:15px; }
+  .kb-card.is-done .ttl { text-decoration:line-through; color:var(--sub); }
+  .kb-meta { display:flex; flex-wrap:wrap; gap:4px 10px; font-size:12px; color:var(--sub); align-items:center; font-variant-numeric:tabular-nums; }
+  .kb-meta .grp { display:inline-flex; align-items:center; gap:5px; }
+  .kb-st { border-radius:4px; padding:0 6px; font-weight:700; background:var(--card2); color:var(--text); }
+  .kb-st.today { background:var(--kb-mark); color:var(--kb-mark-ink); }
+  .kb-st.doing { background:var(--accent); color:var(--kb-ink); }
+  .kb-wait { color:var(--kb-warn); font-weight:700; }
+  .kb-due.soon { color:var(--kb-warn); font-weight:700; } .kb-due.late { color:var(--ng); font-weight:700; }
+  .kb-acts { display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-end; align-items:center; }
+  .kb-acts .sp { flex:1; }
+  .kb-edit { display:flex; flex-direction:column; gap:8px; }
+  .kb-edit .row { display:flex; flex-wrap:wrap; gap:8px; } .kb-edit .row > * { flex:1 1 120px; }
+  .kb-chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .kb-chips span { background:var(--card2); border-radius:999px; padding:2px 4px 2px 10px; font-size:13px; display:inline-flex; align-items:center; gap:2px; }
+  .kb-detail { display:flex; flex-direction:column; gap:8px; border-top:1px solid var(--line); padding-top:8px; }
+  .kb-steps { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px; }
+  .kb-steps li { display:flex; align-items:flex-start; gap:4px; }
+  .kb-steps label { flex:1; display:flex; gap:8px; align-items:flex-start; min-width:0; overflow-wrap:anywhere; cursor:pointer; font-size:14px; padding:3px 0; color:var(--text); letter-spacing:0; }
+  .kb-steps input { margin-top:5px; flex:none; accent-color:var(--accent); }
+  .kb-steps .sdone { text-decoration:line-through; color:var(--sub); }
+  .kb-addstep { display:flex; gap:6px; } .kb-addstep input { flex:1; }
+  .kb-tools { display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; justify-content:space-between; font-size:13px; color:var(--sub); }
+  .kb-tools p { margin:0; max-width:60ch; }
+  .kb-wbs { overflow:auto; max-height:640px; border:1px solid var(--line); border-radius:12px; background:var(--card); background-image:radial-gradient(var(--line) 1px, transparent 1px); background-size:20px 20px; }
+  .kb-wb { position:relative; min-width:100%; }
+  .kb-wb svg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+  .kb-wb path.edge { fill:none; stroke:var(--sub); stroke-width:1.5; } .kb-wb path.edge.root { stroke-dasharray:3 4; } .kb-wb path.head { fill:var(--sub); }
+  .kb-node { position:absolute; width:180px; background:var(--card); color:var(--text); border:1.5px solid var(--sub); border-radius:8px; padding:6px 10px 8px; font-size:13px; line-height:1.4; cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; overflow-wrap:anywhere; }
+  .kb-node b { display:block; font-size:11px; font-weight:700; letter-spacing:.04em; color:var(--sub); }
+  .kb-node.today { background:var(--kb-mark); color:var(--kb-mark-ink); border-color:var(--kb-mark-ink); } .kb-node.today b { color:var(--kb-mark-ink); }
+  .kb-node.doing { border-color:var(--accent); border-width:3px; padding:4.5px 8.5px 6.5px; } .kb-node.doing b { color:var(--accent); }
+  .kb-node.done { border-style:dashed; color:var(--sub); } .kb-node.done span { text-decoration:line-through; }
+  .kb-node.sel { outline:3px solid var(--accent); outline-offset:2px; } .kb-node.drag { cursor:grabbing; z-index:2; }
+  .kb-pnode { position:absolute; width:150px; background:var(--text); color:var(--bg); border-radius:999px; padding:7px 14px; font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px; line-height:1.3; overflow-wrap:anywhere; }
+  .kb-pnode small { font-weight:400; font-size:12px; margin-left:auto; white-space:nowrap; }
+  #kbDetail { max-width:460px; }
+  @media (max-width:900px) { .kb-board { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+  @media (max-width:560px) { .kb-board { grid-template-columns:minmax(0,1fr); } .kb-col.today { order:1; } .kb-col.doing { order:2; } .kb-col.todo { order:3; } .kb-col.done { order:4; } .kb-tabs button { padding-inline:10px; } }
+/* BOARD-UI:CSS:END */
 </style>
 <script>try{var __t=localStorage.getItem('navi_theme');if(__t){document.documentElement.setAttribute('data-theme',__t);}}catch(e){}</script>
 
@@ -183,6 +275,7 @@
   <button id="tabSched">📅 予定</button>
   <button id="tabLesson">📓 レッスン</button>
   <button id="tabTodo">✅ やること</button>
+  <button id="tabBoard">🗂 ボード</button>
   <button id="tabParent">💌 保護者</button>
   <button id="tabOutbox">📝 書き溜め<span class="badge" id="obBadge" style="display:none">0</span></button>
   <button id="tabList">📋 一覧</button>
@@ -293,6 +386,7 @@
   <div id="noticeList"></div>
 </div>
 
+<div class="pane" id="paneBoard"><div id="kb"></div></div>
 <div class="pane" id="paneList">
   <div class="row" style="flex-wrap:wrap;gap:6px">
     <button data-p="today">★今日</button><button data-p="todo">✅Todo</button><button data-p="week">📅予定</button><button data-p="shelf">📥依頼箱</button>
@@ -1635,9 +1729,412 @@
     $('badge').textContent = unread;
   }
 
+// BOARD-UI:JS:START
+  // ================= やることボード（カンバン） =================
+  // Claudeの「やることボード」と同じ機能。カードはNAVIのTodoそのもの（PCの kanban_core）。動かすと、声の指示・Todo管理にも反映される
+  var KB = { data: null, filter: 'all', view: 'board', open: {}, editing: null, sel: null, pending: 0, localPos: {}, dragging: false, deferred: false, loaded: false, built: false, q: Promise.resolve(), focusAfter: null, loadedAt: 0, failed: '' };
+  try { var kbv = localStorage.getItem('navi_kb_view'); if (kbv === 'board' || kbv === 'list' || kbv === 'map') { KB.view = kbv; } } catch (e) { }
+  var KB_ST = { todo: '未着手', today: '今日やる', doing: '進行中', done: '完了' };
+  var KB_WD = ['日', '月', '火', '水', '木', '金', '土'];
+  var KB_NW = 180, KB_PW = 150, KB_GX = 44, KB_ROW = 92, KB_LANE = 28, KB_PAD = 20;
+  var kbBy = {}, kbEdges = [];
+
+  function kbe(tag, cls, text) { var e = document.createElement(tag); if (cls) { e.className = cls; } if (text != null) { e.textContent = text; } return e; }
+  function kbBtn(label, cls, fn) { var b = kbe('button', cls, label); b.type = 'button'; b.addEventListener('click', fn); return b; }
+  function kbMid(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+  function kbParse(s) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; }
+  function kbDays(s) { var d = kbParse(s); return d ? Math.round((d - kbMid(new Date())) / 86400000) : null; }
+  function kbDueLabel(s) {
+    var d = kbParse(s), n = kbDays(s); if (!d) { return ''; }
+    return (d.getMonth() + 1) + '/' + d.getDate() + '（' + KB_WD[d.getDay()] + '）' + (n === 0 ? '今日' : n > 0 ? 'あと' + n + '日' : Math.abs(n) + '日すぎ');
+  }
+  function kbNow() { var d = new Date(), p = function (n) { return ('0' + n).slice(-2); }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()); }
+  function kbCards() { return (KB.data && KB.data.cards) || []; }
+  function kbArea(c) { return c.area || 'その他'; }
+  function kbG(c) { var i = ((KB.data && KB.data.areas) || []).indexOf(kbArea(c)); return 'g' + (i < 0 ? 4 : i % 5); }
+  function kbSay(text, info) { var m = $('kbMsg'); if (!m) { return; } m.textContent = text || ''; m.className = info ? 'kb-msg info' : 'kb-msg'; }
+
+  function kbLoad(quiet) {
+    if (KB.pending > 0) { return Promise.resolve(); }
+    if (!quiet) { kbSay('読みこみ中…', true); }
+    return jcall('board_list', {}).then(function (r) {
+      if (KB.pending > 0) { return; }
+      KB.data = r.board; KB.loaded = true; KB.failed = ''; KB.loadedAt = Date.now();
+      if (!quiet) { kbSay(''); }
+      kbRender();
+    }).catch(function (e) { KB.loaded = true; KB.failed = e.message; kbSay('❌ ' + e.message); kbRender(); });
+  }
+  // 操作：画面はすぐ変えて（local）、PCへは順番に送る。PCの答えが来たら、それに合わせる
+  function kbAct(op, d, local) {
+    if (local) { local(); }
+    KB.pending++;
+    var body = { op: op }; Object.keys(d || {}).forEach(function (k) { body[k] = d[k]; });
+    KB.q = KB.q.then(function () { return jcall('board_act', body); }).then(function (r) {
+      KB.pending--;
+      if (r && r.reply && op !== 'pos' && op !== 'steps') { kbSay(r.reply, true); }
+      if (KB.pending === 0 && r && r.board) {
+        KB.data = r.board; KB.loadedAt = Date.now();
+        kbCards().forEach(function (c) { var l = KB.localPos[c.id]; if (l && c.pos && c.pos.x === l.x && c.pos.y === l.y) { delete KB.localPos[c.id]; } });
+      }
+      kbRender();
+    }).catch(function (e) {
+      KB.pending--; kbSay('❌ ' + e.message);
+      if (KB.pending === 0) { kbLoad(true); }
+    });
+    kbRender();
+  }
+
+  function kbDepths(cards) {
+    var memo = {}, seen = {};
+    function d(c) {
+      if (memo[c.id]) { return memo[c.id]; }
+      if (seen[c.id]) { return 1; }
+      seen[c.id] = true;
+      var m = 0; (c.after || []).forEach(function (id) { if (kbBy[id]) { m = Math.max(m, d(kbBy[id])); } });
+      return (memo[c.id] = m + 1);
+    }
+    cards.forEach(d); return memo;
+  }
+  function kbProjects() {
+    var cards = kbCards(), dep = kbDepths(cards), map = {}, list = [];
+    cards.forEach(function (c) {
+      if (!map[c.project]) { map[c.project] = { name: c.project, g: kbG(c), items: [] }; list.push(map[c.project]); }
+      map[c.project].items.push(c);
+    });
+    list.forEach(function (p) {
+      p.items.sort(function (a, b) { return (dep[a.id] - dep[b.id]) || ((a.order || 0) - (b.order || 0)); });
+      p.done = p.items.filter(function (c) { return c.status === 'done'; }).length;
+    });
+    return { list: list, dep: dep };
+  }
+
+  function kbEditForm(c) {
+    var box = kbe('div', 'kb-edit');
+    var title = kbe('input'); title.type = 'text'; title.maxLength = 120; title.value = c.title || ''; title.id = 'kbEdTitle'; title.setAttribute('aria-label', 'やること');
+    var row = kbe('div', 'row');
+    var pj = kbe('input'); pj.type = 'text'; pj.maxLength = 30; pj.value = c.project === 'その他' ? '' : c.project; pj.placeholder = 'まとまり'; pj.id = 'kbEdProject'; pj.setAttribute('list', 'kbProjList'); pj.setAttribute('aria-label', 'まとまり');
+    var due = kbe('input'); due.type = 'date'; due.value = c.due || ''; due.id = 'kbEdDue'; due.setAttribute('aria-label', '期日');
+    row.appendChild(pj); row.appendChild(due);
+    var after = (c.after || []).slice();
+    var chips = kbe('div', 'kb-chips'), sel = kbe('select'); sel.id = 'kbEdAfter'; sel.setAttribute('aria-label', '先にやること');
+    function drawAfter() {
+      chips.textContent = '';
+      after.forEach(function (id, i) {
+        var s = kbe('span', null, '先に：' + ((kbBy[id] && kbBy[id].title) || '')); s.appendChild(kbBtn('×', 'quiet', function () { after.splice(i, 1); drawAfter(); }));
+        chips.appendChild(s);
+      });
+      sel.textContent = '';
+      var o0 = kbe('option', null, '先にやることを足す…'); o0.value = ''; sel.appendChild(o0);
+      kbCards().forEach(function (x) {
+        if (x.id === c.id || after.indexOf(x.id) >= 0 || x.status === 'done') { return; }
+        var o = kbe('option', null, x.title || ''); o.value = x.id; sel.appendChild(o);
+      });
+    }
+    sel.addEventListener('change', function () { if (sel.value) { after.push(sel.value); drawAfter(); } });
+    drawAfter();
+    var acts = kbe('div', 'kb-acts'), sure = false;
+    function close() { KB.editing = null; kbRender(true); }
+    var del = kbBtn('消す', 'quiet danger', function () {
+      if (!sure) { sure = true; del.textContent = '本当に消す'; return; }
+      var id = c.id; KB.editing = null; if (KB.sel === id) { KB.sel = null; }
+      kbAct('delete', { id: id }, function () { KB.data.cards = kbCards().filter(function (x) { return x.id !== id; }); KB.data.cards.forEach(function (x) { x.after = (x.after || []).filter(function (a) { return a !== id; }); }); });
+    });
+    acts.appendChild(del); acts.appendChild(kbe('span', 'sp'));
+    acts.appendChild(kbBtn('やめる', '', close));
+    acts.appendChild(kbBtn('保存', 'pri', function () {
+      var v = title.value.trim();
+      if (!v) { kbSay('やることを書いてください。'); title.focus(); return; }
+      var p = pj.value.trim();
+      KB.editing = null;
+      kbAct('edit', { id: c.id, title: v, project: p, due: due.value || '', after: after }, function () {
+        c.title = v; c.project = p || (c.area || 'その他'); c.due = due.value || ''; c.after = after;
+      });
+    }));
+    box.appendChild(title); box.appendChild(row); box.appendChild(chips); box.appendChild(sel); box.appendChild(acts);
+    return box;
+  }
+
+  function kbDetail(c) {
+    var box = kbe('div', 'kb-detail'), steps = c.steps || [];
+    function put(n) { kbAct('steps', { id: c.id, steps: n }, function () { c.steps = n; }); }
+    function copy() { return steps.map(function (x) { return { t: x.t, done: !!x.done }; }); }
+    box.appendChild(kbe('p', 'lab', '小さな手順'));
+    if (steps.length) {
+      var ul = kbe('ul', 'kb-steps');
+      steps.forEach(function (s, i) {
+        var li = kbe('li'), lab = kbe('label'), cb = kbe('input'); cb.type = 'checkbox'; cb.checked = !!s.done;
+        cb.addEventListener('change', function () { var n = copy(); n[i].done = cb.checked; put(n); });
+        lab.appendChild(cb); lab.appendChild(kbe('span', s.done ? 'sdone' : '', s.t)); li.appendChild(lab);
+        var x = kbBtn('×', 'quiet', function () { var n = copy(); n.splice(i, 1); put(n); }); x.setAttribute('aria-label', 'この手順を消す');
+        li.appendChild(x); ul.appendChild(li);
+      });
+      box.appendChild(ul);
+    }
+    var f = kbe('form', 'kb-addstep'), inp = kbe('input'); inp.type = 'text'; inp.maxLength = 80; inp.id = 'kbSn-' + c.id; inp.placeholder = '手順を足す'; inp.autocomplete = 'off';
+    var add = kbe('button', null, '足す'); add.type = 'submit'; f.appendChild(inp); f.appendChild(add);
+    f.addEventListener('submit', function (ev) {
+      ev.preventDefault(); var v = inp.value.trim(); if (!v) { inp.focus(); return; }
+      if (steps.length >= 30) { kbSay('手順は30個までです。'); return; }
+      var n = copy(); n.push({ t: v, done: false }); KB.focusAfter = inp.id; put(n);
+    });
+    box.appendChild(f);
+    box.appendChild(kbe('p', 'lab', 'メモ'));
+    var ta = kbe('textarea'); ta.maxLength = 1000; ta.value = c.memo || ''; ta.placeholder = '気づいたこと、決めたこと、材料など';
+    if (c.memoCut) { ta.readOnly = true; ta.value = c.memo + '…'; box.appendChild(ta); box.appendChild(kbe('p', 'lab', 'メモが長いので、ここでは読むだけです。PCで直してください。')); return box; }
+    function saveMemo() { if (ta.value === (c.memo || '')) { return; } var v = ta.value; kbAct('memo', { id: c.id, memo: v }, function () { c.memo = v; }); }
+    ta.addEventListener('blur', saveMemo);
+    var acts = kbe('div', 'kb-acts'); acts.appendChild(kbBtn('メモを保存', '', saveMemo));
+    box.appendChild(ta); box.appendChild(acts);
+    return box;
+  }
+
+  function kbMove(c, to) {
+    kbAct('move', { id: c.id, to: to }, function () { c.status = to; if (to === 'done') { c.doneAt = kbNow(); } });
+  }
+  function kbCard(c, showStatus, forceOpen) {
+    var s = c.status, li = kbe('li', 'kb-card' + (s === 'done' ? ' is-done' : ''));
+    if (KB.editing === c.id) { li.appendChild(kbEditForm(c)); return li; }
+    li.appendChild(kbe('p', 'ttl', c.title || '（無題）'));
+    var meta = kbe('div', 'kb-meta');
+    if (showStatus) { meta.appendChild(kbe('span', 'kb-st ' + s, KB_ST[s])); }
+    var g = kbe('span', 'grp'); g.appendChild(kbe('span', 'kb-dot ' + kbG(c))); g.appendChild(document.createTextNode(c.project)); meta.appendChild(g);
+    if (c.due) {
+      var n = kbDays(c.due), d = kbe('span', 'kb-due', kbDueLabel(c.due));
+      if (s !== 'done' && n !== null) { if (n < 0) { d.className = 'kb-due late'; } else if (n <= 3) { d.className = 'kb-due soon'; } }
+      meta.appendChild(d);
+    }
+    var sts = c.steps || [], isOpen = forceOpen || !!KB.open[c.id];
+    if (sts.length) { meta.appendChild(kbe('span', null, '手順 ' + sts.filter(function (x) { return x.done; }).length + '/' + sts.length)); }
+    if (c.memo) { meta.appendChild(kbe('span', null, 'メモあり')); }
+    if (c.wait && s !== 'done') { meta.appendChild(kbe('span', 'kb-wait', '⏳ ' + c.wait)); }
+    li.appendChild(meta);
+    var acts = kbe('div', 'kb-acts');
+    acts.appendChild(kbBtn('直す', 'quiet', function () { KB.editing = c.id; kbRender(true); }));
+    if (!forceOpen) { var tg = kbBtn(isOpen ? 'とじる' : 'くわしく', 'quiet', function () { KB.open[c.id] = !isOpen; kbRender(true); }); tg.setAttribute('aria-expanded', String(isOpen)); acts.appendChild(tg); }
+    acts.appendChild(kbe('span', 'sp'));
+    var back = { today: 'todo', doing: 'today', done: 'doing' }[s];
+    if (back) { acts.appendChild(kbBtn('戻す', '', function () { kbMove(c, back); })); }
+    var fwd = { todo: ['今日やる', 'today'], today: ['始める', 'doing'], doing: ['完了', 'done'] }[s];
+    if (fwd) { acts.appendChild(kbBtn(fwd[0], 'pri', function () { kbMove(c, fwd[1]); })); }
+    li.appendChild(acts);
+    if (isOpen) { li.appendChild(kbDetail(c)); }
+    return li;
+  }
+
+  function kbBuild() {
+    var root = $('kb'); root.textContent = '';
+    root.innerHTML =
+      '<dl class="kb-sum"><div><dt>今日やる</dt><dd id="kbSToday"></dd></div><div><dt>進行中</dt><dd id="kbSDoing"></dd></div><div><dt>完了</dt><dd id="kbSDone"></dd></div><div><dt>次の期日</dt><dd id="kbSNext"></dd></div></dl>' +
+      '<details><summary>1日の回し方</summary><ol><li>朝、未着手から「今日やる」を3つまで選ぶ。</li><li>1つだけ「始める」を押して、それだけをやる。終わったら「完了」。</li><li>夜、終わらなかったものは「戻す」。翌朝また選び直す。</li></ol></details>' +
+      '<form class="kb-add" id="kbAdd" novalidate><div class="fld grow"><label for="kbNewTitle">やることを追加</label><input type="text" id="kbNewTitle" maxlength="120" placeholder="30分〜1時間で終わる大きさで書く" autocomplete="off"></div>' +
+      '<div class="fld mid"><label for="kbNewProject">まとまり</label><input type="text" id="kbNewProject" maxlength="30" list="kbProjList" placeholder="例：インスタ" autocomplete="off"><datalist id="kbProjList"></datalist></div>' +
+      '<div class="fld"><label for="kbNewDue">期日（なくてもよい）</label><input type="date" id="kbNewDue"></div><button type="submit" class="pri" id="kbAddBtn">追加</button><button type="button" id="kbReload" title="PCから読みなおす">🔄</button></form>' +
+      '<p class="kb-msg" id="kbMsg" role="status"></p>' +
+      '<div class="kb-tabs" role="tablist"><button type="button" role="tab" data-v="board">ボード</button><button type="button" role="tab" data-v="list">まとめ</button><button type="button" role="tab" data-v="map">つながり</button></div>' +
+      '<div class="kb-filters" id="kbFilters"></div>' +
+      '<div class="kb-board" id="kbBoard"><section class="kb-col todo"><div class="kb-head"><h2>未着手</h2><span id="kbCTodo">0</span></div><p class="kb-hint">全部ここに置く</p><ul class="kb-cards" id="kbLTodo"></ul></section>' +
+      '<section class="kb-col today"><div class="kb-head"><h2>今日やる</h2><span id="kbCToday">0 / 3</span></div><p class="kb-hint">最大3つ</p><ul class="kb-cards" id="kbLToday"></ul></section>' +
+      '<section class="kb-col doing"><div class="kb-head"><h2>進行中</h2><span id="kbCDoing">0 / 1</span></div><p class="kb-hint">1つだけ</p><ul class="kb-cards" id="kbLDoing"></ul></section>' +
+      '<section class="kb-col done"><div class="kb-head"><h2>完了</h2><span id="kbCDone">0</span></div><p class="kb-hint">終わったら移す</p><ul class="kb-cards" id="kbLDone"></ul></section></div>' +
+      '<div class="kb-plist" id="kbPlist" hidden></div>' +
+      '<div id="kbMapView" class="kb-mapview" hidden><div class="kb-tools"><p>線は「先にやること → 次にやること」。カードを押すと下で動かせます。掴んで引くと場所を変えられます。</p><button type="button" id="kbTidy">並べ直す</button></div>' +
+      '<div class="kb-wbs" id="kbWbs"><div class="kb-wb" id="kbWb"><svg id="kbSvg" aria-hidden="true"></svg></div></div><div id="kbDetail"></div></div>';
+    root.classList.add('kb');
+    Array.prototype.forEach.call(root.querySelectorAll('.kb-tabs button'), function (b) {
+      b.addEventListener('click', function () { KB.view = b.getAttribute('data-v'); KB.editing = null; try { localStorage.setItem('navi_kb_view', KB.view); } catch (e) { } kbRender(true); });
+    });
+    $('kbTidy').addEventListener('click', function () { kbAct('tidy', {}, function () { KB.localPos = {}; kbCards().forEach(function (c) { c.pos = null; }); }); });
+    $('kbReload').addEventListener('click', function () { kbLoad(false); });
+    $('kbNewTitle').addEventListener('input', function () { kbSay(''); });
+    $('kbAdd').addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      var title = $('kbNewTitle').value.trim();
+      if (!title) { kbSay('やることを書いてください。'); $('kbNewTitle').focus(); return; }
+      var p = $('kbNewProject').value.trim(), due = $('kbNewDue').value || '';
+      $('kbNewTitle').value = ''; $('kbNewDue').value = '';
+      kbAct('add', { title: title, project: p, due: due }, function () {
+        if (!KB.data) { return; }
+        kbCards().push({ id: 'new' + Date.now(), title: title, project: p || 'その他', area: '', due: due, status: 'todo', after: [], steps: [], memo: '', pos: null, order: 99999, doneAt: '', wait: '' });
+      });
+    });
+    root.addEventListener('focusout', function () { setTimeout(function () { if (KB.deferred && !KB.dragging) { KB.deferred = false; kbRender(); } }, 0); });
+    KB.built = true;
+  }
+  function kbSetCount(id, n, max) {
+    var e = $(id); e.textContent = String(n); e.className = n > max ? 'over' : '';
+    e.appendChild(kbe('small', null, ' / ' + max + (n > max ? '（多すぎ）' : '')));
+  }
+  function kbShown(c) { return KB.filter === 'all' || kbArea(c) === KB.filter; }
+
+  function kbRender(force) {
+    if (!KB.built) { return; }
+    if (KB.dragging) { KB.deferred = true; return; }
+    var root = $('kb'), ae = document.activeElement;
+    if (!force && ae && root.contains(ae) && (ae.tagName === 'TEXTAREA' || (ae.tagName === 'INPUT' && (ae.type === 'text' || ae.type === 'date')))) { KB.deferred = true; return; }
+    kbBy = {}; kbCards().forEach(function (c) { kbBy[c.id] = c; });
+    var by = { todo: [], today: [], doing: [], done: [] };
+    kbCards().forEach(function (c) { (by[c.status] || by.todo).push(c); });
+    by.todo.sort(function (a, b) { return (a.due || '9999') < (b.due || '9999') ? -1 : (a.due || '9999') > (b.due || '9999') ? 1 : (a.order - b.order); });
+    by.done.sort(function (a, b) { return a.doneAt < b.doneAt ? 1 : a.doneAt > b.doneAt ? -1 : 0; });
+    var lim = (KB.data && KB.data.limits) || { today: 3, doing: 1 };
+    $('kbCTodo').textContent = by.todo.length; $('kbCToday').textContent = by.today.length + ' / ' + lim.today; $('kbCDoing').textContent = by.doing.length + ' / ' + lim.doing;
+    var doneTotal = (KB.data && KB.data.counts ? Math.max(KB.data.counts.done, by.done.length) : by.done.length);
+    $('kbCDone').textContent = doneTotal;
+    kbSetCount('kbSToday', by.today.length, lim.today); kbSetCount('kbSDoing', by.doing.length, lim.doing); $('kbSDone').textContent = doneTotal;
+    var nx = kbCards().filter(function (c) { return c.status !== 'done' && kbParse(c.due); }).sort(function (a, b) { return a.due < b.due ? -1 : a.due > b.due ? 1 : 0; })[0];
+    var sn = $('kbSNext'); sn.textContent = '';
+    if (nx) { sn.appendChild(document.createTextNode(kbDueLabel(nx.due) + ' ')); sn.appendChild(kbe('small', null, nx.title)); } else { sn.appendChild(kbe('small', null, '期日のあるカードはまだありません')); }
+    var dl = $('kbProjList'); dl.textContent = '';
+    kbProjects().list.forEach(function (p) { if (p.name !== 'その他') { var o = kbe('option'); o.value = p.name; dl.appendChild(o); } });
+    Array.prototype.forEach.call(document.querySelectorAll('.kb-tabs button'), function (b) { b.setAttribute('aria-selected', String(b.getAttribute('data-v') === KB.view)); });
+    $('kbBoard').hidden = KB.view !== 'board'; $('kbPlist').hidden = KB.view !== 'list'; $('kbMapView').hidden = KB.view !== 'map';
+    // 絞りこみ
+    var fb = $('kbFilters'); fb.textContent = ''; fb.hidden = KB.view === 'map';
+    var areas = (KB.data && KB.data.areas) || [];
+    if (areas.length > 1) {
+      [['all', 'すべて']].concat(areas.map(function (a) { return [a, a]; })).forEach(function (g) {
+        var b = kbBtn('', '', function () { KB.filter = g[0]; kbRender(true); });
+        if (g[0] !== 'all') { b.appendChild(kbe('span', 'kb-dot g' + (areas.indexOf(g[0]) % 5))); }
+        b.appendChild(document.createTextNode(g[1])); b.setAttribute('aria-pressed', String(KB.filter === g[0])); fb.appendChild(b);
+      });
+    }
+    if (KB.view === 'board') { kbRenderBoard(by); } else if (KB.view === 'list') { kbRenderList(); } else { kbRenderMap(); }
+    if (KB.focusAfter) { var fe = $(KB.focusAfter); KB.focusAfter = null; if (fe) { fe.focus(); } }
+  }
+  function kbEmptyText(col) {
+    if (!KB.loaded) { return '読みこみ中…'; }
+    if (KB.failed && !KB.data) { return 'PCから読めませんでした。右上の🔄でもう一度。'; }
+    if (!kbCards().length && col === 'todo') { return 'まだカードがありません。上の「やることを追加」から最初の1枚を書けます。'; }
+    return { today: '未着手から3つ選びます。', doing: '「始める」を押した1枚がここに来ます。', done: '終わったカードがここにたまります。' }[col] || 'ここは空です。';
+  }
+  function kbRenderBoard(by) {
+    ['todo', 'today', 'doing', 'done'].forEach(function (col) {
+      var list = $('kbL' + col.charAt(0).toUpperCase() + col.slice(1)); list.textContent = '';
+      var items = by[col].filter(kbShown);
+      items.forEach(function (c) { list.appendChild(kbCard(c)); });
+      if (!items.length) { list.appendChild(kbe('li', 'kb-empty', kbEmptyText(col))); }
+    });
+    if (KB.data && KB.data.doneHidden) { $('kbLDone').appendChild(kbe('li', 'kb-empty', 'ほかに ' + KB.data.doneHidden + '件（古い完了）は、ここには出していません')); }
+  }
+  function kbRenderList() {
+    var box = $('kbPlist'); box.textContent = '';
+    var ps = kbProjects().list.filter(function (p) { return KB.filter === 'all' || p.items.some(kbShown); });
+    if (!ps.length) { box.appendChild(kbe('p', 'kb-empty', kbEmptyText('todo'))); return; }
+    ps.forEach(function (p) {
+      var items = p.items.filter(kbShown);
+      var sec = kbe('section', 'kb-proj'), head = kbe('div', 'kb-head'), h = kbe('h2');
+      h.appendChild(kbe('span', 'kb-dot ' + p.g)); h.appendChild(document.createTextNode(p.name));
+      head.appendChild(h); head.appendChild(kbe('span', null, p.done + ' / ' + p.items.length + ' 完了'));
+      var bar = kbe('div', 'kb-bar'), fill = kbe('i'); fill.style.width = Math.round(100 * p.done / p.items.length) + '%'; bar.appendChild(fill);
+      var ul = kbe('ul', 'kb-cards'); items.forEach(function (c) { ul.appendChild(kbCard(c, true)); });
+      sec.appendChild(head); sec.appendChild(bar); sec.appendChild(ul); box.appendChild(sec);
+    });
+  }
+
+  // つながり：まとまりごとに1段。先にやることの数で、左から右へ並べる
+  function kbLayout() {
+    var pr = kbProjects(), y = KB_PAD, pos = {}, pnodes = [], w = 0;
+    pr.list.forEach(function (p) {
+      var rows = {}, maxRows = 1;
+      p.items.forEach(function (c) {
+        var d = pr.dep[c.id], i = rows[d] || 0; rows[d] = i + 1; maxRows = Math.max(maxRows, i + 1);
+        pos[c.id] = { x: KB_PAD + KB_PW + KB_GX + (d - 1) * (KB_NW + KB_GX), y: y + i * KB_ROW };
+      });
+      pnodes.push({ p: p, x: KB_PAD, y: y + 6 });
+      y += maxRows * KB_ROW + KB_LANE;
+    });
+    kbCards().forEach(function (c) {
+      var l = KB.localPos[c.id] || (c.pos && typeof c.pos.x === 'number' ? c.pos : null);
+      if (l) { pos[c.id] = { x: Math.max(0, l.x), y: Math.max(0, l.y) }; }
+      w = Math.max(w, pos[c.id].x + KB_NW); y = Math.max(y, pos[c.id].y + KB_ROW);
+    });
+    return { pos: pos, pnodes: pnodes, w: w + KB_PAD + 120, h: y + KB_PAD + 60 };
+  }
+  function kbDrawLines() {
+    var svg = $('kbSvg'), NS = 'http://www.w3.org/2000/svg'; svg.textContent = '';
+    kbEdges.forEach(function (e) {
+      var a = e[0], b = e[1]; if (!a || !b) { return; }
+      var x1 = a.offsetLeft + a.offsetWidth, y1 = a.offsetTop + a.offsetHeight / 2, x2 = b.offsetLeft, y2 = b.offsetTop + b.offsetHeight / 2;
+      var back = x2 < x1 + 12, k = back ? 60 : Math.max(20, (x2 - x1) / 2);
+      var p = document.createElementNS(NS, 'path'); p.setAttribute('class', 'edge' + (e[2] ? ' root' : ''));
+      p.setAttribute('d', e[2] ? 'M' + x1 + ' ' + y1 + ' H' + (x1 + 16) + ' V' + y2 + ' H' + x2 : 'M' + x1 + ' ' + y1 + ' C' + (x1 + k) + ' ' + y1 + ' ' + (x2 - k) + ' ' + y2 + ' ' + (x2 - 6) + ' ' + y2);
+      svg.appendChild(p);
+      if (!e[2]) { var h = document.createElementNS(NS, 'path'); h.setAttribute('class', 'head'); h.setAttribute('d', 'M' + x2 + ' ' + y2 + ' l-8 -4.5 v9 z'); svg.appendChild(h); }
+    });
+  }
+  function kbRenderMap() {
+    var wb = $('kbWb'), L = kbLayout(), els = {};
+    Array.prototype.slice.call(wb.querySelectorAll('.kb-node,.kb-pnode,.kb-empty')).forEach(function (n) { n.remove(); });
+    kbEdges = [];
+    wb.style.width = L.w + 'px'; wb.style.height = L.h + 'px';
+    if (!kbCards().length) { var m = kbe('p', 'kb-empty', kbEmptyText('todo')); m.style.padding = '16px'; wb.appendChild(m); kbDrawLines(); kbRenderDetail(); return; }
+    kbCards().forEach(function (c) {
+      var n = kbe('div', 'kb-node ' + c.status + (KB.sel === c.id ? ' sel' : '')), ss = c.steps || [];
+      n.appendChild(kbe('b', null, KB_ST[c.status] + (c.due && c.status !== 'done' ? '・' + kbDueLabel(c.due) : '') + (ss.length ? '・手順 ' + ss.filter(function (x) { return x.done; }).length + '/' + ss.length : '') + (c.wait && c.status !== 'done' ? '・待ち' : '')));
+      n.appendChild(kbe('span', null, c.title || '（無題）'));
+      n.style.left = L.pos[c.id].x + 'px'; n.style.top = L.pos[c.id].y + 'px';
+      n.tabIndex = 0; n.setAttribute('role', 'button');
+      n.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); KB.sel = c.id; kbRender(true); } });
+      kbDragify(n, c); wb.appendChild(n); els[c.id] = n;
+    });
+    L.pnodes.forEach(function (o) {
+      var n = kbe('div', 'kb-pnode'); n.appendChild(kbe('span', 'kb-dot ' + o.p.g)); n.appendChild(document.createTextNode(o.p.name)); n.appendChild(kbe('small', null, o.p.done + '/' + o.p.items.length));
+      n.style.left = o.x + 'px'; n.style.top = o.y + 'px'; wb.appendChild(n);
+      o.p.items.forEach(function (c) {
+        var inside = (c.after || []).some(function (id) { return kbBy[id] && kbBy[id].project === o.p.name; });
+        if (!inside) { kbEdges.push([n, els[c.id], true]); }
+      });
+    });
+    kbCards().forEach(function (c) { (c.after || []).forEach(function (id) { if (els[id]) { kbEdges.push([els[id], els[c.id], false]); } }); });
+    kbDrawLines(); kbRenderDetail();
+  }
+  function kbRenderDetail() {
+    var box = $('kbDetail'); box.textContent = '';
+    var c = KB.sel && kbBy[KB.sel];
+    if (!c) { if (kbCards().length) { box.appendChild(kbe('p', 'kb-empty', 'カードを押すと、ここに出ます。')); } return; }
+    var ul = kbe('ul', 'kb-cards'); ul.appendChild(kbCard(c, true, true)); box.appendChild(ul);
+  }
+  function kbDragify(n, c) {
+    var st = null, moved = false, raf = 0;
+    n.addEventListener('pointerdown', function (ev) {
+      if (ev.button > 0) { return; }
+      st = { x: ev.clientX, y: ev.clientY, l: n.offsetLeft, t: n.offsetTop }; moved = false;
+      try { n.setPointerCapture(ev.pointerId); } catch (e) { }
+    });
+    n.addEventListener('pointermove', function (ev) {
+      if (!st) { return; }
+      var dx = ev.clientX - st.x, dy = ev.clientY - st.y;
+      if (!moved && Math.abs(dx) + Math.abs(dy) < 6) { return; }
+      moved = true; KB.dragging = true; n.classList.add('drag');
+      n.style.left = Math.max(0, st.l + dx) + 'px'; n.style.top = Math.max(0, st.t + dy) + 'px';
+      if (!raf) { raf = requestAnimationFrame(function () { raf = 0; kbDrawLines(); }); }
+    });
+    function end(cancel) {
+      if (!st) { return; }
+      var was = moved; st = null; moved = false; KB.dragging = false; n.classList.remove('drag');
+      if (cancel) { kbRender(true); return; }
+      if (was) {
+        var p = { x: n.offsetLeft, y: n.offsetTop };
+        kbAct('pos', { id: c.id, pos: p }, function () { KB.localPos[c.id] = p; c.pos = p; });
+      } else { KB.sel = c.id; kbRender(true); }
+    }
+    n.addEventListener('pointerup', function () { end(false); });
+    n.addEventListener('pointercancel', function () { end(true); });
+  }
+
+  function kbShow() {
+    if (!KB.built) { kbBuild(); }
+    kbRender(true);
+    if (!KB.loaded || Date.now() - KB.loadedAt > 15000) { kbLoad(KB.loaded); }
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && KB.built && $('kb').offsetParent !== null && KB.pending === 0 && Date.now() - KB.loadedAt > 20000) { kbLoad(true); }
+  });
+// BOARD-UI:JS:END
+
   var curTab = 'chat';
-  var PANES = { chat: 'paneChat', sched: 'paneSched', lesson: 'paneLesson', todo: 'paneTodo', parent: 'paneParent', outbox: 'paneOutbox', notices: 'paneNotices', list: 'paneList', sec: 'paneSec', date: 'paneDate', form: 'paneForm' };
-  var TABS = { chat: 'tabChat', sched: 'tabSched', lesson: 'tabLesson', todo: 'tabTodo', parent: 'tabParent', outbox: 'tabOutbox', notices: 'tabNotices', list: 'tabList', sec: 'tabSec', date: 'tabDate', form: 'tabForm' };
+  var PANES = { chat: 'paneChat', sched: 'paneSched', lesson: 'paneLesson', todo: 'paneTodo', board: 'paneBoard', parent: 'paneParent', outbox: 'paneOutbox', notices: 'paneNotices', list: 'paneList', sec: 'paneSec', date: 'paneDate', form: 'paneForm' };
+  var TABS = { chat: 'tabChat', sched: 'tabSched', lesson: 'tabLesson', todo: 'tabTodo', board: 'tabBoard', parent: 'tabParent', outbox: 'tabOutbox', notices: 'tabNotices', list: 'tabList', sec: 'tabSec', date: 'tabDate', form: 'tabForm' };
   function showTab(t) {
     if (!PANES[t]) { t = 'chat'; }
     curTab = t;
@@ -1657,6 +2154,7 @@
     if (t === 'lesson') { renderLessons(); fetchSnapshot(); }
     if (t === 'todo') { renderTodos(); fetchSnapshot(); }
     if (t === 'parent') { loadParents(); }
+    if (t === 'board') { kbShow(); }
     if (t === 'list') { loadPanel('panel', ''); }
     if (t === 'sec') { buildSecretary(); }
     if (t === 'form') { sel.value = formKey; loadFormInfo(function () { renderForm(); renderFormQ(); }); }
@@ -1664,6 +2162,7 @@
   $('tabSched').onclick = function () { showTab('sched'); };
   $('tabLesson').onclick = function () { showTab('lesson'); };
   $('tabTodo').onclick = function () { showTab('todo'); };
+  $('tabBoard').onclick = function () { showTab('board'); };
   $('tabParent').onclick = function () { showTab('parent'); };
   $('tabList').onclick = function () { showTab('list'); };
   $('tabSec').onclick = function () { showTab('sec'); };
