@@ -247,6 +247,61 @@
   @media (max-width:900px) { .kb-board { grid-template-columns:repeat(2, minmax(0,1fr)); } }
   @media (max-width:560px) { .kb-board { grid-template-columns:minmax(0,1fr); } .kb-col.today { order:1; } .kb-col.doing { order:2; } .kb-col.todo { order:3; } .kb-col.done { order:4; } .kb-tabs button { padding-inline:10px; } }
 /* BOARD-UI:CSS:END */
+/* GOALS-UI:CSS:START */
+  /* ===== 生徒の目標（承認・報告・登録・生徒ごと） ===== */
+  #gl { --kb-mark:#ffe27a; --kb-mark-ink:#463800; --kb-ink:#fff; --kb-warn:#9a5600; }
+  @media (prefers-color-scheme: dark) { #gl { --kb-mark:#5d4e10; --kb-mark-ink:#ffeeb0; --kb-ink:#1a1330; --kb-warn:#f0b35a; } }
+  :root[data-theme=fantasy] #gl { --kb-ink:#241d30; }
+  .gl-bar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .gl-bar select { flex:1 1 200px; width:auto; max-width:360px; }
+  .gl-at { font-size:12px; color:var(--sub); }
+  .gl-body { display:flex; flex-direction:column; gap:14px; }
+  .gl-grp { display:flex; flex-direction:column; gap:8px; }
+  .gl-who { margin:6px 0 0; font-size:15px; display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+  .gl-who small, .gl-stu summary small { font-weight:400; font-size:12px; color:var(--sub); }
+  .gl-sub { margin:10px 0 0; font-size:14px; }
+  .gl-tools { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .gl-n { font-size:13px; color:var(--sub); flex:1 1 80px; }
+  .gl-row .gl-top { display:flex; gap:10px; align-items:flex-start; }
+  .gl-text { flex:1; min-width:0; }
+  .gl-text .ttl { font-weight:600; font-size:15px; margin:0; overflow-wrap:anywhere; }
+  .gl-text .ttl small { font-weight:400; color:var(--sub); }
+  .gl-orig { font-size:12px; color:var(--sub); margin:2px 0 0; overflow-wrap:anywhere; }
+  .gl-chk { display:inline-flex; padding:4px; margin:-4px 0 0 -4px; }
+  .gl-chk input, .gl-az input { width:20px; height:20px; accent-color:var(--accent); }
+  .sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  .gl-confirm { position:sticky; top:0; z-index:5; background:var(--card); border:2px solid var(--accent); border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:8px; box-shadow:0 4px 14px rgba(0,0,0,.18); margin-bottom:6px; }
+  .gl-confirm p { margin:0; font-weight:600; }
+  .gl-fail { margin:0; padding-left:1.2em; font-size:13px; color:var(--ng); list-style:none; padding:0; }
+  .gl-fail:empty, #glMsg:empty { display:none; }
+  .gl-modes { display:flex; flex-direction:column; gap:6px; }
+  .gl-mode { display:flex; gap:10px; align-items:flex-start; background:var(--card2); border-radius:10px; padding:8px 10px; }
+  .gl-mode input { margin-top:3px; accent-color:var(--accent); }
+  .gl-mode b { display:block; font-size:14px; } .gl-mode small { color:var(--sub); font-size:12px; }
+  .gl-goals { margin:4px 0 0; padding-left:1.4em; display:flex; flex-direction:column; gap:2px; }
+  .gl-goals li { overflow-wrap:anywhere; font-size:14px; }
+  .gl-goals li button { padding:0 6px; font-size:13px; }
+  .gl-prob { margin:0; padding-left:1.2em; font-size:13px; color:var(--ng); }
+  .gl-row.blocked { opacity:.8; border-style:dashed; }
+  .gl-one { background:var(--card2); border-radius:10px; padding:8px 12px; }
+  .gl-one summary { cursor:pointer; color:var(--accent); }
+  .gl-one .kb-edit { margin-top:8px; }
+  .gl-az { display:inline-flex; gap:8px; align-items:center; font-size:13px; color:var(--sub); width:fit-content; }
+  .gl-stu { background:var(--card2); border-radius:12px; padding:0; border:2px solid transparent; }
+  .gl-stu.attn { border-color:var(--kb-mark); }
+  .gl-stu > summary { list-style:none; cursor:pointer; padding:10px 12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; color:var(--text); }
+  .gl-stu > summary::-webkit-details-marker { display:none; }
+  .gl-stu > summary::before { content:'▸'; color:var(--sub); }
+  .gl-stu[open] > summary::before { content:'▾'; }
+  .gl-chips { display:inline-flex; gap:4px; flex-wrap:wrap; margin-left:auto; }
+  .gl-chip { font-size:12px; border-radius:999px; padding:1px 8px; background:var(--card); color:var(--text); border:1px solid var(--line); font-variant-numeric:tabular-nums; }
+  .gl-chip.hot { background:var(--kb-mark); color:var(--kb-mark-ink); border-color:transparent; font-weight:700; }
+  .gl-chip.late { color:var(--ng); border-color:var(--ng); font-weight:700; }
+  .gl-chip.warn { color:var(--kb-warn); border-color:var(--kb-warn); }
+  .gl-chip.quiet { color:var(--sub); border-color:transparent; background:transparent; }
+  .gl-stu-body { padding:0 12px 12px; display:flex; flex-direction:column; gap:8px; }
+  @media (max-width:560px) { .gl-chips { margin-left:0; } .gl-bar select { max-width:none; } }
+/* GOALS-UI:CSS:END */
 </style>
 <script>try{var __t=localStorage.getItem('navi_theme');if(__t){document.documentElement.setAttribute('data-theme',__t);}}catch(e){}</script>
 
@@ -276,6 +331,7 @@
   <button id="tabLesson">📓 レッスン</button>
   <button id="tabTodo">✅ やること</button>
   <button id="tabBoard">🗂 ボード</button>
+  <button id="tabGoals">🎯 目標</button>
   <button id="tabParent">💌 保護者</button>
   <button id="tabOutbox">📝 書き溜め<span class="badge" id="obBadge" style="display:none">0</span></button>
   <button id="tabList">📋 一覧</button>
@@ -387,6 +443,7 @@
 </div>
 
 <div class="pane" id="paneBoard"><div id="kb"></div></div>
+<div class="pane" id="paneGoals"><div id="gl"></div></div>
 <div class="pane" id="paneList">
   <div class="row" style="flex-wrap:wrap;gap:6px">
     <button data-p="today">★今日</button><button data-p="todo">✅Todo</button><button data-p="week">📅予定</button><button data-p="shelf">📥依頼箱</button>
@@ -1729,7 +1786,6 @@
     $('badge').textContent = unread;
   }
 
-
 // BOARD-UI:JS:START
   // ================= やることボード（カンバン） =================
   // Claudeの「やることボード」と同じ機能。カードはNAVIのTodoそのもの（PCの kanban_core）。動かすと、声の指示・Todo管理にも反映される
@@ -2202,9 +2258,495 @@
   setInterval(function () { if (KB.built && document.visibilityState === 'visible' && $('kb').offsetParent !== null && !KB.syncing && !KB.dragging) { kbSync(); } }, 45000);
 // BOARD-UI:JS:END
 
+// GOALS-UI:JS:START
+  // ================= 生徒の目標（承認待ち・報告の確認・登録・生徒ごとの状況） =================
+  // データはステッカーアプリのスプレッドシート（Student Goals）。PCのN.A.V.I.がGASを通して読み書きする。この端末には保存しない（生徒の名前・目標が残らないように）
+  var GL = { data: null, by: {}, g: {}, tab: 'pending', sel: {}, open: {}, edit: null, confirm: null, student: 'all', showAz: false, parsed: null, mode: 'finalize', draft: '',
+             msg: '', info: false, failed: [], skew: 0, at: 0, loading: false, busy: false, built: false, err: '', timer: 0 };
+  try { var glt = localStorage.getItem('navi_gl_tab'); if (['pending', 'reported', 'add', 'students'].indexOf(glt) >= 0) { GL.tab = glt; } } catch (e) { }
+  var GL_ST = { PendingApproval: '承認待ち', PendingStudentAccept: '返事待ち', Active: '取り組み中', Submitted: '報告済み', Completed: '完了' };
+
+  function gle(tag, cls, text) { var e = document.createElement(tag); if (cls) { e.className = cls; } if (text != null) { e.textContent = text; } return e; }
+  function glBtn(label, cls, fn, title) { var b = gle('button', cls, label); b.type = 'button'; if (title) { b.title = title; } b.addEventListener('click', fn); b.disabled = GL.busy; return b; }
+  function glNow() { return Date.now() + GL.skew; }
+  function glSay(text, info) { GL.msg = text || ''; GL.info = !!info; var m = $('glMsg'); if (m) { m.textContent = GL.msg; m.className = info ? 'kb-msg info' : 'kb-msg'; } }
+  function glStu(id) { return GL.by[id] || { id: id, name: '（名簿にない生徒）', cls: '', done: 0 }; }
+  function glMid(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+  function glParseDay(s) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; }
+  function glDaysTo(s) { var d = glParseDay(s); return d ? Math.round((d - glMid(new Date(glNow()))) / 86400000) : null; }
+  function glMD(ms) { var d = new Date(ms); return (d.getMonth() + 1) + '/' + d.getDate(); }
+  function glAgo(ms) {
+    if (!ms) { return ''; }
+    var m = Math.max(0, Math.round((glNow() - ms) / 60000));
+    if (m < 1) { return 'いま'; }
+    if (m < 60) { return m + '分前'; }
+    var h = Math.round(m / 60); if (h < 24) { return h + '時間前'; }
+    return Math.round(h / 24) + '日前';
+  }
+  function glDue(iso) {
+    var n = glDaysTo(iso), d = glParseDay(iso); if (!d) { return null; }
+    var s = gle('span', 'kb-due' + (n < 0 ? ' late' : n <= 3 ? ' soon' : ''), '期限 ' + (d.getMonth() + 1) + '/' + d.getDate() + (n === 0 ? '（今日）' : n > 0 ? '（あと' + n + '日）' : '（' + (-n) + '日すぎ）'));
+    return s;
+  }
+
+  // ---- データ ----
+  function glSet(snap) {
+    if (!snap || !snap.goals || !snap.students) { throw new Error('PCの返事が読めませんでした'); }
+    GL.data = snap; GL.skew = (snap.now || Date.now()) - Date.now(); GL.at = Date.now();
+    GL.by = {}; snap.students.forEach(function (s) { GL.by[s.id] = s; });
+    GL.g = {}; snap.goals.forEach(function (g) { GL.g[g.id] = g; });
+    Object.keys(GL.sel).forEach(function (id) { if (!GL.g[id]) { delete GL.sel[id]; } });
+    if (GL.edit && !GL.g[GL.edit.id]) { GL.edit = null; }
+  }
+  function glLoad(quiet) {
+    if (GL.loading) { return Promise.resolve(); }
+    GL.loading = true;
+    if (!quiet) { glSay('読み込んでいます…（PCがスプレッドシートを読みます）', true); }
+    return jcall('goals_list', {}).then(function (r) { glSet(r.goals); GL.err = ''; glSay('', true); })
+      .catch(function (e) { GL.err = e.message || '読み込めませんでした'; glSay('❌ ' + GL.err); })
+      .then(function () { GL.loading = false; glRender(true); });
+  }
+  // 操作を頼む。終わったら最新の一覧に入れ替わる。できなかった分は、理由つきで出す
+  function glAct(op, extra, after) {
+    if (GL.busy) { return Promise.resolve(); }
+    GL.busy = true; GL.confirm = null; GL.failed = [];
+    var body = { op: op }; Object.keys(extra || {}).forEach(function (k) { body[k] = extra[k]; });
+    var was = GL.g;
+    glSay('PCに頼んでいます…（スプレッドシートに書いています）', true); glRender(true);
+    return jcall('goals_act', body).then(function (r) {
+      GL.failed = (r.failed || []).map(function (f) {
+        var g = was[f.id], who = g ? glStu(g.sid).name + 'の「' + g.t.slice(0, 20) + '」' : (GL.by[f.id] ? GL.by[f.id].name : '');
+        return (who ? who + '：' : '') + f.error;
+      });
+      glSet(r.goals);
+      (extra && extra.ids || []).forEach(function (id) { delete GL.sel[id]; });
+      if (after) { after(r); }
+      glSay(r.reply || '', true);
+    }).catch(function (e) { glSay('❌ ' + (e.message || '失敗しました')); })
+      .then(function () { GL.busy = false; GL.edit = null; glRender(true); });
+  }
+
+  // ---- 絞りこみ・並べ方 ----
+  function glShown(g) {
+    var f = GL.student; if (f === 'all') { return true; }
+    var s = glStu(g.sid);
+    return f.indexOf('s:') === 0 ? g.sid === f.slice(2) : s.cls === f.slice(2);
+  }
+  function glList(status) {
+    return GL.data.goals.filter(function (g) { return g.st === status && glShown(g) && (GL.showAz || !g.az); })
+      .sort(function (a, b) { return (a.pa || a.sb || 0) - (b.pa || b.sb || 0); });
+  }
+  function glCountAll(status) { return GL.data.goals.filter(function (g) { return g.st === status && !(status === 'Active' && g.az); }).length; }
+  function glGroup(list) {          // 生徒ごとにまとめる（いちばん古いものが先の生徒から）
+    var order = [], by = {};
+    list.forEach(function (g) { if (!by[g.sid]) { by[g.sid] = []; order.push(g.sid); } by[g.sid].push(g); });
+    return order.map(function (sid) { return { sid: sid, goals: by[sid] }; });
+  }
+  function glHead(sid, n) {
+    var s = glStu(sid), h = gle('h3', 'gl-who');
+    h.appendChild(gle('span', null, s.name)); if (s.cls) { h.appendChild(gle('small', null, s.cls)); }
+    if (n) { h.appendChild(gle('small', null, n + '件')); }
+    return h;
+  }
+  function glEmpty(text) { return gle('p', 'kb-empty', text); }
+
+  // ---- 確認の帯（取り消せない操作・まとめて処理するとき） ----
+  function glAsk(text, okLabel, fn, input) { GL.confirm = { text: text, ok: okLabel, fn: fn, input: input || null, val: '' }; glRender(true); }
+  function glConfirmBar() {
+    var c = GL.confirm; if (!c) { return null; }
+    var bar = gle('div', 'gl-confirm'); bar.setAttribute('role', 'alertdialog');
+    bar.appendChild(gle('p', null, c.text));
+    var inp = null;
+    if (c.input) {
+      inp = gle('input'); inp.type = 'text'; inp.maxLength = 120; inp.placeholder = c.input; inp.value = c.val || '';
+      inp.addEventListener('input', function () { c.val = inp.value; });
+      bar.appendChild(inp);
+    }
+    var row = gle('div', 'kb-acts');
+    row.appendChild(glBtn('やめる', 'quiet', function () { GL.confirm = null; glRender(true); }));
+    row.appendChild(gle('span', 'sp'));
+    row.appendChild(glBtn(c.ok, 'pri', function () { var v = c.val || ''; GL.confirm = null; c.fn(v); }));
+    bar.appendChild(row);
+    return bar;
+  }
+
+  // ---- 行の部品 ----
+  function glCheck(g) {
+    var l = gle('label', 'gl-chk'), c = gle('input'); c.type = 'checkbox'; c.checked = !!GL.sel[g.id]; c.disabled = GL.busy;
+    c.addEventListener('change', function () { if (c.checked) { GL.sel[g.id] = 1; } else { delete GL.sel[g.id]; } glRender(true); });
+    l.appendChild(c); l.appendChild(gle('span', 'sr', '選ぶ')); return l;
+  }
+  function glText(g) {
+    var w = gle('div', 'gl-text'); w.appendChild(gle('p', 'ttl', g.t));
+    if (g.o) { w.appendChild(gle('p', 'gl-orig', '元の文：' + g.o)); }
+    return w;
+  }
+  function glTags(g) {
+    var m = gle('div', 'kb-meta');
+    if (g.by === 'teacher') { m.appendChild(gle('span', null, '先生の提案')); }
+    if (g.rnd) { m.appendChild(gle('span', null, 'ランダム目標')); }
+    if (g.az) { m.appendChild(gle('span', null, 'Kids A-Z（自動）')); }
+    if (g.ck && !g.az) { m.appendChild(gle('span', null, 'チェックリスト連動')); }
+    if (g.st === 'Active' && !g.vis) { m.appendChild(gle('span', null, '保護者には非表示')); }
+    return m;
+  }
+  function glEditBox(g, kind) {        // 行の下に出る入力欄
+    var e = GL.edit, box = gle('div', 'kb-edit');
+    var inp = kind === 'fix' ? gle('textarea') : gle('input'); if (kind !== 'fix') { inp.type = 'text'; }
+    inp.maxLength = kind === 'fix' ? 200 : 120; inp.value = e.text;
+    inp.placeholder = kind === 'fix' ? '目標の文' : (kind === 'reject' ? '生徒へのひとこと（理由）。なくてもよい' : kind === 'rework' ? '生徒へのコメント（どこを直すか）。なくてもよい' : '理由。なくてもよい');
+    inp.addEventListener('input', function () { e.text = inp.value; });
+    box.appendChild(inp);
+    var row = gle('div', 'kb-acts');
+    row.appendChild(glBtn('やめる', 'quiet', function () { GL.edit = null; glRender(true); }));
+    row.appendChild(gle('span', 'sp'));
+    if (kind === 'fix') {
+      row.appendChild(glBtn('文だけ直す', null, function () { if (!e.text.trim()) { glSay('目標の文が空です。'); return; } glAct('edit', { ids: [g.id], text: e.text }); }));
+      if (g.st === 'PendingApproval') { row.appendChild(glBtn('この文で承認', 'pri', function () { if (!e.text.trim()) { glSay('目標の文が空です。'); return; } glAct('editApprove', { ids: [g.id], text: e.text }); })); }
+    } else if (kind === 'due') {
+      var d = gle('input'); d.type = 'date'; d.value = g.due || ''; d.addEventListener('input', function () { e.text = d.value; });
+      box.replaceChild(d, inp); e.text = d.value;
+      row.appendChild(glBtn('期限を決める', 'pri', function () { if (!e.text) { glSay('日付を選んでください。'); return; } glAct('due', { ids: [g.id], studentId: g.sid, due: e.text }); }));
+      box.appendChild(gle('p', 'kb-hint', 'ステッカーアプリのルール：今日より前は選べません。一度決めた期限は、早めることはできても延ばせません。'));
+    } else {
+      var op = kind === 'reject' ? 'reject' : kind === 'rework' ? 'rework' : 'discard';
+      row.appendChild(glBtn(kind === 'reject' ? '却下する' : kind === 'rework' ? 'やり直しに戻す' : '破棄する', kind === 'discard' ? 'danger' : 'pri', function () { glAct(op, { ids: [g.id], reason: e.text }); }));
+    }
+    box.appendChild(row);
+    return box;
+  }
+  function glBeginEdit(g, kind) { GL.edit = { id: g.id, kind: kind, text: kind === 'fix' ? g.t : (kind === 'due' ? (g.due || '') : '') }; glRender(true); }
+  function glRow(g, acts, extra) {
+    var li = gle('li', 'kb-card gl-row');
+    var top = gle('div', 'gl-top'); if (acts && acts.check) { top.appendChild(glCheck(g)); }
+    top.appendChild(glText(g)); li.appendChild(top);
+    var meta = glTags(g); if (extra) { extra(meta); }
+    if (meta.childNodes.length) { li.appendChild(meta); }
+    if (g.fb && (g.st === 'Active' || g.st === 'PendingApproval')) { li.appendChild(gle('p', 'gl-orig', 'コメント：' + g.fb)); }
+    if (acts && acts.btns) { var row = gle('div', 'kb-acts'); row.appendChild(gle('span', 'sp')); acts.btns(row); li.appendChild(row); }
+    if (GL.edit && GL.edit.id === g.id) { li.appendChild(glEditBox(g, GL.edit.kind)); }
+    return li;
+  }
+  function glSelectedIds(list) { return list.filter(function (g) { return GL.sel[g.id]; }).map(function (g) { return g.id; }); }
+  function glToolbar(list, bulk) {       // すべて選ぶ／選んだ分への操作
+    var bar = gle('div', 'gl-tools');
+    var all = list.length && list.every(function (g) { return GL.sel[g.id]; });
+    bar.appendChild(glBtn(all ? '選びなおす（全部外す）' : '表示中を全部選ぶ', null, function () { list.forEach(function (g) { if (all) { delete GL.sel[g.id]; } else { GL.sel[g.id] = 1; } }); glRender(true); }));
+    var n = glSelectedIds(list).length;
+    bar.appendChild(gle('span', 'gl-n', n ? n + '件 選んでいます' : ''));
+    bulk(bar, n);
+    return bar;
+  }
+
+  // ---- 承認待ち ----
+  function glPanelPending(box) {
+    var list = glList('PendingApproval');
+    var auto = (GL.data.autoHours || 24);
+    box.appendChild(gle('p', 'kb-hint', '生徒が出した目標です。出してから' + auto + '時間たつと、ステッカーアプリが自動で承認します。'));
+    if (!list.length) { box.appendChild(glEmpty('承認待ちの目標はありません。')); return; }
+    box.appendChild(glToolbar(list, function (bar, n) {
+      bar.appendChild(glBtn('選んだ分を承認', 'pri', function () { var ids = glSelectedIds(list); glAsk(ids.length + '件の目標を承認します。', '承認する', function () { glAct('approve', { ids: ids }); }); }));
+      bar.lastChild.disabled = GL.busy || !n;
+      bar.appendChild(glBtn('選んだ分を却下…', 'danger', function () { var ids = glSelectedIds(list); glAsk(ids.length + '件の目標を却下します。', '却下する', function (v) { glAct('reject', { ids: ids, reason: v }); }, '生徒へのひとこと（理由）。なくてもよい'); }));
+      bar.lastChild.disabled = GL.busy || !n;
+    }));
+    glGroup(list).forEach(function (grp) {
+      var sec = gle('section', 'gl-grp'); sec.appendChild(glHead(grp.sid, grp.goals.length));
+      var ul = gle('ul', 'kb-cards');
+      grp.goals.forEach(function (g) {
+        ul.appendChild(glRow(g, {
+          check: true,
+          btns: function (row) {
+            row.appendChild(glBtn('却下…', 'quiet danger', function () { glBeginEdit(g, 'reject'); }));
+            row.appendChild(glBtn('直して承認…', null, function () { glBeginEdit(g, 'fix'); }));
+            row.appendChild(glBtn('承認', 'pri', function () { glAct('approve', { ids: [g.id] }); }));
+          }
+        }, function (meta) {
+          var left = Math.ceil(auto - (glNow() - g.pa) / 3600000);
+          meta.appendChild(gle('span', null, '出した ' + glAgo(g.pa)));
+          meta.appendChild(gle('span', left <= 3 ? 'kb-wait' : null, left <= 0 ? 'まもなく自動で承認' : 'あと約' + left + '時間で自動承認'));
+        }));
+      });
+      sec.appendChild(ul); box.appendChild(sec);
+    });
+  }
+
+  // ---- 報告された目標の確認 ----
+  function glPanelReported(box) {
+    var list = glList('Submitted');
+    box.appendChild(gle('p', 'kb-hint', '生徒が「できた」と報告した目標です。完了にすると、ステッカーアプリの設定どおりにコインなどの報酬が渡されます（取り消せません）。'));
+    if (!list.length) { box.appendChild(glEmpty('報告された目標はありません。')); return; }
+    box.appendChild(glToolbar(list, function (bar, n) {
+      bar.appendChild(glBtn('選んだ分を完了にする', 'pri', function () { var ids = glSelectedIds(list); glAsk(ids.length + '件を完了にして、報酬を渡します。取り消せません。', '完了にする', function () { glAct('confirm', { ids: ids }); }); }));
+      bar.lastChild.disabled = GL.busy || !n;
+    }));
+    glGroup(list).forEach(function (grp) {
+      var sec = gle('section', 'gl-grp'); sec.appendChild(glHead(grp.sid, grp.goals.length));
+      var ul = gle('ul', 'kb-cards');
+      grp.goals.forEach(function (g) {
+        ul.appendChild(glRow(g, {
+          check: true,
+          btns: function (row) {
+            row.appendChild(glBtn('やり直し…', 'quiet', function () { glBeginEdit(g, 'rework'); }));
+            row.appendChild(glBtn('完了にする', 'pri', function () { glAsk('「' + g.t.slice(0, 30) + '」を完了にして、報酬を渡します。取り消せません。', '完了にする', function () { glAct('confirm', { ids: [g.id] }); }); }));
+          }
+        }, function (meta) {
+          meta.appendChild(gle('span', null, '報告 ' + (g.sb ? glAgo(g.sb) : '')));
+          var d = glDue(g.due); if (d) { meta.appendChild(d); }
+          if (g.due && g.sb) {
+            var late = new Date(g.sb) > new Date(glParseDay(g.due).getTime() + 86400000 - 1);
+            meta.appendChild(gle('span', late ? 'kb-wait' : null, late ? '期限を過ぎて報告' : '期限内に報告'));
+          }
+        }));
+      });
+      sec.appendChild(ul); box.appendChild(sec);
+    });
+  }
+
+  // ---- 登録 ----
+  function glBusyOf(sid) { return GL.data.goals.filter(function (g) { return g.sid === sid && !g.az && ['PendingApproval', 'PendingStudentAccept', 'Active', 'Submitted'].indexOf(g.st) >= 0; }).length; }
+  function glAddEntry(sid, texts) {
+    if (!GL.parsed) { GL.parsed = { entries: [], problems: [] }; }
+    var e = null; GL.parsed.entries.forEach(function (x) { if (x.studentId === sid) { e = x; } });
+    var s = glStu(sid), n = glBusyOf(sid);
+    if (!e) { e = { studentId: sid, name: s.name, cls: s.cls, texts: [], dropped: [], warn: [], blocked: n > 0, why: n ? '今の目標が終わっていません（' + n + '件）' : '' }; GL.parsed.entries.push(e); }
+    texts.forEach(function (t) { t = t.trim(); if (t && e.texts.indexOf(t) < 0 && e.texts.length < 3) { e.texts.push(t); } });
+    e.off = e.blocked;
+  }
+  function glPanelAdd(box) {
+    box.appendChild(gle('p', 'kb-hint', '紙で出された目標や、教室で決めた目標を、先生が代わりに入れます。1人1〜3個。今の目標が終わっていない生徒には、ステッカーアプリのルールで新しく入れられません。'));
+    var modes = gle('div', 'gl-modes');
+    [['finalize', '確定して登録', 'すぐ「取り組み中」になります（教室で決めた目標向き）'], ['propose', '提案する', '生徒が承諾するまで待ちます（生徒に選ばせたいとき）']].forEach(function (m) {
+      var l = gle('label', 'gl-mode'), r = gle('input'); r.type = 'radio'; r.name = 'glMode'; r.checked = GL.mode === m[0]; r.disabled = GL.busy;
+      r.addEventListener('change', function () { GL.mode = m[0]; });
+      var t = gle('span'); t.appendChild(gle('b', null, m[1])); t.appendChild(gle('small', null, m[2]));
+      l.appendChild(r); l.appendChild(t); modes.appendChild(l);
+    });
+    box.appendChild(modes);
+    var lab = gle('label', 'lab', '貼り付け（1人ずつ「名前：目標／目標」、または名前の行のあとに「・目標」）'); lab.setAttribute('for', 'glDraft'); box.appendChild(lab);
+    var ta = gle('textarea'); ta.id = 'glDraft'; ta.rows = 6; ta.value = GL.draft; ta.disabled = GL.busy;
+    ta.placeholder = 'ゆき：毎日5分音読する／単語を10個覚える\nけん\n・夏休みの宿題を終える\n・過去問を解く\n3番 英検を受ける';
+    ta.addEventListener('input', function () { GL.draft = ta.value; });
+    box.appendChild(ta);
+    var row = gle('div', 'kb-acts');
+    row.appendChild(glBtn('読み取る', 'pri', function () {
+      if (!GL.draft.trim()) { glSay('目標を書くか、貼り付けてください。'); return; }
+      GL.busy = true; glSay('読み取っています…', true); glRender(true);
+      jcall('goals_parse', { text: GL.draft }).then(function (r) {
+        GL.parsed = r.parsed; (GL.parsed.entries || []).forEach(function (e) { e.off = !!e.blocked; });
+        glSay(GL.parsed.entries.length ? '' : '登録できる目標が見つかりませんでした。', !GL.parsed.entries.length ? false : true);
+      }).catch(function (e) { glSay('❌ ' + e.message); }).then(function () { GL.busy = false; glRender(true); });
+    }));
+    row.appendChild(glBtn('書いた内容を消す', 'quiet', function () { GL.draft = ''; GL.parsed = null; glRender(true); }));
+    box.appendChild(row);
+    // 1人ずつ
+    var det = gle('details', 'gl-one'); det.appendChild(gle('summary', null, '1人ずつ入れる'));
+    var f = gle('div', 'kb-edit'); var sel = gle('select'); sel.appendChild(Object.assign(gle('option', null, '生徒を選ぶ'), { value: '' }));
+    GL.data.students.slice().sort(function (a, b) { return (a.cls + a.name).localeCompare(b.cls + b.name, 'ja'); }).forEach(function (s) {
+      var n = glBusyOf(s.id), o = gle('option', null, (s.cls ? s.cls + '　' : '') + s.name + (n ? '（取り組み中あり）' : '')); o.value = s.id; sel.appendChild(o);
+    });
+    f.appendChild(sel);
+    var ins = [0, 1, 2].map(function (i) { var x = gle('input'); x.type = 'text'; x.maxLength = 200; x.placeholder = '目標' + (i + 1) + (i ? '（なくてもよい）' : ''); f.appendChild(x); return x; });
+    f.appendChild(glBtn('下の確認に足す', null, function () {
+      if (!sel.value) { glSay('生徒を選んでください。'); return; }
+      var ts = ins.map(function (x) { return x.value; }).filter(function (t) { return t.trim(); });
+      if (!ts.length) { glSay('目標を1つ以上書いてください。'); return; }
+      glAddEntry(sel.value, ts); glSay('', true); glRender(true);
+    }));
+    det.appendChild(f); box.appendChild(det);
+    // 確認
+    var P = GL.parsed;
+    if (P && P.problems && P.problems.length) { var pu = gle('ul', 'gl-prob'); P.problems.forEach(function (p) { pu.appendChild(gle('li', null, p)); }); box.appendChild(pu); }
+    if (P && P.entries && P.entries.length) {
+      box.appendChild(gle('h3', 'gl-sub', '登録する内容の確認（' + (GL.mode === 'propose' ? '提案する' : '確定して登録') + '）'));
+      var ul = gle('ul', 'kb-cards');
+      P.entries.forEach(function (e) {
+        var li = gle('li', 'kb-card gl-row' + (e.blocked ? ' blocked' : ''));
+        var top = gle('div', 'gl-top'), l = gle('label', 'gl-chk'), c = gle('input'); c.type = 'checkbox'; c.checked = !e.off && !e.blocked; c.disabled = GL.busy || !!e.blocked;
+        c.addEventListener('change', function () { e.off = !c.checked; glRender(true); }); l.appendChild(c); l.appendChild(gle('span', 'sr', '登録する'));
+        top.appendChild(l); var w = gle('div', 'gl-text'); var h = gle('p', 'ttl', e.name); if (e.cls) { h.appendChild(gle('small', null, '　' + e.cls)); } w.appendChild(h);
+        var ol = gle('ol', 'gl-goals');
+        e.texts.forEach(function (t, i) { var it = gle('li', null, t); it.appendChild(glBtn('×', 'quiet', function () { e.texts.splice(i, 1); if (!e.texts.length) { P.entries.splice(P.entries.indexOf(e), 1); } glRender(true); }, '外す')); ol.appendChild(it); });
+        w.appendChild(ol); top.appendChild(w); li.appendChild(top);
+        (e.warn || []).forEach(function (t) { li.appendChild(gle('p', 'gl-orig', '⚠ ' + t)); });
+        if (e.blocked) {
+          var p = gle('p', 'kb-wait', e.why + '。「生徒ごと」で終わらせるか破棄すると入れられます。');
+          p.appendChild(glBtn('見に行く', 'quiet', function () { GL.open[e.studentId] = true; glTab('students'); })); li.appendChild(p);
+        }
+        ul.appendChild(li);
+      });
+      box.appendChild(ul);
+      var ok = P.entries.filter(function (e) { return !e.blocked && !e.off && e.texts.length; });
+      var go = gle('div', 'kb-acts'); go.appendChild(gle('span', 'sp'));
+      var b = glBtn(ok.length + '人分を' + (GL.mode === 'propose' ? '提案する' : '登録する'), 'pri', function () {
+        glAct('add', { entries: ok.map(function (e) { return { studentId: e.studentId, texts: e.texts, mode: GL.mode }; }) }, function (r) {
+          var bad = {}; (r.failed || []).forEach(function (f) { bad[f.id] = 1; });
+          GL.parsed.entries = GL.parsed.entries.filter(function (e) { return !(ok.indexOf(e) >= 0 && !bad[e.studentId]); });
+          if (!GL.parsed.entries.length) { GL.parsed = null; GL.draft = ''; }
+        });
+      });
+      b.disabled = GL.busy || !ok.length; go.appendChild(b); box.appendChild(go);
+    }
+  }
+
+  // ---- 生徒ごとの状況 ----
+  function glStudentInfo(s) {
+    var gs = GL.data.goals.filter(function (g) { return g.sid === s.id; });
+    var info = { s: s, gs: gs, pend: 0, rep: 0, act: 0, acc: 0, late: 0, long: 0, month: 0, az: 0 };
+    var m0 = new Date(glNow()); var mStart = new Date(m0.getFullYear(), m0.getMonth(), 1).getTime();
+    gs.forEach(function (g) {
+      if (g.st === 'PendingApproval') { info.pend++; } else if (g.st === 'Submitted') { info.rep++; } else if (g.st === 'PendingStudentAccept') { info.acc++; }
+      else if (g.st === 'Active') {
+        if (g.az) { info.az++; return; }
+        info.act++;
+        var n = glDaysTo(g.due); if (n !== null && n < 0) { info.late++; }
+        if (n === null && g.ap && glNow() - g.ap > 14 * 86400000) { info.long++; }
+      } else if (g.st === 'Completed' && g.cp >= mStart) { info.month++; }
+    });
+    info.none = !info.pend && !info.rep && !info.act && !info.acc;
+    info.score = info.pend * 3 + info.rep * 3 + info.late * 2 + info.long + (info.none ? 1 : 0);
+    return info;
+  }
+  function glChip(text, cls) { return gle('span', 'gl-chip' + (cls ? ' ' + cls : ''), text); }
+  function glPanelStudents(box) {
+    var az = gle('label', 'gl-az'), ck = gle('input'); ck.type = 'checkbox'; ck.checked = GL.showAz; ck.addEventListener('change', function () { GL.showAz = ck.checked; glRender(true); });
+    az.appendChild(ck); az.appendChild(gle('span', null, 'Kids A-Zの自動目標も表示する')); box.appendChild(az);
+    var infos = GL.data.students.filter(function (s) { var f = GL.student; return f === 'all' || (f.indexOf('s:') === 0 ? s.id === f.slice(2) : s.cls === f.slice(2)); }).map(glStudentInfo);
+    infos.sort(function (a, b) { return b.score - a.score || (a.s.cls + a.s.name).localeCompare(b.s.cls + b.s.name, 'ja'); });
+    if (!infos.length) { box.appendChild(glEmpty('生徒がいません。')); return; }
+    infos.forEach(function (i) {
+      var d = gle('details', 'gl-stu' + (i.score >= 3 ? ' attn' : '')); d.open = !!GL.open[i.s.id];
+      d.addEventListener('toggle', function () { if (d.open) { GL.open[i.s.id] = true; } else { delete GL.open[i.s.id]; } });
+      var sm = gle('summary'); sm.appendChild(gle('b', null, i.s.name)); if (i.s.cls) { sm.appendChild(gle('small', null, i.s.cls)); }
+      var chips = gle('span', 'gl-chips');
+      if (i.pend) { chips.appendChild(glChip('承認待ち ' + i.pend, 'hot')); }
+      if (i.rep) { chips.appendChild(glChip('報告 ' + i.rep, 'hot')); }
+      if (i.act) { chips.appendChild(glChip('取り組み中 ' + i.act)); }
+      if (i.acc) { chips.appendChild(glChip('返事待ち ' + i.acc)); }
+      if (i.late) { chips.appendChild(glChip('期限すぎ ' + i.late, 'late')); }
+      if (i.long) { chips.appendChild(glChip('2週間以上 ' + i.long, 'warn')); }
+      if (i.none) { chips.appendChild(glChip('いまの目標なし', 'warn')); }
+      chips.appendChild(glChip('今月 ' + i.month + '／累計 ' + i.s.done, 'quiet'));
+      sm.appendChild(chips); d.appendChild(sm);
+      var body = gle('div', 'gl-stu-body');
+      if (i.none) {
+        var p = gle('p', 'kb-hint', '取り組み中の目標がありません。'); p.appendChild(glBtn('この生徒に目標を入れる', 'pri', function () {
+          GL.draft = (GL.draft ? GL.draft.replace(/\s*$/, '\n') : '') + i.s.name + '：'; GL.parsed = null; glTab('add');
+          setTimeout(function () { var t = $('glDraft'); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } }, 0);
+        })); body.appendChild(p);
+      }
+      var ul = gle('ul', 'kb-cards');
+      var order = { PendingApproval: 0, Submitted: 1, PendingStudentAccept: 2, Active: 3, Completed: 4 };
+      i.gs.filter(function (g) { return GL.showAz || !g.az; }).sort(function (a, b) { return order[a.st] - order[b.st] || (b.cp || b.pa || 0) - (a.cp || a.pa || 0); }).forEach(function (g) {
+        ul.appendChild(glRow(g, { btns: function (row) { glStuButtons(row, g, i); } }, function (meta) {
+          var st = gle('span', 'kb-st ' + (g.st === 'Active' ? 'doing' : g.st === 'Completed' ? '' : 'today'), GL_ST[g.st] || g.st); meta.insertBefore(st, meta.firstChild);
+          var du = glDue(g.due); if (du && g.st !== 'Completed') { meta.appendChild(du); }
+          if (g.st === 'Completed') { meta.appendChild(gle('span', null, '完了 ' + glMD(g.cp))); }
+          if (g.st === 'Active' && g.ap) { meta.appendChild(gle('span', null, '開始 ' + glAgo(g.ap))); }
+        }));
+      });
+      if (!ul.childNodes.length) { body.appendChild(glEmpty('表示する目標はありません。')); } else { body.appendChild(ul); }
+      d.appendChild(body); box.appendChild(d);
+    });
+  }
+  function glStuButtons(row, g, info) {
+    var short = g.t.slice(0, 30);
+    if (g.st === 'PendingApproval') {
+      row.appendChild(glBtn('却下…', 'quiet danger', function () { glBeginEdit(g, 'reject'); }));
+      row.appendChild(glBtn('直して承認…', null, function () { glBeginEdit(g, 'fix'); }));
+      row.appendChild(glBtn('承認', 'pri', function () { glAct('approve', { ids: [g.id] }); }));
+    } else if (g.st === 'Submitted') {
+      row.appendChild(glBtn('やり直し…', 'quiet', function () { glBeginEdit(g, 'rework'); }));
+      row.appendChild(glBtn('完了にする', 'pri', function () { glAsk('「' + short + '」を完了にして、報酬を渡します。取り消せません。', '完了にする', function () { glAct('confirm', { ids: [g.id] }); }); }));
+    } else if (g.st === 'PendingStudentAccept') {
+      row.appendChild(glBtn('提案を取り下げる', 'quiet danger', function () { glAsk(glStu(g.sid).name + 'への先生の提案（' + info.acc + '件）を取り下げます。', '取り下げる', function () { glAct('withdraw', { studentId: g.sid }); }); }));
+      row.appendChild(glBtn('生徒に代わって承諾', 'pri', function () { glAct('accept', { studentId: g.sid }); }, '教室で本人と決めたとき。提案した分が全部、取り組み中になります'));
+    } else if (g.st === 'Active') {
+      row.appendChild(glBtn('文を直す…', 'quiet', function () { glBeginEdit(g, 'fix'); }));
+      row.appendChild(glBtn(g.vis ? '保護者に隠す' : '保護者に見せる', 'quiet', function () { glAct('visible', { ids: [g.id], visible: !g.vis }); }));
+      row.appendChild(glBtn('期限…', 'quiet', function () { glBeginEdit(g, 'due'); }));
+      row.appendChild(glBtn('破棄…', 'quiet danger', function () { glBeginEdit(g, 'discard'); }));
+      if (!g.az) { row.appendChild(glBtn('完了にする', 'pri', function () { glAsk('「' + short + '」を、報告を待たずに完了にして、報酬を渡します。取り消せません。', '完了にする', function () { glAct('complete', { ids: [g.id] }); }); })); }
+    }
+  }
+
+  // ---- 全体 ----
+  function glTab(t) { GL.tab = t; GL.edit = null; GL.confirm = null; try { localStorage.setItem('navi_gl_tab', t); } catch (e) { } glRender(true); }
+  function glBuild() {
+    var root = $('gl'); root.textContent = ''; root.classList.add('kb', 'gl');
+    var top = gle('div', 'gl-bar');
+    var sel = gle('select'); sel.id = 'glFilter'; sel.setAttribute('aria-label', '生徒・クラスで絞りこむ'); sel.addEventListener('change', function () { GL.student = sel.value; glRender(true); });
+    top.appendChild(sel);
+    var rl = gle('button', null, '🔄'); rl.type = 'button'; rl.title = 'スプレッドシートから読みなおす'; rl.id = 'glReload'; rl.addEventListener('click', function () { glSay('読みなおします…', true); glLoad(false); });
+    top.appendChild(rl);
+    var st = gle('span', 'gl-at'); st.id = 'glAt'; top.appendChild(st);
+    root.appendChild(top);
+    var sum = gle('dl', 'kb-sum'); sum.id = 'glSum'; root.appendChild(sum);
+    var m = gle('p', 'kb-msg'); m.id = 'glMsg'; m.setAttribute('role', 'status'); root.appendChild(m);
+    var fl = gle('ul', 'gl-fail'); fl.id = 'glFail'; root.appendChild(fl);
+    var tabs = gle('div', 'kb-tabs'); tabs.id = 'glTabs'; tabs.setAttribute('role', 'tablist'); root.appendChild(tabs);
+    var cf = gle('div'); cf.id = 'glConfirm'; root.appendChild(cf);
+    var body = gle('div', 'gl-body'); body.id = 'glBody'; root.appendChild(body);
+    GL.built = true;
+  }
+  function glRender(force) {
+    if (!GL.built) { return; }
+    var root = $('gl'), ae = document.activeElement;
+    if (!force && ae && root.contains(ae) && (ae.tagName === 'TEXTAREA' || (ae.tagName === 'INPUT' && ae.type !== 'checkbox'))) { return; }
+    var msg = $('glMsg'); msg.textContent = GL.msg; msg.className = GL.info ? 'kb-msg info' : 'kb-msg';
+    var fl = $('glFail'); fl.textContent = ''; GL.failed.forEach(function (t) { fl.appendChild(gle('li', null, '⚠ ' + t)); });
+    var at = $('glAt'); at.textContent = GL.at ? '更新 ' + new Date(GL.at).getHours() + ':' + ('0' + new Date(GL.at).getMinutes()).slice(-2) : '';
+    var body = $('glBody'), sum = $('glSum'), tabs = $('glTabs'), cf = $('glConfirm');
+    var keep = { x: window.pageXOffset, y: window.pageYOffset };
+    body.textContent = ''; sum.textContent = ''; tabs.textContent = ''; cf.textContent = '';
+    if (!GL.data) {
+      body.appendChild(glEmpty(GL.loading ? '読み込んでいます…' : (GL.err ? '読み込めませんでした。🔄 を押してもう一度。' : '')));
+      return;
+    }
+    // 絞りこみの選択肢
+    var sel = $('glFilter'); sel.textContent = '';
+    var o0 = gle('option', null, '全員'); o0.value = 'all'; sel.appendChild(o0);
+    var cls = []; GL.data.students.forEach(function (s) { if (s.cls && cls.indexOf(s.cls) < 0) { cls.push(s.cls); } });
+    cls.sort(function (a, b) { return a.localeCompare(b, 'ja'); }).forEach(function (c) { var o = gle('option', null, 'クラス：' + c); o.value = 'c:' + c; sel.appendChild(o); });
+    GL.data.students.slice().sort(function (a, b) { return a.name.localeCompare(b.name, 'ja'); }).forEach(function (s) { var o = gle('option', null, s.name); o.value = 's:' + s.id; sel.appendChild(o); });
+    sel.value = GL.student; if (sel.value !== GL.student) { GL.student = 'all'; sel.value = 'all'; }
+    // 数
+    var cnt = { pending: glCountAll('PendingApproval'), reported: glCountAll('Submitted'), active: glCountAll('Active'), accept: glCountAll('PendingStudentAccept') };
+    [['承認待ち', cnt.pending, cnt.pending > 0], ['報告', cnt.reported, cnt.reported > 0], ['取り組み中', cnt.active, false], ['返事待ち', cnt.accept, false]].forEach(function (x) {
+      var d = gle('div'); d.appendChild(gle('dt', null, x[0])); d.appendChild(gle('dd', x[2] ? 'over' : null, String(x[1]))); sum.appendChild(d);
+    });
+    if (GL.data.cut && (GL.data.cut.done || GL.data.cut.az || GL.data.cut.text)) {
+      var cut = gle('div'); cut.appendChild(gle('dt', null, '省いた分')); cut.appendChild(gle('dd', null, '多すぎるため、古い完了などを一部省いています')); sum.appendChild(cut);
+    }
+    // タブ
+    [['pending', '承認待ち', cnt.pending], ['reported', '報告', cnt.reported], ['add', '登録', 0], ['students', '生徒ごと', 0]].forEach(function (t) {
+      var b = gle('button', null, t[1] + (t[2] ? '（' + t[2] + '）' : '')); b.type = 'button'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', String(GL.tab === t[0]));
+      b.addEventListener('click', function () { glTab(t[0]); }); tabs.appendChild(b);
+    });
+    var bar = glConfirmBar(); if (bar) { cf.appendChild(bar); }
+    if (GL.tab === 'pending') { glPanelPending(body); } else if (GL.tab === 'reported') { glPanelReported(body); }
+    else if (GL.tab === 'add') { glPanelAdd(body); } else { glPanelStudents(body); }
+    window.scrollTo(keep.x, keep.y);
+  }
+  function glShow() {
+    if (!GL.built) { glBuild(); }
+    glRender(true);
+    if (!GL.data || Date.now() - GL.at > 20000) { glLoad(!!GL.data); }
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && GL.built && $('gl').offsetParent !== null && (!GL.data || Date.now() - GL.at > 20000)) { glLoad(true); }
+  });
+  setInterval(function () {      // 開いている間は、1分おきに読みなおす（入力中・操作中は止める）
+    if (GL.built && document.visibilityState === 'visible' && $('gl').offsetParent !== null && !GL.busy && !GL.loading && !GL.edit && !GL.confirm && Date.now() - GL.at > 60000) {
+      var ae = document.activeElement; if (ae && $('gl').contains(ae) && (ae.tagName === 'TEXTAREA' || (ae.tagName === 'INPUT' && ae.type !== 'checkbox'))) { return; }
+      glLoad(true);
+    }
+  }, 30000);
+// GOALS-UI:JS:END
+
   var curTab = 'chat';
-  var PANES = { chat: 'paneChat', sched: 'paneSched', lesson: 'paneLesson', todo: 'paneTodo', board: 'paneBoard', parent: 'paneParent', outbox: 'paneOutbox', notices: 'paneNotices', list: 'paneList', sec: 'paneSec', date: 'paneDate', form: 'paneForm' };
-  var TABS = { chat: 'tabChat', sched: 'tabSched', lesson: 'tabLesson', todo: 'tabTodo', board: 'tabBoard', parent: 'tabParent', outbox: 'tabOutbox', notices: 'tabNotices', list: 'tabList', sec: 'tabSec', date: 'tabDate', form: 'tabForm' };
+  var PANES = { chat: 'paneChat', sched: 'paneSched', lesson: 'paneLesson', todo: 'paneTodo', board: 'paneBoard', goals: 'paneGoals', parent: 'paneParent', outbox: 'paneOutbox', notices: 'paneNotices', list: 'paneList', sec: 'paneSec', date: 'paneDate', form: 'paneForm' };
+  var TABS = { chat: 'tabChat', sched: 'tabSched', lesson: 'tabLesson', todo: 'tabTodo', board: 'tabBoard', goals: 'tabGoals', parent: 'tabParent', outbox: 'tabOutbox', notices: 'tabNotices', list: 'tabList', sec: 'tabSec', date: 'tabDate', form: 'tabForm' };
   function showTab(t) {
     if (!PANES[t]) { t = 'chat'; }
     curTab = t;
@@ -2225,7 +2767,7 @@
     if (t === 'todo') { renderTodos(); fetchSnapshot(); }
     if (t === 'parent') { loadParents(); }
     if (t === 'board') { kbShow(); }
-    if (t === 'board') { kbShow(); }
+    if (t === 'goals') { glShow(); }
     if (t === 'list') { loadPanel('panel', ''); }
     if (t === 'sec') { buildSecretary(); }
     if (t === 'form') { sel.value = formKey; loadFormInfo(function () { renderForm(); renderFormQ(); }); }
@@ -2234,7 +2776,7 @@
   $('tabLesson').onclick = function () { showTab('lesson'); };
   $('tabTodo').onclick = function () { showTab('todo'); };
   $('tabBoard').onclick = function () { showTab('board'); };
-  $('tabBoard').onclick = function () { showTab('board'); };
+  $('tabGoals').onclick = function () { showTab('goals'); };
   $('tabParent').onclick = function () { showTab('parent'); };
   $('tabList').onclick = function () { showTab('list'); };
   $('tabSec').onclick = function () { showTab('sec'); };
