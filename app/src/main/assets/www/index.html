@@ -123,7 +123,188 @@
   .tools { display:flex; gap:8px; margin-top:8px; align-items:center; }
   .tools .grow { flex:1; }
   .msg { color:var(--note); font-size:14px; min-height:20px; margin-top:8px; }
+  .secTitle { font-size:12px; letter-spacing:.08em; color:var(--sub); margin:18px 2px 8px; font-weight:700; }
+  .secGrid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .secGrid button { display:flex; flex-direction:column; align-items:flex-start; gap:6px; text-align:left; font-size:14px; font-weight:600; min-height:78px; line-height:1.35; padding:12px 12px; background:var(--card); border:1px solid var(--line); box-shadow:var(--shadow); border-radius:16px; color:var(--text); }
+  .secGrid .ico { font-size:22px; line-height:1; }
+  .secHome { background:var(--card); border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:16px; padding:12px 14px; margin-top:6px; box-shadow:var(--shadow); }
+  .secHomeT { font-size:13px; font-weight:800; color:var(--accent); margin-bottom:6px; }
+  .secHomeB { font-size:14px; line-height:1.6; white-space:pre-wrap; word-break:break-word; color:var(--text); }
+  .fq { display:flex; gap:8px; align-items:center; padding:8px 0; border-top:1px solid var(--line); }
+  .fq:first-of-type { border-top:none; }
+  .fqb { flex:1; min-width:0; font-size:14px; }
+  .fqs { color:var(--sub); font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .fqe { color:var(--ng); font-size:13px; margin-top:2px; }
+.pickrow{display:flex;gap:6px;align-items:center}.pickrow input[type=text]{flex:1;min-width:0}.pickrow .pick{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}.pickrow{position:relative}.pickbtn{flex:none;padding:8px 12px;font-size:18px;border-radius:12px}.quick{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.quick button{padding:4px 10px;font-size:.85em}
+  .memrow { padding:6px 0; border-top:1px solid var(--line, #ddd); }
+  .memrow:first-child { border-top:none; }
+  .memrow input[type=text] { width:100%; margin-top:4px; }
+
+  .tools input[type=text] { flex:1; min-width:0; margin-top:0; }
+  .tools button { white-space:nowrap; }
+  /* ===== ファンタジーのデザイン（🎨で切りかえ。端末に覚えさせる） ===== */
+  :root[data-theme=fantasy] { --bg:#17131f; --card:#241d30; --card2:#2f2640; --line:#6b5a2e; --text:#f5ead0; --sub:#c8b88a; --me:#f5ead0; --ai:#f5ead0; --ng:#ff7a6b; --note:#ffd98a; --accent:#e8b84a; --pink:#e8b84a; --grad:linear-gradient(135deg,#b8862a,#e8b84a); --shadow:0 4px 18px rgba(0,0,0,.5); --r:10px; --ok:#5fae82; }
+  :root[data-theme=fantasy] body { font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP","Georgia",serif; background:radial-gradient(ellipse at 20% 0%,#2a2040 0,#17131f 55%) fixed; }
+  :root[data-theme=fantasy] h1, :root[data-theme=fantasy] header > span:first-child { color:#e8b84a; letter-spacing:.08em; text-shadow:0 0 10px rgba(232,184,74,.45); }
+  :root[data-theme=fantasy] h1::before, :root[data-theme=fantasy] header > span:first-child::before { content:'⚜ '; }
+  :root[data-theme=fantasy] .card, :root[data-theme=fantasy] .bubble, :root[data-theme=fantasy] #plan, :root[data-theme=fantasy] footer, :root[data-theme=fantasy] .secGrid button, :root[data-theme=fantasy] .secHome { border:1px solid var(--line); border-radius:10px; }
+  :root[data-theme=fantasy] button { color:#f5ead0; background:#33293f; border:1px solid #6b5a2e; border-radius:8px; }
+  :root[data-theme=fantasy] button.go, :root[data-theme=fantasy] button.on { background:var(--grad); color:#2a1a05; border-color:#e8b84a; }
+  :root[data-theme=fantasy] button.run { background:linear-gradient(135deg,#3f7d5a,#5fae82); color:#fff; border-color:#5fae82; }
+  :root[data-theme=fantasy] nav button.on, :root[data-theme=fantasy] .tabs button.on { background:var(--grad); color:#2a1a05; }
+  :root[data-theme=fantasy] input[type=text], :root[data-theme=fantasy] input[type=date], :root[data-theme=fantasy] select, :root[data-theme=fantasy] textarea { background:#1d1728; color:#f5ead0; border:1px solid #6b5a2e; border-radius:8px; }
+  :root[data-theme=fantasy] a.link, :root[data-theme=fantasy] .secTitle, :root[data-theme=fantasy] .secHomeT { color:#e8b84a; }
+  :root[data-theme=fantasy] .secTitle::before { content:'✦ '; }
+/* BOARD-UI:CSS:START */
+  /* ===== やることボード（カンバン） ===== */
+  main.wide { max-width: 1180px; }
+  #kb { --kb-mark:#ffe27a; --kb-mark-ink:#463800; --kb-ink:#fff; --kb-warn:#9a5600; --kb-g0:#d9731a; --kb-g1:#2f6fb5; --kb-g2:#2e8b57; --kb-g3:#7a55c7; --kb-g4:#7b8794; }
+  @media (prefers-color-scheme: dark) { #kb { --kb-mark:#5d4e10; --kb-mark-ink:#ffeeb0; --kb-ink:#1a1330; --kb-warn:#f0b35a; --kb-g0:#f0975a; --kb-g1:#7ab0ea; --kb-g2:#6fcf97; --kb-g3:#b59af0; --kb-g4:#9babb9; } }
+  :root[data-theme=fantasy] #kb { --kb-ink:#241d30; }
+  .kb { display:flex; flex-direction:column; gap:14px; }
+  .kb [hidden] { display:none !important; }
+  .kb-mapview { display:flex; flex-direction:column; gap:12px; }
+  .kb h2 { margin:0; font-size:16px; }
+  .kb-sum { display:flex; flex-wrap:wrap; gap:6px 22px; padding:10px 0; border-block:1px solid var(--line); margin:0; font-variant-numeric:tabular-nums; }
+  .kb-sum dt { font-size:12px; color:var(--sub); letter-spacing:.06em; }
+  .kb-sum dd { margin:0; font-weight:700; font-size:18px; }
+  .kb-sum dd small { font-weight:400; font-size:13px; color:var(--sub); }
+  .kb-sum .over { color:var(--kb-warn); }
+  .kb details { font-size:14px; color:var(--sub); }
+  .kb details summary { cursor:pointer; color:var(--accent); width:fit-content; }
+  .kb details ol { margin:8px 0 0; padding-left:1.4em; }
+  .kb-add { display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; }
+  .kb-add .fld { display:flex; flex-direction:column; gap:3px; min-width:0; }
+  .kb-add .fld.grow { flex:1 1 220px; } .kb-add .fld.mid { flex:0 1 160px; }
+  .kb-add label, .kb .lab { font-size:12px; color:var(--sub); letter-spacing:.06em; }
+  .kb input[type=text], .kb input[type=date], .kb select, .kb textarea { font:inherit; font-size:15px; color:var(--text); background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:8px 10px; min-width:0; width:100%; }
+  .kb textarea { min-height:76px; resize:vertical; display:block; }
+  .kb button { font-size:14px; padding:6px 12px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--text); }
+  .kb button.pri { background:var(--accent); color:var(--kb-ink); border-color:var(--accent); font-weight:700; }
+  .kb button.quiet { border-color:transparent; background:transparent; color:var(--sub); padding-inline:8px; }
+  .kb button.danger { color:var(--ng); }
+  .kb button:disabled { opacity:.5; }
+  .kb-msg { min-height:1.4em; font-size:14px; color:var(--ng); margin:0; }
+  .kb-msg.info { color:var(--sub); }
+  .kb-tabs { display:flex; gap:4px; border-bottom:1px solid var(--line); }
+  .kb-tabs button { border:0; border-bottom:3px solid transparent; border-radius:0; background:transparent; color:var(--sub); font-weight:700; font-size:15px; padding:8px 14px; }
+  .kb-tabs button[aria-selected=true] { color:var(--text); border-bottom-color:var(--accent); }
+  .kb-filters { display:flex; flex-wrap:wrap; gap:6px; }
+  .kb-filters button { border-radius:999px; padding:3px 12px; font-size:13px; display:inline-flex; align-items:center; gap:6px; }
+  .kb-filters button[aria-pressed=true] { background:var(--text); color:var(--bg); border-color:var(--text); }
+  .kb-dot { width:8px; height:8px; border-radius:50%; flex:none; background:var(--kb-g4); display:inline-block; }
+  .kb-dot.g0 { background:var(--kb-g0); } .kb-dot.g1 { background:var(--kb-g1); } .kb-dot.g2 { background:var(--kb-g2); } .kb-dot.g3 { background:var(--kb-g3); }
+  .kb-board { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px; align-items:start; }
+  .kb-col, .kb-proj { background:var(--card2); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:10px; min-width:0; }
+  .kb-col.today { background:var(--kb-mark); color:var(--kb-mark-ink); }
+  .kb-head { display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+  .kb-head h2 { display:flex; align-items:center; gap:8px; min-width:0; overflow-wrap:anywhere; }
+  .kb-head span { font-size:13px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .kb-hint { font-size:12px; margin:-6px 0 0; opacity:.8; }
+  .kb-cards { display:flex; flex-direction:column; gap:8px; list-style:none; margin:0; padding:0; }
+  .kb-empty { font-size:13px; opacity:.75; margin:0; padding:8px 2px; list-style:none; }
+  .kb-plist { display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%,300px),1fr)); gap:12px; align-items:start; }
+  .kb-bar { height:6px; border-radius:3px; background:var(--card); overflow:hidden; }
+  .kb-bar i { display:block; height:100%; background:var(--accent); border-radius:3px; }
+  .kb-card { background:var(--card); color:var(--text); border:1px solid var(--line); border-radius:10px; padding:10px; display:flex; flex-direction:column; gap:6px; min-width:0; }
+  .kb-card .ttl { font-weight:600; margin:0; overflow-wrap:anywhere; font-size:15px; }
+  .kb-card.is-done .ttl { text-decoration:line-through; color:var(--sub); }
+  .kb-meta { display:flex; flex-wrap:wrap; gap:4px 10px; font-size:12px; color:var(--sub); align-items:center; font-variant-numeric:tabular-nums; }
+  .kb-meta .grp { display:inline-flex; align-items:center; gap:5px; }
+  .kb-st { border-radius:4px; padding:0 6px; font-weight:700; background:var(--card2); color:var(--text); }
+  .kb-st.today { background:var(--kb-mark); color:var(--kb-mark-ink); }
+  .kb-st.doing { background:var(--accent); color:var(--kb-ink); }
+  .kb-wait { color:var(--kb-warn); font-weight:700; }
+  .kb-due.soon { color:var(--kb-warn); font-weight:700; } .kb-due.late { color:var(--ng); font-weight:700; }
+  .kb-acts { display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-end; align-items:center; }
+  .kb-acts .sp { flex:1; }
+  .kb-edit { display:flex; flex-direction:column; gap:8px; }
+  .kb-edit .row { display:flex; flex-wrap:wrap; gap:8px; } .kb-edit .row > * { flex:1 1 120px; }
+  .kb-chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .kb-chips span { background:var(--card2); border-radius:999px; padding:2px 4px 2px 10px; font-size:13px; display:inline-flex; align-items:center; gap:2px; }
+  .kb-detail { display:flex; flex-direction:column; gap:8px; border-top:1px solid var(--line); padding-top:8px; }
+  .kb-steps { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px; }
+  .kb-steps li { display:flex; align-items:flex-start; gap:4px; }
+  .kb-steps label { flex:1; display:flex; gap:8px; align-items:flex-start; min-width:0; overflow-wrap:anywhere; cursor:pointer; font-size:14px; padding:3px 0; color:var(--text); letter-spacing:0; }
+  .kb-steps input { margin-top:5px; flex:none; accent-color:var(--accent); }
+  .kb-steps .sdone { text-decoration:line-through; color:var(--sub); }
+  .kb-addstep { display:flex; gap:6px; } .kb-addstep input { flex:1; }
+  .kb-tools { display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; justify-content:space-between; font-size:13px; color:var(--sub); }
+  .kb-tools p { margin:0; max-width:60ch; }
+  .kb-wbs { overflow:auto; max-height:640px; border:1px solid var(--line); border-radius:12px; background:var(--card); background-image:radial-gradient(var(--line) 1px, transparent 1px); background-size:20px 20px; }
+  .kb-wb { position:relative; min-width:100%; }
+  .kb-wb svg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+  .kb-wb path.edge { fill:none; stroke:var(--sub); stroke-width:1.5; } .kb-wb path.edge.root { stroke-dasharray:3 4; } .kb-wb path.head { fill:var(--sub); }
+  .kb-node { position:absolute; width:180px; background:var(--card); color:var(--text); border:1.5px solid var(--sub); border-radius:8px; padding:6px 10px 8px; font-size:13px; line-height:1.4; cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; overflow-wrap:anywhere; }
+  .kb-node b { display:block; font-size:11px; font-weight:700; letter-spacing:.04em; color:var(--sub); }
+  .kb-node.today { background:var(--kb-mark); color:var(--kb-mark-ink); border-color:var(--kb-mark-ink); } .kb-node.today b { color:var(--kb-mark-ink); }
+  .kb-node.doing { border-color:var(--accent); border-width:3px; padding:4.5px 8.5px 6.5px; } .kb-node.doing b { color:var(--accent); }
+  .kb-node.done { border-style:dashed; color:var(--sub); } .kb-node.done span { text-decoration:line-through; }
+  .kb-node.sel { outline:3px solid var(--accent); outline-offset:2px; } .kb-node.drag { cursor:grabbing; z-index:2; }
+  .kb-pnode { position:absolute; width:150px; background:var(--text); color:var(--bg); border-radius:999px; padding:7px 14px; font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px; line-height:1.3; overflow-wrap:anywhere; }
+  .kb-pnode small { font-weight:400; font-size:12px; margin-left:auto; white-space:nowrap; }
+  #kbDetail { max-width:460px; }
+  @media (max-width:900px) { .kb-board { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+  @media (max-width:560px) { .kb-board { grid-template-columns:minmax(0,1fr); } .kb-col.today { order:1; } .kb-col.doing { order:2; } .kb-col.todo { order:3; } .kb-col.done { order:4; } .kb-tabs button { padding-inline:10px; } }
+/* BOARD-UI:CSS:END */
+/* GOALS-UI:CSS:START */
+  /* ===== 生徒の目標（承認・報告・登録・生徒ごと） ===== */
+  #gl { --kb-mark:#ffe27a; --kb-mark-ink:#463800; --kb-ink:#fff; --kb-warn:#9a5600; }
+  @media (prefers-color-scheme: dark) { #gl { --kb-mark:#5d4e10; --kb-mark-ink:#ffeeb0; --kb-ink:#1a1330; --kb-warn:#f0b35a; } }
+  :root[data-theme=fantasy] #gl { --kb-ink:#241d30; }
+  .gl-bar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .gl-bar select { flex:1 1 200px; width:auto; max-width:360px; }
+  .gl-at { font-size:12px; color:var(--sub); }
+  .gl-body { display:flex; flex-direction:column; gap:14px; }
+  .gl-grp { display:flex; flex-direction:column; gap:8px; }
+  .gl-who { margin:6px 0 0; font-size:15px; display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+  .gl-who small, .gl-stu summary small { font-weight:400; font-size:12px; color:var(--sub); }
+  .gl-sub { margin:10px 0 0; font-size:14px; }
+  .gl-tools { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .gl-n { font-size:13px; color:var(--sub); flex:1 1 80px; }
+  .gl-row .gl-top { display:flex; gap:10px; align-items:flex-start; }
+  .gl-text { flex:1; min-width:0; }
+  .gl-text .ttl { font-weight:600; font-size:15px; margin:0; overflow-wrap:anywhere; }
+  .gl-text .ttl small { font-weight:400; color:var(--sub); }
+  .gl-orig { font-size:12px; color:var(--sub); margin:2px 0 0; overflow-wrap:anywhere; }
+  .gl-chk { display:inline-flex; padding:4px; margin:-4px 0 0 -4px; }
+  .gl-chk input, .gl-az input { width:20px; height:20px; accent-color:var(--accent); }
+  .sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  .gl-confirm { position:sticky; top:0; z-index:5; background:var(--card); border:2px solid var(--accent); border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:8px; box-shadow:0 4px 14px rgba(0,0,0,.18); margin-bottom:6px; }
+  .gl-confirm p { margin:0; font-weight:600; }
+  .gl-fail { margin:0; padding-left:1.2em; font-size:13px; color:var(--ng); list-style:none; padding:0; }
+  .gl-fail:empty, #glMsg:empty { display:none; }
+  .gl-modes { display:flex; flex-direction:column; gap:6px; }
+  .gl-mode { display:flex; gap:10px; align-items:flex-start; background:var(--card2); border-radius:10px; padding:8px 10px; }
+  .gl-mode input { margin-top:3px; accent-color:var(--accent); }
+  .gl-mode b { display:block; font-size:14px; } .gl-mode small { color:var(--sub); font-size:12px; }
+  .gl-goals { margin:4px 0 0; padding-left:1.4em; display:flex; flex-direction:column; gap:2px; }
+  .gl-goals li { overflow-wrap:anywhere; font-size:14px; }
+  .gl-goals li button { padding:0 6px; font-size:13px; }
+  .gl-prob { margin:0; padding-left:1.2em; font-size:13px; color:var(--ng); }
+  .gl-row.blocked { opacity:.8; border-style:dashed; }
+  .gl-one { background:var(--card2); border-radius:10px; padding:8px 12px; }
+  .gl-one summary { cursor:pointer; color:var(--accent); }
+  .gl-one .kb-edit { margin-top:8px; }
+  .gl-az { display:inline-flex; gap:8px; align-items:center; font-size:13px; color:var(--sub); width:fit-content; }
+  .gl-stu { background:var(--card2); border-radius:12px; padding:0; border:2px solid transparent; }
+  .gl-stu.attn { border-color:var(--kb-mark); }
+  .gl-stu > summary { list-style:none; cursor:pointer; padding:10px 12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; color:var(--text); }
+  .gl-stu > summary::-webkit-details-marker { display:none; }
+  .gl-stu > summary::before { content:'▸'; color:var(--sub); }
+  .gl-stu[open] > summary::before { content:'▾'; }
+  .gl-chips { display:inline-flex; gap:4px; flex-wrap:wrap; margin-left:auto; }
+  .gl-chip { font-size:12px; border-radius:999px; padding:1px 8px; background:var(--card); color:var(--text); border:1px solid var(--line); font-variant-numeric:tabular-nums; }
+  .gl-chip.hot { background:var(--kb-mark); color:var(--kb-mark-ink); border-color:transparent; font-weight:700; }
+  .gl-chip.late { color:var(--ng); border-color:var(--ng); font-weight:700; }
+  .gl-chip.warn { color:var(--kb-warn); border-color:var(--kb-warn); }
+  .gl-chip.quiet { color:var(--sub); border-color:transparent; background:transparent; }
+  .gl-stu-body { padding:0 12px 12px; display:flex; flex-direction:column; gap:8px; }
+  @media (max-width:560px) { .gl-chips { margin-left:0; } .gl-bar select { max-width:none; } }
+/* GOALS-UI:CSS:END */
 </style>
+<script>try{var __t=localStorage.getItem('navi_theme');if(__t){document.documentElement.setAttribute('data-theme',__t);}}catch(e){}</script>
+
 </head>
 <body>
 
@@ -131,17 +312,30 @@
   <h1>✦ N.A.V.I.<small id="ver"></small></h1>
   <span style="font-size:12px;color:var(--sub)"><span class="dot" id="dot"></span><span id="pcText">…</span></span>
   <button class="ib" id="spk" title="返事を読み上げる">🔊</button>
+  <button class="ib" id="themeBtn" title="デザインを切りかえる">🎨</button>
   <button class="ib" id="gear" title="設定">⚙️</button>
 </header>
+<script>
+(function () {
+  var b = document.getElementById('themeBtn'); if (!b) { return; }
+  function get() { try { return localStorage.getItem('navi_theme') || ''; } catch (e) { return ''; } }
+  function apply(v) { if (v) { document.documentElement.setAttribute('data-theme', v); } else { document.documentElement.removeAttribute('data-theme'); } b.title = v ? 'ファンタジー（タップで標準に戻す）' : '標準（タップでファンタジーに）'; }
+  b.addEventListener('click', function (e) { e.preventDefault(); var n = get() ? '' : 'fantasy'; try { localStorage.setItem('navi_theme', n); } catch (x) {} apply(n); });
+  apply(get());
+})();
+</script>
 <div id="banner"><span id="bannerText">新しい版があります</span><button id="bannerBtn">更新する</button></div>
 <div class="tabs">
   <button id="tabChat" class="on">💬 チャット</button>
   <button id="tabSched">📅 予定</button>
   <button id="tabLesson">📓 レッスン</button>
   <button id="tabTodo">✅ やること</button>
+  <button id="tabBoard">🗂 ボード</button>
+  <button id="tabGoals">🎯 目標</button>
   <button id="tabParent">💌 保護者</button>
   <button id="tabOutbox">📝 書き溜め<span class="badge" id="obBadge" style="display:none">0</span></button>
   <button id="tabList">📋 一覧</button>
+  <button id="tabSec">🧭 秘書</button>
   <button id="tabDate">🔎 日付</button>
   <button id="tabForm">📝 フォーム</button>
   <button id="tabNotices">🔔 お知らせ<span class="badge" id="badge" style="display:none">0</span></button>
@@ -248,6 +442,8 @@
   <div id="noticeList"></div>
 </div>
 
+<div class="pane" id="paneBoard"><div id="kb"></div></div>
+<div class="pane" id="paneGoals"><div id="gl"></div></div>
 <div class="pane" id="paneList">
   <div class="row" style="flex-wrap:wrap;gap:6px">
     <button data-p="today">★今日</button><button data-p="todo">✅Todo</button><button data-p="week">📅予定</button><button data-p="shelf">📥依頼箱</button>
@@ -262,6 +458,13 @@
   </div>
   <div class="msg" id="panelMsg"></div>
 </div>
+  <div class="pane" id="paneSec">
+    <div id="secBody"></div>
+    <div id="secOut" class="panelText" style="display:none"></div>
+    <div id="secForm" style="margin-top:8px"></div>
+    <div class="msg" style="font-size:13px;color:var(--sub);margin-top:12px">名前が必要なものは、💬会話で話しかけてください：「ゆきは最近どう？」「Aクラスの進み具合」「ゆきの振替」。外から（Wi-Fiなし）のときは、生徒の名前は出ません。</div>
+  </div>
+
 <div class="pane" id="paneDate">
   <div class="row" style="align-items:center;gap:6px">
     <button id="dPrev">◀</button><input type="date" id="dDate" style="flex:1"><button id="dNext">▶</button>
@@ -278,7 +481,8 @@
 <div class="pane" id="paneForm">
   <label>フォーム</label><select id="formSel"></select>
   <div id="formBody"></div>
-  <div class="msg" id="formMsg"></div>
+  <div id="formQ"></div>
+    <div class="msg" id="formMsg"></div>
 </div>
 
 <div id="pendingBar"><span id="pendingText"></span><button id="pendingGo">確認して送る</button></div>
@@ -350,6 +554,22 @@
     <input type="text" id="pcWords" placeholder="名前でしぼる（例：ゆき,けん　空ならそのアプリの通知すべて）" style="width:100%;margin-top:6px">
     <div class="row" style="margin-top:8px"><button id="pcAccess" style="flex:1">🔓 通知へのアクセスを許可する</button></div>
     <p style="color:var(--sub);font-size:12px;margin:6px 0 0" id="pcState"></p>
+  </div>
+  <div id="focusBox" style="margin-top:12px;padding:12px;border-radius:14px;background:var(--card)">
+    <div style="font-weight:700;margin-bottom:6px">🎯 伴走と宿題（スマホを乗っ取る強さ）</div>
+    <p style="color:var(--sub);font-size:12px;margin:0 0 8px">PCのN.A.V.I.で「伴走して」「指導を始めて」を使っている間、このスマホでも追いかけます。電話・設定・NAVIは止めません。夜23時〜朝6時・電話中・レッスン中・予定の間・「静かにして」と言った間は鳴らさず、アプリにもかぶせません。</p>
+    <div class="sw"><span>⏰ 目覚まし並みに知らせる（全画面・音・振動）</span><input type="checkbox" id="fcAlarm"></div>
+    <div class="sw"><span>🛡 決めたアプリを開いたら、NAVIの画面をかぶせる</span><input type="checkbox" id="fcBlock"></div>
+    <div style="font-weight:600;margin:10px 0 4px;font-size:13px">かぶせるアプリ</div>
+    <div id="fcList"></div>
+    <input type="text" id="fcFind" placeholder="入っているアプリから探す（例：YouTube）" style="width:100%;margin-top:4px">
+    <div id="fcFound" style="margin-top:6px"></div>
+    <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:6px">
+      <button id="fcA11y" style="flex:1">🛡 かぶせる許可（ユーザー補助）</button>
+      <button id="fcFull" style="flex:1">⏰ 全画面で出す許可</button>
+    </div>
+    <div class="row" style="margin-top:6px"><button id="fcSync" style="flex:1">🔄 いまのようすを取り直す</button></div>
+    <p style="color:var(--sub);font-size:12px;margin:6px 0 0" id="fcState"></p>
   </div>
   <div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:6px" id="glyphTests">
     <button data-g="ok">✅できた</button><button data-g="err">⚠️エラー</button><button data-g="think">💭考え中</button>
@@ -645,11 +865,19 @@
   }
 
   function showState(st) {
+    if (pendingDraftKey && st && st.results && st.results.length && st.results.every(function (r) { return r.ok !== false; })) { draftClear(pendingDraftKey); pendingDraftKey = ''; }
     if (st.reply) { say('ai', st.reply); }
     var speakIt = function () { speakFor(st.reply || '', st.clip, st.clip_only, st.can_execute ? '内容を確認して、実行と言うか、ボタンを押してください' : ''); };
     var el = $('plan'); el.innerHTML = '';
     var items = st.plan || [];
     planVisible = items.length > 0;
+    if (!planVisible && st.form_offer) {      // 「今日必要なフォーム」など：計画はなく、フォームだけ開く
+      el.style.display = 'block';
+      var fb0 = document.createElement('button'); fb0.textContent = '📝 フォームを開く'; fb0.className = 'run';
+      fb0.onclick = function () { openForm(st.form_offer.key, st.form_offer.prefill || {}); };
+      el.appendChild(fb0);
+      speakIt(); return;
+    }
     if (!planVisible) { el.style.display = 'none'; speakIt(); return; }
     el.style.display = 'block';
     items.forEach(function (it, i) {
@@ -777,6 +1005,8 @@
     },
     autoListen: function () { if (info.paired && info.speech && $('mic').className !== 'on') { setTimeout(function () { A.listen(); }, 300); } },
     openTab: function (t) { showTab(t); },
+    openFormKey: function (k, c) { openForm(k, c ? { 'class': c, date: '今日' } : {}); },
+    onFocus: function () { try { fcRender(); } catch (e) {} },
     openOb: function (t) {
       showTab('outbox');
       if (['memo', 'todo', 'event', 'snote', 'journal', 'photo', 'send'].indexOf(t) >= 0) { $('obType').value = t; obTypeChanged(); }
@@ -1556,12 +1786,971 @@
     $('badge').textContent = unread;
   }
 
+// BOARD-UI:JS:START
+  // ================= やることボード（カンバン） =================
+  // Claudeの「やることボード」と同じ機能。カードはNAVIのTodoそのもの（PCの kanban_core）。動かすと、声の指示・Todo管理にも反映される
+  var KB = { cards: [], deleted: {}, dirty: {}, meta: { limits: { today: 3, doing: 1 }, doneTotal: 0, doneHidden: 0 }, skew: 0, syncedAt: 0, syncing: false, syncAgain: false, data: null, filter: 'all', view: 'board', open: {}, editing: null, sel: null, localPos: {}, dragging: false, deferred: false, loaded: false, built: false, focusAfter: null, failed: '', timer: 0 };
+  try { var kbv = localStorage.getItem('navi_kb_view'); if (kbv === 'board' || kbv === 'list' || kbv === 'map') { KB.view = kbv; } } catch (e) { }
+  var KB_ST = { todo: '未着手', today: '今日やる', doing: '進行中', done: '完了' };
+  var KB_WD = ['日', '月', '火', '水', '木', '金', '土'];
+  var KB_NW = 180, KB_PW = 150, KB_GX = 44, KB_ROW = 92, KB_LANE = 28, KB_PAD = 20;
+  var kbBy = {}, kbEdges = [];
+
+  function kbe(tag, cls, text) { var e = document.createElement(tag); if (cls) { e.className = cls; } if (text != null) { e.textContent = text; } return e; }
+  function kbBtn(label, cls, fn) { var b = kbe('button', cls, label); b.type = 'button'; b.addEventListener('click', fn); return b; }
+  function kbMid(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+  function kbParse(s) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; }
+  function kbDays(s) { var d = kbParse(s); return d ? Math.round((d - kbMid(new Date())) / 86400000) : null; }
+  function kbDueLabel(s) {
+    var d = kbParse(s), n = kbDays(s); if (!d) { return ''; }
+    return (d.getMonth() + 1) + '/' + d.getDate() + '（' + KB_WD[d.getDay()] + '）' + (n === 0 ? '今日' : n > 0 ? 'あと' + n + '日' : Math.abs(n) + '日すぎ');
+  }
+  function kbNow() { var d = new Date(), p = function (n) { return ('0' + n).slice(-2); }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()); }
+  function kbCards() { return KB.cards; }
+  function kbArea(c) { return c.area || 'その他'; }
+  function kbG(c) { var i = ((KB.data && KB.data.areas) || []).indexOf(kbArea(c)); return 'g' + (i < 0 ? 4 : i % 5); }
+  function kbSay(text, info) { var m = $('kbMsg'); if (!m) { return; } m.textContent = text || ''; m.className = info ? 'kb-msg info' : 'kb-msg'; }
+
+  // ---- データ：この端末に保存して（オフラインでも動く）、PCと同期する。カードごとに、更新が新しいほうが残る ----
+  var KB_STORE = 'navi_kb_store';
+  function kbNowMs() { return Date.now() + (KB.skew || 0); }
+  function kbPersist() { try { localStorage.setItem(KB_STORE, JSON.stringify({ cards: KB.cards, deleted: KB.deleted, dirty: KB.dirty, meta: KB.meta, skew: KB.skew, syncedAt: KB.syncedAt })); } catch (e) { } }
+  function kbRestore() {
+    try {
+      var st = JSON.parse(localStorage.getItem(KB_STORE) || 'null');
+      if (st && Array.isArray(st.cards)) { KB.cards = st.cards; KB.deleted = st.deleted || {}; KB.dirty = st.dirty || {}; KB.meta = st.meta || KB.meta; KB.skew = st.skew || 0; KB.syncedAt = st.syncedAt || 0; KB.loaded = true; }
+    } catch (e) { }
+    kbRecalc();
+  }
+  // 先にやることが終わっていないカードの「待ち」と、上の帯・絞りこみに使う数を計算し直す
+  function kbRecalc() {
+    var by = {}, areas = [], projects = [], counts = { todo: 0, today: 0, doing: 0, done: 0 };
+    KB.cards.forEach(function (c) { by[c.id] = c; });
+    KB.cards.forEach(function (c) {
+      var left = (c.after || []).filter(function (id) { return by[id] && by[id].status !== 'done'; });
+      if (c.status !== 'done' && left.length) {
+        if (!c.wait || c.wait.indexOf('先に：') === 0) { c.wait = ('先に：' + left.map(function (id) { return by[id].title.slice(0, 14); }).join('・')).slice(0, 36); }
+      } else if (c.wait && c.wait.indexOf('先に：') === 0) { c.wait = ''; }
+      var a = kbArea(c); if (areas.indexOf(a) < 0) { areas.push(a); }
+      if (projects.indexOf(c.project) < 0) { projects.push(c.project); }
+      counts[c.status] = (counts[c.status] || 0) + 1;
+    });
+    counts.done = Math.max(counts.done, KB.meta.doneTotal || 0);
+    KB.data = { cards: KB.cards, areas: areas, projects: projects, limits: KB.meta.limits, counts: counts, doneHidden: KB.meta.doneHidden || 0 };
+  }
+  function kbChanged(msg) { kbRecalc(); kbPersist(); if (msg) { kbSay(msg, true); } kbSyncLine(); kbRender(); kbSchedule(false); }
+  // カードを変えたら、更新時刻を「いま」にして、送る印（dirty）を付ける
+  function kbTouch(c, fn, msg) { fn(); c.upd = kbNowMs(); KB.dirty[c.id] = c.upd; kbChanged(msg); }
+  function kbWire(c) { return { id: c.id, title: c.title, project: c.project, area: c.area || '', due: c.due || '', status: c.status, after: c.after || [], steps: c.steps || [], memo: c.memo || '', pos: c.pos || null, upd: c.upd || 0 }; }
+  function kbSyncLine() {
+    var el = $('kbSync'); if (!el) { return; }
+    var n = Object.keys(KB.dirty).length + Object.keys(KB.deleted).length, t = KB.syncedAt ? new Date(KB.syncedAt) : null;
+    var hm = t ? t.getHours() + ':' + ('0' + t.getMinutes()).slice(-2) : '';
+    if (KB.syncing) { el.textContent = '🔄 PCと同期しています…'; }
+    else if (KB.failed) { el.textContent = '📴 PCにつながっていません。変更' + (n ? n + '件' : '') + 'はこの端末に保存してあり、つながったら自動で送ります' + (hm ? '（最後の同期 ' + hm + '）' : ''); }
+    else if (n) { el.textContent = '⏳ 未同期の変更 ' + n + '件'; }
+    else { el.textContent = hm ? '✔ 同期ずみ ' + hm + '（PCと同じ内容です）' : ''; }
+  }
+  function kbSchedule(now) { clearTimeout(KB.timer); KB.timer = setTimeout(kbSync, now ? 0 : 700); }
+  function kbSync() {
+    if (KB.syncing) { KB.syncAgain = true; return Promise.resolve(); }
+    KB.syncing = true; KB.syncAgain = false;
+    var by = {}; KB.cards.forEach(function (c) { by[c.id] = c; });
+    var batch = [], size = 0;
+    Object.keys(KB.dirty).forEach(function (id) {
+      var c = by[id]; if (!c) { delete KB.dirty[id]; return; }
+      var j = JSON.stringify(kbWire(c)).length; if (batch.length && size + j > 6500) { return; }
+      batch.push(c); size += j;
+    });
+    var dels = {}, dn = 0; Object.keys(KB.deleted).forEach(function (id) { if (dn < 40) { dels[id] = KB.deleted[id]; dn++; } });
+    var sent = {}; batch.forEach(function (c) { sent[c.id] = c.upd; });
+    kbSyncLine();
+    return jcall('board_sync', { dirty: batch.map(kbWire), deleted: dels, now: Date.now() }).then(function (r) {
+      var b = r && r.board; if (!b || !b.cards) { throw new Error('PCの返事が読めませんでした'); }
+      if (r.now) { KB.skew = r.now - Date.now(); }
+      batch.forEach(function (c) { if (KB.dirty[c.id] === sent[c.id]) { delete KB.dirty[c.id]; } });
+      Object.keys(dels).forEach(function (id) { if (KB.deleted[id] === dels[id]) { delete KB.deleted[id]; } });
+      var local = {}, out = [], seen = {};
+      KB.cards.forEach(function (c) { local[c.id] = c; });
+      b.cards.forEach(function (sc) { seen[sc.id] = 1; out.push(KB.dirty[sc.id] && local[sc.id] ? local[sc.id] : sc); });     // こちらで直して、まだ送っていないものは、こちらを残す
+      KB.cards.forEach(function (c) { if (!seen[c.id] && KB.dirty[c.id]) { out.push(c); } });                                  // PCで消えたカードは、きれいなままなら、ここでも消える
+      KB.cards = out;
+      KB.meta = { limits: b.limits || KB.meta.limits, doneTotal: (b.counts && b.counts.done) || 0, doneHidden: b.doneHidden || 0 };
+      KB.loaded = true; KB.failed = ''; KB.syncedAt = Date.now();
+      var a = r.applied || {};
+      if (a.kept) { kbSay('PCのほうが新しい変更が ' + a.kept + '件あったので、PCの内容にそろえました。', true); }
+    }).catch(function (e) { KB.failed = e.message || '同期できませんでした'; KB.loaded = true; }).then(function () {
+      KB.syncing = false; kbRecalc(); kbPersist(); kbSyncLine(); kbRender();
+      if (KB.failed) { clearTimeout(KB.timer); KB.timer = setTimeout(kbSync, 30000); }
+      else if (KB.syncAgain || Object.keys(KB.dirty).length || Object.keys(KB.deleted).length) { kbSchedule(true); }
+    });
+  }
+
+  function kbDepths(cards) {
+    var memo = {}, seen = {};
+    function d(c) {
+      if (memo[c.id]) { return memo[c.id]; }
+      if (seen[c.id]) { return 1; }
+      seen[c.id] = true;
+      var m = 0; (c.after || []).forEach(function (id) { if (kbBy[id]) { m = Math.max(m, d(kbBy[id])); } });
+      return (memo[c.id] = m + 1);
+    }
+    cards.forEach(d); return memo;
+  }
+  function kbProjects() {
+    var cards = kbCards(), dep = kbDepths(cards), map = {}, list = [];
+    cards.forEach(function (c) {
+      if (!map[c.project]) { map[c.project] = { name: c.project, g: kbG(c), items: [] }; list.push(map[c.project]); }
+      map[c.project].items.push(c);
+    });
+    list.forEach(function (p) {
+      p.items.sort(function (a, b) { return (dep[a.id] - dep[b.id]) || ((a.order || 0) - (b.order || 0)); });
+      p.done = p.items.filter(function (c) { return c.status === 'done'; }).length;
+    });
+    return { list: list, dep: dep };
+  }
+
+  function kbEditForm(c) {
+    var box = kbe('div', 'kb-edit');
+    var title = kbe('input'); title.type = 'text'; title.maxLength = 120; title.value = c.title || ''; title.id = 'kbEdTitle'; title.setAttribute('aria-label', 'やること');
+    var row = kbe('div', 'row');
+    var pj = kbe('input'); pj.type = 'text'; pj.maxLength = 30; pj.value = c.project === 'その他' ? '' : c.project; pj.placeholder = 'まとまり'; pj.id = 'kbEdProject'; pj.setAttribute('list', 'kbProjList'); pj.setAttribute('aria-label', 'まとまり');
+    var due = kbe('input'); due.type = 'date'; due.value = c.due || ''; due.id = 'kbEdDue'; due.setAttribute('aria-label', '期日');
+    row.appendChild(pj); row.appendChild(due);
+    var after = (c.after || []).slice();
+    var chips = kbe('div', 'kb-chips'), sel = kbe('select'); sel.id = 'kbEdAfter'; sel.setAttribute('aria-label', '先にやること');
+    function drawAfter() {
+      chips.textContent = '';
+      after.forEach(function (id, i) {
+        var s = kbe('span', null, '先に：' + ((kbBy[id] && kbBy[id].title) || '')); s.appendChild(kbBtn('×', 'quiet', function () { after.splice(i, 1); drawAfter(); }));
+        chips.appendChild(s);
+      });
+      sel.textContent = '';
+      var o0 = kbe('option', null, '先にやることを足す…'); o0.value = ''; sel.appendChild(o0);
+      kbCards().forEach(function (x) {
+        if (x.id === c.id || after.indexOf(x.id) >= 0 || x.status === 'done') { return; }
+        var o = kbe('option', null, x.title || ''); o.value = x.id; sel.appendChild(o);
+      });
+    }
+    sel.addEventListener('change', function () { if (sel.value) { after.push(sel.value); drawAfter(); } });
+    drawAfter();
+    var acts = kbe('div', 'kb-acts'), sure = false;
+    function close() { KB.editing = null; kbRender(true); }
+    var del = kbBtn('消す', 'quiet danger', function () {
+      if (!sure) { sure = true; del.textContent = '本当に消す'; return; }
+      var id = c.id; KB.editing = null; if (KB.sel === id) { KB.sel = null; }
+      kbDeleteCard(id);
+    });
+    acts.appendChild(del); acts.appendChild(kbe('span', 'sp'));
+    acts.appendChild(kbBtn('やめる', '', close));
+    acts.appendChild(kbBtn('保存', 'pri', function () {
+      var v = title.value.trim();
+      if (!v) { kbSay('やることを書いてください。'); title.focus(); return; }
+      var p = pj.value.trim();
+      if (kbWouldCycle(c.id, after)) { kbSay('その並びだと、ぐるぐる回ってしまいます（先にやることが、自分の後になっています）'); return; }
+      KB.editing = null;
+      kbTouch(c, function () {
+        c.title = v; c.project = p || (c.area || 'その他'); c.due = due.value || ''; c.after = after.slice();
+        if (p) { var same = kbCards().filter(function (x) { return x !== c && x.project === p && x.area; })[0]; if (same) { c.area = same.area; } }
+      }, '直しました');
+    }));
+    box.appendChild(title); box.appendChild(row); box.appendChild(chips); box.appendChild(sel); box.appendChild(acts);
+    return box;
+  }
+
+  function kbDetail(c) {
+    var box = kbe('div', 'kb-detail'), steps = c.steps || [];
+    function put(n) { kbTouch(c, function () { c.steps = n; }); }
+    function copy() { return steps.map(function (x) { return { t: x.t, done: !!x.done }; }); }
+    box.appendChild(kbe('p', 'lab', '小さな手順'));
+    if (steps.length) {
+      var ul = kbe('ul', 'kb-steps');
+      steps.forEach(function (s, i) {
+        var li = kbe('li'), lab = kbe('label'), cb = kbe('input'); cb.type = 'checkbox'; cb.checked = !!s.done;
+        cb.addEventListener('change', function () { var n = copy(); n[i].done = cb.checked; put(n); });
+        lab.appendChild(cb); lab.appendChild(kbe('span', s.done ? 'sdone' : '', s.t)); li.appendChild(lab);
+        var x = kbBtn('×', 'quiet', function () { var n = copy(); n.splice(i, 1); put(n); }); x.setAttribute('aria-label', 'この手順を消す');
+        li.appendChild(x); ul.appendChild(li);
+      });
+      box.appendChild(ul);
+    }
+    var f = kbe('form', 'kb-addstep'), inp = kbe('input'); inp.type = 'text'; inp.maxLength = 80; inp.id = 'kbSn-' + c.id; inp.placeholder = '手順を足す'; inp.autocomplete = 'off';
+    var add = kbe('button', null, '足す'); add.type = 'submit'; f.appendChild(inp); f.appendChild(add);
+    f.addEventListener('submit', function (ev) {
+      ev.preventDefault(); var v = inp.value.trim(); if (!v) { inp.focus(); return; }
+      if (steps.length >= 30) { kbSay('手順は30個までです。'); return; }
+      var n = copy(); n.push({ t: v, done: false }); KB.focusAfter = inp.id; put(n);
+    });
+    box.appendChild(f);
+    box.appendChild(kbe('p', 'lab', 'メモ'));
+    var ta = kbe('textarea'); ta.maxLength = 1000; ta.value = c.memo || ''; ta.placeholder = '気づいたこと、決めたこと、材料など';
+    if (c.memoCut) { ta.readOnly = true; ta.value = c.memo + '…'; box.appendChild(ta); box.appendChild(kbe('p', 'lab', 'メモが長いので、ここでは読むだけです。PCで直してください。')); return box; }
+    function saveMemo() { if (ta.value === (c.memo || '')) { return; } var v = ta.value; kbTouch(c, function () { c.memo = v; }, 'メモを保存しました'); }
+    ta.addEventListener('blur', saveMemo);
+    var acts = kbe('div', 'kb-acts'); acts.appendChild(kbBtn('メモを保存', '', saveMemo));
+    box.appendChild(ta); box.appendChild(acts);
+    return box;
+  }
+
+  function kbMove(c, to) {
+    var name = (c.title || '').slice(0, 24);
+    kbTouch(c, function () { c.status = to; if (to === 'done') { c.doneAt = kbNow(); } });
+    var lim = KB.meta.limits, n = { today: 0, doing: 0 };
+    kbCards().forEach(function (x) { if (n[x.status] !== undefined) { n[x.status]++; } });
+    var w = [];
+    if (to === 'today' && n.today > lim.today) { w.push('「今日やる」が' + n.today + '件です（' + lim.today + '件までにしましょう）'); }
+    if ((to === 'today' || to === 'doing') && c.wait && c.wait.indexOf('先に：') === 0) { w.push('まだ「' + c.wait + '」が終わっていません'); }
+    if (to === 'doing' && n.doing > lim.doing) { w.push('「進行中」が' + n.doing + '件です（1つだけにしましょう）'); }
+    kbSay('「' + name + '」を' + { todo: '未着手に戻しました', today: '「今日やる」にしました', doing: '始めました', done: '完了にしました' }[to] + (w.length ? '。' + w.join('。') : ''), true);
+  }
+  function kbWouldCycle(id, newAfter) {
+    var by = {}, seen = {}, st = newAfter.slice(); kbCards().forEach(function (c) { by[c.id] = c; });
+    while (st.length) { var cur = st.pop(); if (cur === id) { return true; } if (seen[cur] || !by[cur]) { continue; } seen[cur] = 1; (by[cur].after || []).forEach(function (a) { st.push(a); }); }
+    return false;
+  }
+  function kbDeleteCard(id) {
+    var c = kbCards().filter(function (x) { return x.id === id; })[0]; if (!c) { return; }
+    KB.cards = kbCards().filter(function (x) { return x.id !== id; });
+    KB.cards.forEach(function (x) { if ((x.after || []).indexOf(id) >= 0) { x.after = x.after.filter(function (a) { return a !== id; }); } });
+    delete KB.dirty[id]; KB.deleted[id] = kbNowMs();
+    kbChanged('「' + (c.title || '').slice(0, 24) + '」を消しました');
+  }
+  function kbCard(c, showStatus, forceOpen) {
+    var s = c.status, li = kbe('li', 'kb-card' + (s === 'done' ? ' is-done' : ''));
+    if (KB.editing === c.id) { li.appendChild(kbEditForm(c)); return li; }
+    li.appendChild(kbe('p', 'ttl', c.title || '（無題）'));
+    var meta = kbe('div', 'kb-meta');
+    if (showStatus) { meta.appendChild(kbe('span', 'kb-st ' + s, KB_ST[s])); }
+    var g = kbe('span', 'grp'); g.appendChild(kbe('span', 'kb-dot ' + kbG(c))); g.appendChild(document.createTextNode(c.project)); meta.appendChild(g);
+    if (c.due) {
+      var n = kbDays(c.due), d = kbe('span', 'kb-due', kbDueLabel(c.due));
+      if (s !== 'done' && n !== null) { if (n < 0) { d.className = 'kb-due late'; } else if (n <= 3) { d.className = 'kb-due soon'; } }
+      meta.appendChild(d);
+    }
+    var sts = c.steps || [], isOpen = forceOpen || !!KB.open[c.id];
+    if (sts.length) { meta.appendChild(kbe('span', null, '手順 ' + sts.filter(function (x) { return x.done; }).length + '/' + sts.length)); }
+    if (c.memo) { meta.appendChild(kbe('span', null, 'メモあり')); }
+    if (c.wait && s !== 'done') { meta.appendChild(kbe('span', 'kb-wait', '⏳ ' + c.wait)); }
+    li.appendChild(meta);
+    var acts = kbe('div', 'kb-acts');
+    acts.appendChild(kbBtn('直す', 'quiet', function () { KB.editing = c.id; kbRender(true); }));
+    if (!forceOpen) { var tg = kbBtn(isOpen ? 'とじる' : 'くわしく', 'quiet', function () { KB.open[c.id] = !isOpen; kbRender(true); }); tg.setAttribute('aria-expanded', String(isOpen)); acts.appendChild(tg); }
+    acts.appendChild(kbe('span', 'sp'));
+    var back = { today: 'todo', doing: 'today', done: 'doing' }[s];
+    if (back) { acts.appendChild(kbBtn('戻す', '', function () { kbMove(c, back); })); }
+    var fwd = { todo: ['今日やる', 'today'], today: ['始める', 'doing'], doing: ['完了', 'done'] }[s];
+    if (fwd) { acts.appendChild(kbBtn(fwd[0], 'pri', function () { kbMove(c, fwd[1]); })); }
+    li.appendChild(acts);
+    if (isOpen) { li.appendChild(kbDetail(c)); }
+    return li;
+  }
+
+  function kbBuild() {
+    var root = $('kb'); root.textContent = '';
+    root.innerHTML =
+      '<dl class="kb-sum"><div><dt>今日やる</dt><dd id="kbSToday"></dd></div><div><dt>進行中</dt><dd id="kbSDoing"></dd></div><div><dt>完了</dt><dd id="kbSDone"></dd></div><div><dt>次の期日</dt><dd id="kbSNext"></dd></div></dl>' +
+      '<details><summary>1日の回し方</summary><ol><li>朝、未着手から「今日やる」を3つまで選ぶ。</li><li>1つだけ「始める」を押して、それだけをやる。終わったら「完了」。</li><li>夜、終わらなかったものは「戻す」。翌朝また選び直す。</li></ol></details>' +
+      '<form class="kb-add" id="kbAdd" novalidate><div class="fld grow"><label for="kbNewTitle">やることを追加</label><input type="text" id="kbNewTitle" maxlength="120" placeholder="30分〜1時間で終わる大きさで書く" autocomplete="off"></div>' +
+      '<div class="fld mid"><label for="kbNewProject">まとまり</label><input type="text" id="kbNewProject" maxlength="30" list="kbProjList" placeholder="例：インスタ" autocomplete="off"><datalist id="kbProjList"></datalist></div>' +
+      '<div class="fld"><label for="kbNewDue">期日（なくてもよい）</label><input type="date" id="kbNewDue"></div><button type="submit" class="pri" id="kbAddBtn">追加</button><button type="button" id="kbReload" title="PCから読みなおす">🔄</button></form>' +
+      '<p class="kb-msg" id="kbMsg" role="status"></p><p class="kb-msg info" id="kbSync"></p>' +
+      '<div class="kb-tabs" role="tablist"><button type="button" role="tab" data-v="board">ボード</button><button type="button" role="tab" data-v="list">まとめ</button><button type="button" role="tab" data-v="map">つながり</button></div>' +
+      '<div class="kb-filters" id="kbFilters"></div>' +
+      '<div class="kb-board" id="kbBoard"><section class="kb-col todo"><div class="kb-head"><h2>未着手</h2><span id="kbCTodo">0</span></div><p class="kb-hint">全部ここに置く</p><ul class="kb-cards" id="kbLTodo"></ul></section>' +
+      '<section class="kb-col today"><div class="kb-head"><h2>今日やる</h2><span id="kbCToday">0 / 3</span></div><p class="kb-hint">最大3つ</p><ul class="kb-cards" id="kbLToday"></ul></section>' +
+      '<section class="kb-col doing"><div class="kb-head"><h2>進行中</h2><span id="kbCDoing">0 / 1</span></div><p class="kb-hint">1つだけ</p><ul class="kb-cards" id="kbLDoing"></ul></section>' +
+      '<section class="kb-col done"><div class="kb-head"><h2>完了</h2><span id="kbCDone">0</span></div><p class="kb-hint">終わったら移す</p><ul class="kb-cards" id="kbLDone"></ul></section></div>' +
+      '<div class="kb-plist" id="kbPlist" hidden></div>' +
+      '<div id="kbMapView" class="kb-mapview" hidden><div class="kb-tools"><p>線は「先にやること → 次にやること」。カードを押すと下で動かせます。掴んで引くと場所を変えられます。</p><button type="button" id="kbTidy">並べ直す</button></div>' +
+      '<div class="kb-wbs" id="kbWbs"><div class="kb-wb" id="kbWb"><svg id="kbSvg" aria-hidden="true"></svg></div></div><div id="kbDetail"></div></div>';
+    root.classList.add('kb');
+    Array.prototype.forEach.call(root.querySelectorAll('.kb-tabs button'), function (b) {
+      b.addEventListener('click', function () { KB.view = b.getAttribute('data-v'); KB.editing = null; try { localStorage.setItem('navi_kb_view', KB.view); } catch (e) { } kbRender(true); });
+    });
+    $('kbTidy').addEventListener('click', function () { KB.localPos = {}; kbCards().forEach(function (c) { if (c.pos) { c.pos = null; c.upd = kbNowMs(); KB.dirty[c.id] = c.upd; } }); kbChanged('並べ直しました'); });
+    $('kbReload').addEventListener('click', function () { kbSay('PCと同期します…', true); kbSchedule(true); });
+    $('kbNewTitle').addEventListener('input', function () { kbSay(''); });
+    $('kbAdd').addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      var title = $('kbNewTitle').value.trim();
+      if (!title) { kbSay('やることを書いてください。'); $('kbNewTitle').focus(); return; }
+      var p = $('kbNewProject').value.trim(), due = $('kbNewDue').value || '';
+      $('kbNewTitle').value = ''; $('kbNewDue').value = '';
+      var nid = 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), now = kbNowMs();
+      var same = p ? kbCards().filter(function (x) { return x.project === p && x.area; })[0] : null;
+      KB.cards.push({ id: nid, title: title.slice(0, 120), project: p || 'その他', area: same ? same.area : '', due: due, status: 'todo', after: [], steps: [], memo: '', pos: null, order: 99999, doneAt: '', wait: '', upd: now });
+      KB.dirty[nid] = now; KB.loaded = true;
+      kbChanged('「' + title.slice(0, 24) + '」を入れました');
+    });
+    root.addEventListener('focusout', function () { setTimeout(function () { if (KB.deferred && !KB.dragging) { KB.deferred = false; kbRender(); } }, 0); });
+    KB.built = true;
+  }
+  function kbSetCount(id, n, max) {
+    var e = $(id); e.textContent = String(n); e.className = n > max ? 'over' : '';
+    e.appendChild(kbe('small', null, ' / ' + max + (n > max ? '（多すぎ）' : '')));
+  }
+  function kbShown(c) { return KB.filter === 'all' || kbArea(c) === KB.filter; }
+
+  function kbRender(force) {
+    if (!KB.built) { return; }
+    if (KB.dragging) { KB.deferred = true; return; }
+    var root = $('kb'), ae = document.activeElement;
+    if (!force && ae && root.contains(ae) && (ae.tagName === 'TEXTAREA' || (ae.tagName === 'INPUT' && (ae.type === 'text' || ae.type === 'date')))) { KB.deferred = true; return; }
+    kbBy = {}; kbCards().forEach(function (c) { kbBy[c.id] = c; });
+    var by = { todo: [], today: [], doing: [], done: [] };
+    kbCards().forEach(function (c) { (by[c.status] || by.todo).push(c); });
+    by.todo.sort(function (a, b) { return (a.due || '9999') < (b.due || '9999') ? -1 : (a.due || '9999') > (b.due || '9999') ? 1 : (a.order - b.order); });
+    by.done.sort(function (a, b) { return a.doneAt < b.doneAt ? 1 : a.doneAt > b.doneAt ? -1 : 0; });
+    var lim = (KB.data && KB.data.limits) || { today: 3, doing: 1 };
+    $('kbCTodo').textContent = by.todo.length; $('kbCToday').textContent = by.today.length + ' / ' + lim.today; $('kbCDoing').textContent = by.doing.length + ' / ' + lim.doing;
+    var doneTotal = (KB.data && KB.data.counts ? Math.max(KB.data.counts.done, by.done.length) : by.done.length);
+    $('kbCDone').textContent = doneTotal;
+    kbSetCount('kbSToday', by.today.length, lim.today); kbSetCount('kbSDoing', by.doing.length, lim.doing); $('kbSDone').textContent = doneTotal;
+    var nx = kbCards().filter(function (c) { return c.status !== 'done' && kbParse(c.due); }).sort(function (a, b) { return a.due < b.due ? -1 : a.due > b.due ? 1 : 0; })[0];
+    var sn = $('kbSNext'); sn.textContent = '';
+    if (nx) { sn.appendChild(document.createTextNode(kbDueLabel(nx.due) + ' ')); sn.appendChild(kbe('small', null, nx.title)); } else { sn.appendChild(kbe('small', null, '期日のあるカードはまだありません')); }
+    var dl = $('kbProjList'); dl.textContent = '';
+    kbProjects().list.forEach(function (p) { if (p.name !== 'その他') { var o = kbe('option'); o.value = p.name; dl.appendChild(o); } });
+    Array.prototype.forEach.call(document.querySelectorAll('.kb-tabs button'), function (b) { b.setAttribute('aria-selected', String(b.getAttribute('data-v') === KB.view)); });
+    $('kbBoard').hidden = KB.view !== 'board'; $('kbPlist').hidden = KB.view !== 'list'; $('kbMapView').hidden = KB.view !== 'map';
+    // 絞りこみ
+    var fb = $('kbFilters'); fb.textContent = ''; fb.hidden = KB.view === 'map';
+    var areas = (KB.data && KB.data.areas) || [];
+    if (areas.length > 1) {
+      [['all', 'すべて']].concat(areas.map(function (a) { return [a, a]; })).forEach(function (g) {
+        var b = kbBtn('', '', function () { KB.filter = g[0]; kbRender(true); });
+        if (g[0] !== 'all') { b.appendChild(kbe('span', 'kb-dot g' + (areas.indexOf(g[0]) % 5))); }
+        b.appendChild(document.createTextNode(g[1])); b.setAttribute('aria-pressed', String(KB.filter === g[0])); fb.appendChild(b);
+      });
+    }
+    if (KB.view === 'board') { kbRenderBoard(by); } else if (KB.view === 'list') { kbRenderList(); } else { kbRenderMap(); }
+    if (KB.focusAfter) { var fe = $(KB.focusAfter); KB.focusAfter = null; if (fe) { fe.focus(); } }
+  }
+  function kbEmptyText(col) {
+    if (!KB.loaded) { return '読みこみ中…'; }
+    if (KB.failed && !kbCards().length) { return 'PCにつながっていません。つながると、PCのカードがここに出ます（右上の🔄でもう一度）。'; }
+    if (!kbCards().length && col === 'todo') { return 'まだカードがありません。上の「やることを追加」から最初の1枚を書けます。'; }
+    return { today: '未着手から3つ選びます。', doing: '「始める」を押した1枚がここに来ます。', done: '終わったカードがここにたまります。' }[col] || 'ここは空です。';
+  }
+  function kbRenderBoard(by) {
+    ['todo', 'today', 'doing', 'done'].forEach(function (col) {
+      var list = $('kbL' + col.charAt(0).toUpperCase() + col.slice(1)); list.textContent = '';
+      var items = by[col].filter(kbShown);
+      items.forEach(function (c) { list.appendChild(kbCard(c)); });
+      if (!items.length) { list.appendChild(kbe('li', 'kb-empty', kbEmptyText(col))); }
+    });
+    if (KB.data && KB.data.doneHidden) { $('kbLDone').appendChild(kbe('li', 'kb-empty', 'ほかに ' + KB.data.doneHidden + '件（古い完了）は、ここには出していません')); }
+  }
+  function kbRenderList() {
+    var box = $('kbPlist'); box.textContent = '';
+    var ps = kbProjects().list.filter(function (p) { return KB.filter === 'all' || p.items.some(kbShown); });
+    if (!ps.length) { box.appendChild(kbe('p', 'kb-empty', kbEmptyText('todo'))); return; }
+    ps.forEach(function (p) {
+      var items = p.items.filter(kbShown);
+      var sec = kbe('section', 'kb-proj'), head = kbe('div', 'kb-head'), h = kbe('h2');
+      h.appendChild(kbe('span', 'kb-dot ' + p.g)); h.appendChild(document.createTextNode(p.name));
+      head.appendChild(h); head.appendChild(kbe('span', null, p.done + ' / ' + p.items.length + ' 完了'));
+      var bar = kbe('div', 'kb-bar'), fill = kbe('i'); fill.style.width = Math.round(100 * p.done / p.items.length) + '%'; bar.appendChild(fill);
+      var ul = kbe('ul', 'kb-cards'); items.forEach(function (c) { ul.appendChild(kbCard(c, true)); });
+      sec.appendChild(head); sec.appendChild(bar); sec.appendChild(ul); box.appendChild(sec);
+    });
+  }
+
+  // つながり：まとまりごとに1段。先にやることの数で、左から右へ並べる
+  function kbLayout() {
+    var pr = kbProjects(), y = KB_PAD, pos = {}, pnodes = [], w = 0;
+    pr.list.forEach(function (p) {
+      var rows = {}, maxRows = 1;
+      p.items.forEach(function (c) {
+        var d = pr.dep[c.id], i = rows[d] || 0; rows[d] = i + 1; maxRows = Math.max(maxRows, i + 1);
+        pos[c.id] = { x: KB_PAD + KB_PW + KB_GX + (d - 1) * (KB_NW + KB_GX), y: y + i * KB_ROW };
+      });
+      pnodes.push({ p: p, x: KB_PAD, y: y + 6 });
+      y += maxRows * KB_ROW + KB_LANE;
+    });
+    kbCards().forEach(function (c) {
+      var l = KB.localPos[c.id] || (c.pos && typeof c.pos.x === 'number' ? c.pos : null);
+      if (l) { pos[c.id] = { x: Math.max(0, l.x), y: Math.max(0, l.y) }; }
+      w = Math.max(w, pos[c.id].x + KB_NW); y = Math.max(y, pos[c.id].y + KB_ROW);
+    });
+    return { pos: pos, pnodes: pnodes, w: w + KB_PAD + 120, h: y + KB_PAD + 60 };
+  }
+  function kbDrawLines() {
+    var svg = $('kbSvg'), NS = 'http://www.w3.org/2000/svg'; svg.textContent = '';
+    kbEdges.forEach(function (e) {
+      var a = e[0], b = e[1]; if (!a || !b) { return; }
+      var x1 = a.offsetLeft + a.offsetWidth, y1 = a.offsetTop + a.offsetHeight / 2, x2 = b.offsetLeft, y2 = b.offsetTop + b.offsetHeight / 2;
+      var back = x2 < x1 + 12, k = back ? 60 : Math.max(20, (x2 - x1) / 2);
+      var p = document.createElementNS(NS, 'path'); p.setAttribute('class', 'edge' + (e[2] ? ' root' : ''));
+      p.setAttribute('d', e[2] ? 'M' + x1 + ' ' + y1 + ' H' + (x1 + 16) + ' V' + y2 + ' H' + x2 : 'M' + x1 + ' ' + y1 + ' C' + (x1 + k) + ' ' + y1 + ' ' + (x2 - k) + ' ' + y2 + ' ' + (x2 - 6) + ' ' + y2);
+      svg.appendChild(p);
+      if (!e[2]) { var h = document.createElementNS(NS, 'path'); h.setAttribute('class', 'head'); h.setAttribute('d', 'M' + x2 + ' ' + y2 + ' l-8 -4.5 v9 z'); svg.appendChild(h); }
+    });
+  }
+  function kbRenderMap() {
+    var wb = $('kbWb'), L = kbLayout(), els = {};
+    Array.prototype.slice.call(wb.querySelectorAll('.kb-node,.kb-pnode,.kb-empty')).forEach(function (n) { n.remove(); });
+    kbEdges = [];
+    wb.style.width = L.w + 'px'; wb.style.height = L.h + 'px';
+    if (!kbCards().length) { var m = kbe('p', 'kb-empty', kbEmptyText('todo')); m.style.padding = '16px'; wb.appendChild(m); kbDrawLines(); kbRenderDetail(); return; }
+    kbCards().forEach(function (c) {
+      var n = kbe('div', 'kb-node ' + c.status + (KB.sel === c.id ? ' sel' : '')), ss = c.steps || [];
+      n.appendChild(kbe('b', null, KB_ST[c.status] + (c.due && c.status !== 'done' ? '・' + kbDueLabel(c.due) : '') + (ss.length ? '・手順 ' + ss.filter(function (x) { return x.done; }).length + '/' + ss.length : '') + (c.wait && c.status !== 'done' ? '・待ち' : '')));
+      n.appendChild(kbe('span', null, c.title || '（無題）'));
+      n.style.left = L.pos[c.id].x + 'px'; n.style.top = L.pos[c.id].y + 'px';
+      n.tabIndex = 0; n.setAttribute('role', 'button');
+      n.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); KB.sel = c.id; kbRender(true); } });
+      kbDragify(n, c); wb.appendChild(n); els[c.id] = n;
+    });
+    L.pnodes.forEach(function (o) {
+      var n = kbe('div', 'kb-pnode'); n.appendChild(kbe('span', 'kb-dot ' + o.p.g)); n.appendChild(document.createTextNode(o.p.name)); n.appendChild(kbe('small', null, o.p.done + '/' + o.p.items.length));
+      n.style.left = o.x + 'px'; n.style.top = o.y + 'px'; wb.appendChild(n);
+      o.p.items.forEach(function (c) {
+        var inside = (c.after || []).some(function (id) { return kbBy[id] && kbBy[id].project === o.p.name; });
+        if (!inside) { kbEdges.push([n, els[c.id], true]); }
+      });
+    });
+    kbCards().forEach(function (c) { (c.after || []).forEach(function (id) { if (els[id]) { kbEdges.push([els[id], els[c.id], false]); } }); });
+    kbDrawLines(); kbRenderDetail();
+  }
+  function kbRenderDetail() {
+    var box = $('kbDetail'); box.textContent = '';
+    var c = KB.sel && kbBy[KB.sel];
+    if (!c) { if (kbCards().length) { box.appendChild(kbe('p', 'kb-empty', 'カードを押すと、ここに出ます。')); } return; }
+    var ul = kbe('ul', 'kb-cards'); ul.appendChild(kbCard(c, true, true)); box.appendChild(ul);
+  }
+  function kbDragify(n, c) {
+    var st = null, moved = false, raf = 0;
+    n.addEventListener('pointerdown', function (ev) {
+      if (ev.button > 0) { return; }
+      st = { x: ev.clientX, y: ev.clientY, l: n.offsetLeft, t: n.offsetTop }; moved = false;
+      try { n.setPointerCapture(ev.pointerId); } catch (e) { }
+    });
+    n.addEventListener('pointermove', function (ev) {
+      if (!st) { return; }
+      var dx = ev.clientX - st.x, dy = ev.clientY - st.y;
+      if (!moved && Math.abs(dx) + Math.abs(dy) < 6) { return; }
+      moved = true; KB.dragging = true; n.classList.add('drag');
+      n.style.left = Math.max(0, st.l + dx) + 'px'; n.style.top = Math.max(0, st.t + dy) + 'px';
+      if (!raf) { raf = requestAnimationFrame(function () { raf = 0; kbDrawLines(); }); }
+    });
+    function end(cancel) {
+      if (!st) { return; }
+      var was = moved; st = null; moved = false; KB.dragging = false; n.classList.remove('drag');
+      if (cancel) { kbRender(true); return; }
+      if (was) {
+        var p = { x: n.offsetLeft, y: n.offsetTop };
+        KB.localPos[c.id] = p; kbTouch(c, function () { c.pos = p; });
+      } else { KB.sel = c.id; kbRender(true); }
+    }
+    n.addEventListener('pointerup', function () { end(false); });
+    n.addEventListener('pointercancel', function () { end(true); });
+  }
+
+  function kbShow() {
+    if (!KB.built) { kbBuild(); kbRestore(); }
+    kbSyncLine(); kbRender(true);
+    kbSchedule(true);
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && KB.built && $('kb').offsetParent !== null) { kbSchedule(true); }
+  });
+  setInterval(function () { if (KB.built && document.visibilityState === 'visible' && $('kb').offsetParent !== null && !KB.syncing && !KB.dragging) { kbSync(); } }, 45000);
+// BOARD-UI:JS:END
+
+// GOALS-UI:JS:START
+  // ================= 生徒の目標（承認待ち・報告の確認・登録・生徒ごとの状況） =================
+  // データはステッカーアプリのスプレッドシート（Student Goals）。PCのN.A.V.I.がGASを通して読み書きする。この端末には保存しない（生徒の名前・目標が残らないように）
+  var GL = { data: null, by: {}, g: {}, tab: 'pending', sel: {}, open: {}, edit: null, confirm: null, student: 'all', showAz: false, parsed: null, mode: 'finalize', draft: '',
+             msg: '', info: false, failed: [], skew: 0, at: 0, loading: false, busy: false, built: false, err: '', timer: 0 };
+  try { var glt = localStorage.getItem('navi_gl_tab'); if (['pending', 'reported', 'add', 'students'].indexOf(glt) >= 0) { GL.tab = glt; } } catch (e) { }
+  var GL_ST = { PendingApproval: '承認待ち', PendingStudentAccept: '返事待ち', Active: '取り組み中', Submitted: '報告済み', Completed: '完了' };
+
+  function gle(tag, cls, text) { var e = document.createElement(tag); if (cls) { e.className = cls; } if (text != null) { e.textContent = text; } return e; }
+  function glBtn(label, cls, fn, title) { var b = gle('button', cls, label); b.type = 'button'; if (title) { b.title = title; } b.addEventListener('click', fn); b.disabled = GL.busy; return b; }
+  function glNow() { return Date.now() + GL.skew; }
+  function glSay(text, info) { GL.msg = text || ''; GL.info = !!info; var m = $('glMsg'); if (m) { m.textContent = GL.msg; m.className = info ? 'kb-msg info' : 'kb-msg'; } }
+  function glStu(id) { return GL.by[id] || { id: id, name: '（名簿にない生徒）', cls: '', done: 0 }; }
+  function glMid(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+  function glParseDay(s) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; }
+  function glDaysTo(s) { var d = glParseDay(s); return d ? Math.round((d - glMid(new Date(glNow()))) / 86400000) : null; }
+  function glMD(ms) { var d = new Date(ms); return (d.getMonth() + 1) + '/' + d.getDate(); }
+  function glAgo(ms) {
+    if (!ms) { return ''; }
+    var m = Math.max(0, Math.round((glNow() - ms) / 60000));
+    if (m < 1) { return 'いま'; }
+    if (m < 60) { return m + '分前'; }
+    var h = Math.round(m / 60); if (h < 24) { return h + '時間前'; }
+    return Math.round(h / 24) + '日前';
+  }
+  function glDue(iso) {
+    var n = glDaysTo(iso), d = glParseDay(iso); if (!d) { return null; }
+    var s = gle('span', 'kb-due' + (n < 0 ? ' late' : n <= 3 ? ' soon' : ''), '期限 ' + (d.getMonth() + 1) + '/' + d.getDate() + (n === 0 ? '（今日）' : n > 0 ? '（あと' + n + '日）' : '（' + (-n) + '日すぎ）'));
+    return s;
+  }
+
+  // ---- データ ----
+  function glSet(snap) {
+    if (!snap || !snap.goals || !snap.students) { throw new Error('PCの返事が読めませんでした'); }
+    GL.data = snap; GL.skew = (snap.now || Date.now()) - Date.now(); GL.at = Date.now();
+    GL.by = {}; snap.students.forEach(function (s) { GL.by[s.id] = s; });
+    GL.g = {}; snap.goals.forEach(function (g) { GL.g[g.id] = g; });
+    Object.keys(GL.sel).forEach(function (id) { if (!GL.g[id]) { delete GL.sel[id]; } });
+    if (GL.edit && !GL.g[GL.edit.id]) { GL.edit = null; }
+  }
+  function glLoad(quiet) {
+    if (GL.loading) { return Promise.resolve(); }
+    GL.loading = true;
+    if (!quiet) { glSay('読み込んでいます…（PCがスプレッドシートを読みます）', true); }
+    return jcall('goals_list', {}).then(function (r) { glSet(r.goals); GL.err = ''; glSay('', true); })
+      .catch(function (e) { GL.err = e.message || '読み込めませんでした'; glSay('❌ ' + GL.err); })
+      .then(function () { GL.loading = false; glRender(true); });
+  }
+  // 操作を頼む。終わったら最新の一覧に入れ替わる。できなかった分は、理由つきで出す
+  function glAct(op, extra, after) {
+    if (GL.busy) { return Promise.resolve(); }
+    GL.busy = true; GL.confirm = null; GL.failed = [];
+    var body = { op: op }; Object.keys(extra || {}).forEach(function (k) { body[k] = extra[k]; });
+    var was = GL.g;
+    glSay('PCに頼んでいます…（スプレッドシートに書いています）', true); glRender(true);
+    return jcall('goals_act', body).then(function (r) {
+      GL.failed = (r.failed || []).map(function (f) {
+        var g = was[f.id], who = g ? glStu(g.sid).name + 'の「' + g.t.slice(0, 20) + '」' : (GL.by[f.id] ? GL.by[f.id].name : '');
+        return (who ? who + '：' : '') + f.error;
+      });
+      glSet(r.goals);
+      (extra && extra.ids || []).forEach(function (id) { delete GL.sel[id]; });
+      if (after) { after(r); }
+      glSay(r.reply || '', true);
+    }).catch(function (e) { glSay('❌ ' + (e.message || '失敗しました')); })
+      .then(function () { GL.busy = false; GL.edit = null; glRender(true); });
+  }
+
+  // ---- 絞りこみ・並べ方 ----
+  function glShown(g) {
+    var f = GL.student; if (f === 'all') { return true; }
+    var s = glStu(g.sid);
+    return f.indexOf('s:') === 0 ? g.sid === f.slice(2) : s.cls === f.slice(2);
+  }
+  function glList(status) {
+    return GL.data.goals.filter(function (g) { return g.st === status && glShown(g) && (GL.showAz || !g.az); })
+      .sort(function (a, b) { return (a.pa || a.sb || 0) - (b.pa || b.sb || 0); });
+  }
+  function glCountAll(status) { return GL.data.goals.filter(function (g) { return g.st === status && !(status === 'Active' && g.az); }).length; }
+  function glGroup(list) {          // 生徒ごとにまとめる（いちばん古いものが先の生徒から）
+    var order = [], by = {};
+    list.forEach(function (g) { if (!by[g.sid]) { by[g.sid] = []; order.push(g.sid); } by[g.sid].push(g); });
+    return order.map(function (sid) { return { sid: sid, goals: by[sid] }; });
+  }
+  function glHead(sid, n) {
+    var s = glStu(sid), h = gle('h3', 'gl-who');
+    h.appendChild(gle('span', null, s.name)); if (s.cls) { h.appendChild(gle('small', null, s.cls)); }
+    if (n) { h.appendChild(gle('small', null, n + '件')); }
+    return h;
+  }
+  function glEmpty(text) { return gle('p', 'kb-empty', text); }
+
+  // ---- 確認の帯（取り消せない操作・まとめて処理するとき） ----
+  function glAsk(text, okLabel, fn, input) { GL.confirm = { text: text, ok: okLabel, fn: fn, input: input || null, val: '' }; glRender(true); }
+  function glConfirmBar() {
+    var c = GL.confirm; if (!c) { return null; }
+    var bar = gle('div', 'gl-confirm'); bar.setAttribute('role', 'alertdialog');
+    bar.appendChild(gle('p', null, c.text));
+    var inp = null;
+    if (c.input) {
+      inp = gle('input'); inp.type = 'text'; inp.maxLength = 120; inp.placeholder = c.input; inp.value = c.val || '';
+      inp.addEventListener('input', function () { c.val = inp.value; });
+      bar.appendChild(inp);
+    }
+    var row = gle('div', 'kb-acts');
+    row.appendChild(glBtn('やめる', 'quiet', function () { GL.confirm = null; glRender(true); }));
+    row.appendChild(gle('span', 'sp'));
+    row.appendChild(glBtn(c.ok, 'pri', function () { var v = c.val || ''; GL.confirm = null; c.fn(v); }));
+    bar.appendChild(row);
+    return bar;
+  }
+
+  // ---- 行の部品 ----
+  function glCheck(g) {
+    var l = gle('label', 'gl-chk'), c = gle('input'); c.type = 'checkbox'; c.checked = !!GL.sel[g.id]; c.disabled = GL.busy;
+    c.addEventListener('change', function () { if (c.checked) { GL.sel[g.id] = 1; } else { delete GL.sel[g.id]; } glRender(true); });
+    l.appendChild(c); l.appendChild(gle('span', 'sr', '選ぶ')); return l;
+  }
+  function glText(g) {
+    var w = gle('div', 'gl-text'); w.appendChild(gle('p', 'ttl', g.t));
+    if (g.o) { w.appendChild(gle('p', 'gl-orig', '元の文：' + g.o)); }
+    return w;
+  }
+  function glTags(g) {
+    var m = gle('div', 'kb-meta');
+    if (g.by === 'teacher') { m.appendChild(gle('span', null, '先生の提案')); }
+    if (g.rnd) { m.appendChild(gle('span', null, 'ランダム目標')); }
+    if (g.az) { m.appendChild(gle('span', null, 'Kids A-Z（自動）')); }
+    if (g.ck && !g.az) { m.appendChild(gle('span', null, 'チェックリスト連動')); }
+    if (g.st === 'Active' && !g.vis) { m.appendChild(gle('span', null, '保護者には非表示')); }
+    return m;
+  }
+  function glEditBox(g, kind) {        // 行の下に出る入力欄
+    var e = GL.edit, box = gle('div', 'kb-edit');
+    var inp = kind === 'fix' ? gle('textarea') : gle('input'); if (kind !== 'fix') { inp.type = 'text'; }
+    inp.maxLength = kind === 'fix' ? 200 : 120; inp.value = e.text;
+    inp.placeholder = kind === 'fix' ? '目標の文' : (kind === 'reject' ? '生徒へのひとこと（理由）。なくてもよい' : kind === 'rework' ? '生徒へのコメント（どこを直すか）。なくてもよい' : '理由。なくてもよい');
+    inp.addEventListener('input', function () { e.text = inp.value; });
+    box.appendChild(inp);
+    var row = gle('div', 'kb-acts');
+    row.appendChild(glBtn('やめる', 'quiet', function () { GL.edit = null; glRender(true); }));
+    row.appendChild(gle('span', 'sp'));
+    if (kind === 'fix') {
+      row.appendChild(glBtn('文だけ直す', null, function () { if (!e.text.trim()) { glSay('目標の文が空です。'); return; } glAct('edit', { ids: [g.id], text: e.text }); }));
+      if (g.st === 'PendingApproval') { row.appendChild(glBtn('この文で承認', 'pri', function () { if (!e.text.trim()) { glSay('目標の文が空です。'); return; } glAct('editApprove', { ids: [g.id], text: e.text }); })); }
+    } else if (kind === 'due') {
+      var d = gle('input'); d.type = 'date'; d.value = g.due || ''; d.addEventListener('input', function () { e.text = d.value; });
+      box.replaceChild(d, inp); e.text = d.value;
+      row.appendChild(glBtn('期限を決める', 'pri', function () { if (!e.text) { glSay('日付を選んでください。'); return; } glAct('due', { ids: [g.id], studentId: g.sid, due: e.text }); }));
+      box.appendChild(gle('p', 'kb-hint', 'ステッカーアプリのルール：今日より前は選べません。一度決めた期限は、早めることはできても延ばせません。'));
+    } else {
+      var op = kind === 'reject' ? 'reject' : kind === 'rework' ? 'rework' : 'discard';
+      row.appendChild(glBtn(kind === 'reject' ? '却下する' : kind === 'rework' ? 'やり直しに戻す' : '破棄する', kind === 'discard' ? 'danger' : 'pri', function () { glAct(op, { ids: [g.id], reason: e.text }); }));
+    }
+    box.appendChild(row);
+    return box;
+  }
+  function glBeginEdit(g, kind) { GL.edit = { id: g.id, kind: kind, text: kind === 'fix' ? g.t : (kind === 'due' ? (g.due || '') : '') }; glRender(true); }
+  function glRow(g, acts, extra) {
+    var li = gle('li', 'kb-card gl-row');
+    var top = gle('div', 'gl-top'); if (acts && acts.check) { top.appendChild(glCheck(g)); }
+    top.appendChild(glText(g)); li.appendChild(top);
+    var meta = glTags(g); if (extra) { extra(meta); }
+    if (meta.childNodes.length) { li.appendChild(meta); }
+    if (g.fb && (g.st === 'Active' || g.st === 'PendingApproval')) { li.appendChild(gle('p', 'gl-orig', 'コメント：' + g.fb)); }
+    if (acts && acts.btns) { var row = gle('div', 'kb-acts'); row.appendChild(gle('span', 'sp')); acts.btns(row); li.appendChild(row); }
+    if (GL.edit && GL.edit.id === g.id) { li.appendChild(glEditBox(g, GL.edit.kind)); }
+    return li;
+  }
+  function glSelectedIds(list) { return list.filter(function (g) { return GL.sel[g.id]; }).map(function (g) { return g.id; }); }
+  function glToolbar(list, bulk) {       // すべて選ぶ／選んだ分への操作
+    var bar = gle('div', 'gl-tools');
+    var all = list.length && list.every(function (g) { return GL.sel[g.id]; });
+    bar.appendChild(glBtn(all ? '選びなおす（全部外す）' : '表示中を全部選ぶ', null, function () { list.forEach(function (g) { if (all) { delete GL.sel[g.id]; } else { GL.sel[g.id] = 1; } }); glRender(true); }));
+    var n = glSelectedIds(list).length;
+    bar.appendChild(gle('span', 'gl-n', n ? n + '件 選んでいます' : ''));
+    bulk(bar, n);
+    return bar;
+  }
+
+  // ---- 承認待ち ----
+  function glPanelPending(box) {
+    var list = glList('PendingApproval');
+    var auto = (GL.data.autoHours || 24);
+    box.appendChild(gle('p', 'kb-hint', '生徒が出した目標です。出してから' + auto + '時間たつと、ステッカーアプリが自動で承認します。'));
+    if (!list.length) { box.appendChild(glEmpty('承認待ちの目標はありません。')); return; }
+    box.appendChild(glToolbar(list, function (bar, n) {
+      bar.appendChild(glBtn('選んだ分を承認', 'pri', function () { var ids = glSelectedIds(list); glAsk(ids.length + '件の目標を承認します。', '承認する', function () { glAct('approve', { ids: ids }); }); }));
+      bar.lastChild.disabled = GL.busy || !n;
+      bar.appendChild(glBtn('選んだ分を却下…', 'danger', function () { var ids = glSelectedIds(list); glAsk(ids.length + '件の目標を却下します。', '却下する', function (v) { glAct('reject', { ids: ids, reason: v }); }, '生徒へのひとこと（理由）。なくてもよい'); }));
+      bar.lastChild.disabled = GL.busy || !n;
+    }));
+    glGroup(list).forEach(function (grp) {
+      var sec = gle('section', 'gl-grp'); sec.appendChild(glHead(grp.sid, grp.goals.length));
+      var ul = gle('ul', 'kb-cards');
+      grp.goals.forEach(function (g) {
+        ul.appendChild(glRow(g, {
+          check: true,
+          btns: function (row) {
+            row.appendChild(glBtn('却下…', 'quiet danger', function () { glBeginEdit(g, 'reject'); }));
+            row.appendChild(glBtn('直して承認…', null, function () { glBeginEdit(g, 'fix'); }));
+            row.appendChild(glBtn('承認', 'pri', function () { glAct('approve', { ids: [g.id] }); }));
+          }
+        }, function (meta) {
+          var left = Math.ceil(auto - (glNow() - g.pa) / 3600000);
+          meta.appendChild(gle('span', null, '出した ' + glAgo(g.pa)));
+          meta.appendChild(gle('span', left <= 3 ? 'kb-wait' : null, left <= 0 ? 'まもなく自動で承認' : 'あと約' + left + '時間で自動承認'));
+        }));
+      });
+      sec.appendChild(ul); box.appendChild(sec);
+    });
+  }
+
+  // ---- 報告された目標の確認 ----
+  function glPanelReported(box) {
+    var list = glList('Submitted');
+    box.appendChild(gle('p', 'kb-hint', '生徒が「できた」と報告した目標です。完了にすると、ステッカーアプリの設定どおりにコインなどの報酬が渡されます（取り消せません）。'));
+    if (!list.length) { box.appendChild(glEmpty('報告された目標はありません。')); return; }
+    box.appendChild(glToolbar(list, function (bar, n) {
+      bar.appendChild(glBtn('選んだ分を完了にする', 'pri', function () { var ids = glSelectedIds(list); glAsk(ids.length + '件を完了にして、報酬を渡します。取り消せません。', '完了にする', function () { glAct('confirm', { ids: ids }); }); }));
+      bar.lastChild.disabled = GL.busy || !n;
+    }));
+    glGroup(list).forEach(function (grp) {
+      var sec = gle('section', 'gl-grp'); sec.appendChild(glHead(grp.sid, grp.goals.length));
+      var ul = gle('ul', 'kb-cards');
+      grp.goals.forEach(function (g) {
+        ul.appendChild(glRow(g, {
+          check: true,
+          btns: function (row) {
+            row.appendChild(glBtn('やり直し…', 'quiet', function () { glBeginEdit(g, 'rework'); }));
+            row.appendChild(glBtn('完了にする', 'pri', function () { glAsk('「' + g.t.slice(0, 30) + '」を完了にして、報酬を渡します。取り消せません。', '完了にする', function () { glAct('confirm', { ids: [g.id] }); }); }));
+          }
+        }, function (meta) {
+          meta.appendChild(gle('span', null, '報告 ' + (g.sb ? glAgo(g.sb) : '')));
+          var d = glDue(g.due); if (d) { meta.appendChild(d); }
+          if (g.due && g.sb) {
+            var late = new Date(g.sb) > new Date(glParseDay(g.due).getTime() + 86400000 - 1);
+            meta.appendChild(gle('span', late ? 'kb-wait' : null, late ? '期限を過ぎて報告' : '期限内に報告'));
+          }
+        }));
+      });
+      sec.appendChild(ul); box.appendChild(sec);
+    });
+  }
+
+  // ---- 登録 ----
+  function glBusyOf(sid) { return GL.data.goals.filter(function (g) { return g.sid === sid && !g.az && ['PendingApproval', 'PendingStudentAccept', 'Active', 'Submitted'].indexOf(g.st) >= 0; }).length; }
+  function glAddEntry(sid, texts) {
+    if (!GL.parsed) { GL.parsed = { entries: [], problems: [] }; }
+    var e = null; GL.parsed.entries.forEach(function (x) { if (x.studentId === sid) { e = x; } });
+    var s = glStu(sid), n = glBusyOf(sid);
+    if (!e) { e = { studentId: sid, name: s.name, cls: s.cls, texts: [], dropped: [], warn: [], blocked: n > 0, why: n ? '今の目標が終わっていません（' + n + '件）' : '' }; GL.parsed.entries.push(e); }
+    texts.forEach(function (t) { t = t.trim(); if (t && e.texts.indexOf(t) < 0 && e.texts.length < 3) { e.texts.push(t); } });
+    e.off = e.blocked;
+  }
+  function glPanelAdd(box) {
+    box.appendChild(gle('p', 'kb-hint', '紙で出された目標や、教室で決めた目標を、先生が代わりに入れます。1人1〜3個。今の目標が終わっていない生徒には、ステッカーアプリのルールで新しく入れられません。'));
+    var modes = gle('div', 'gl-modes');
+    [['finalize', '確定して登録', 'すぐ「取り組み中」になります（教室で決めた目標向き）'], ['propose', '提案する', '生徒が承諾するまで待ちます（生徒に選ばせたいとき）']].forEach(function (m) {
+      var l = gle('label', 'gl-mode'), r = gle('input'); r.type = 'radio'; r.name = 'glMode'; r.checked = GL.mode === m[0]; r.disabled = GL.busy;
+      r.addEventListener('change', function () { GL.mode = m[0]; });
+      var t = gle('span'); t.appendChild(gle('b', null, m[1])); t.appendChild(gle('small', null, m[2]));
+      l.appendChild(r); l.appendChild(t); modes.appendChild(l);
+    });
+    box.appendChild(modes);
+    var lab = gle('label', 'lab', '貼り付け（1人ずつ「名前：目標／目標」、または名前の行のあとに「・目標」）'); lab.setAttribute('for', 'glDraft'); box.appendChild(lab);
+    var ta = gle('textarea'); ta.id = 'glDraft'; ta.rows = 6; ta.value = GL.draft; ta.disabled = GL.busy;
+    ta.placeholder = 'ゆき：毎日5分音読する／単語を10個覚える\nけん\n・夏休みの宿題を終える\n・過去問を解く\n3番 英検を受ける';
+    ta.addEventListener('input', function () { GL.draft = ta.value; });
+    box.appendChild(ta);
+    var row = gle('div', 'kb-acts');
+    row.appendChild(glBtn('読み取る', 'pri', function () {
+      if (!GL.draft.trim()) { glSay('目標を書くか、貼り付けてください。'); return; }
+      GL.busy = true; glSay('読み取っています…', true); glRender(true);
+      jcall('goals_parse', { text: GL.draft }).then(function (r) {
+        GL.parsed = r.parsed; (GL.parsed.entries || []).forEach(function (e) { e.off = !!e.blocked; });
+        glSay(GL.parsed.entries.length ? '' : '登録できる目標が見つかりませんでした。', !GL.parsed.entries.length ? false : true);
+      }).catch(function (e) { glSay('❌ ' + e.message); }).then(function () { GL.busy = false; glRender(true); });
+    }));
+    row.appendChild(glBtn('書いた内容を消す', 'quiet', function () { GL.draft = ''; GL.parsed = null; glRender(true); }));
+    box.appendChild(row);
+    // 1人ずつ
+    var det = gle('details', 'gl-one'); det.appendChild(gle('summary', null, '1人ずつ入れる'));
+    var f = gle('div', 'kb-edit'); var sel = gle('select'); sel.appendChild(Object.assign(gle('option', null, '生徒を選ぶ'), { value: '' }));
+    GL.data.students.slice().sort(function (a, b) { return (a.cls + a.name).localeCompare(b.cls + b.name, 'ja'); }).forEach(function (s) {
+      var n = glBusyOf(s.id), o = gle('option', null, (s.cls ? s.cls + '　' : '') + s.name + (n ? '（取り組み中あり）' : '')); o.value = s.id; sel.appendChild(o);
+    });
+    f.appendChild(sel);
+    var ins = [0, 1, 2].map(function (i) { var x = gle('input'); x.type = 'text'; x.maxLength = 200; x.placeholder = '目標' + (i + 1) + (i ? '（なくてもよい）' : ''); f.appendChild(x); return x; });
+    f.appendChild(glBtn('下の確認に足す', null, function () {
+      if (!sel.value) { glSay('生徒を選んでください。'); return; }
+      var ts = ins.map(function (x) { return x.value; }).filter(function (t) { return t.trim(); });
+      if (!ts.length) { glSay('目標を1つ以上書いてください。'); return; }
+      glAddEntry(sel.value, ts); glSay('', true); glRender(true);
+    }));
+    det.appendChild(f); box.appendChild(det);
+    // 確認
+    var P = GL.parsed;
+    if (P && P.problems && P.problems.length) { var pu = gle('ul', 'gl-prob'); P.problems.forEach(function (p) { pu.appendChild(gle('li', null, p)); }); box.appendChild(pu); }
+    if (P && P.entries && P.entries.length) {
+      box.appendChild(gle('h3', 'gl-sub', '登録する内容の確認（' + (GL.mode === 'propose' ? '提案する' : '確定して登録') + '）'));
+      var ul = gle('ul', 'kb-cards');
+      P.entries.forEach(function (e) {
+        var li = gle('li', 'kb-card gl-row' + (e.blocked ? ' blocked' : ''));
+        var top = gle('div', 'gl-top'), l = gle('label', 'gl-chk'), c = gle('input'); c.type = 'checkbox'; c.checked = !e.off && !e.blocked; c.disabled = GL.busy || !!e.blocked;
+        c.addEventListener('change', function () { e.off = !c.checked; glRender(true); }); l.appendChild(c); l.appendChild(gle('span', 'sr', '登録する'));
+        top.appendChild(l); var w = gle('div', 'gl-text'); var h = gle('p', 'ttl', e.name); if (e.cls) { h.appendChild(gle('small', null, '　' + e.cls)); } w.appendChild(h);
+        var ol = gle('ol', 'gl-goals');
+        e.texts.forEach(function (t, i) { var it = gle('li', null, t); it.appendChild(glBtn('×', 'quiet', function () { e.texts.splice(i, 1); if (!e.texts.length) { P.entries.splice(P.entries.indexOf(e), 1); } glRender(true); }, '外す')); ol.appendChild(it); });
+        w.appendChild(ol); top.appendChild(w); li.appendChild(top);
+        (e.warn || []).forEach(function (t) { li.appendChild(gle('p', 'gl-orig', '⚠ ' + t)); });
+        if (e.blocked) {
+          var p = gle('p', 'kb-wait', e.why + '。「生徒ごと」で終わらせるか破棄すると入れられます。');
+          p.appendChild(glBtn('見に行く', 'quiet', function () { GL.open[e.studentId] = true; glTab('students'); })); li.appendChild(p);
+        }
+        ul.appendChild(li);
+      });
+      box.appendChild(ul);
+      var ok = P.entries.filter(function (e) { return !e.blocked && !e.off && e.texts.length; });
+      var go = gle('div', 'kb-acts'); go.appendChild(gle('span', 'sp'));
+      var b = glBtn(ok.length + '人分を' + (GL.mode === 'propose' ? '提案する' : '登録する'), 'pri', function () {
+        glAct('add', { entries: ok.map(function (e) { return { studentId: e.studentId, texts: e.texts, mode: GL.mode }; }) }, function (r) {
+          var bad = {}; (r.failed || []).forEach(function (f) { bad[f.id] = 1; });
+          GL.parsed.entries = GL.parsed.entries.filter(function (e) { return !(ok.indexOf(e) >= 0 && !bad[e.studentId]); });
+          if (!GL.parsed.entries.length) { GL.parsed = null; GL.draft = ''; }
+        });
+      });
+      b.disabled = GL.busy || !ok.length; go.appendChild(b); box.appendChild(go);
+    }
+  }
+
+  // ---- 生徒ごとの状況 ----
+  function glStudentInfo(s) {
+    var gs = GL.data.goals.filter(function (g) { return g.sid === s.id; });
+    var info = { s: s, gs: gs, pend: 0, rep: 0, act: 0, acc: 0, late: 0, long: 0, month: 0, az: 0 };
+    var m0 = new Date(glNow()); var mStart = new Date(m0.getFullYear(), m0.getMonth(), 1).getTime();
+    gs.forEach(function (g) {
+      if (g.st === 'PendingApproval') { info.pend++; } else if (g.st === 'Submitted') { info.rep++; } else if (g.st === 'PendingStudentAccept') { info.acc++; }
+      else if (g.st === 'Active') {
+        if (g.az) { info.az++; return; }
+        info.act++;
+        var n = glDaysTo(g.due); if (n !== null && n < 0) { info.late++; }
+        if (n === null && g.ap && glNow() - g.ap > 14 * 86400000) { info.long++; }
+      } else if (g.st === 'Completed' && g.cp >= mStart) { info.month++; }
+    });
+    info.none = !info.pend && !info.rep && !info.act && !info.acc;
+    info.score = info.pend * 3 + info.rep * 3 + info.late * 2 + info.long + (info.none ? 1 : 0);
+    return info;
+  }
+  function glChip(text, cls) { return gle('span', 'gl-chip' + (cls ? ' ' + cls : ''), text); }
+  function glPanelStudents(box) {
+    var az = gle('label', 'gl-az'), ck = gle('input'); ck.type = 'checkbox'; ck.checked = GL.showAz; ck.addEventListener('change', function () { GL.showAz = ck.checked; glRender(true); });
+    az.appendChild(ck); az.appendChild(gle('span', null, 'Kids A-Zの自動目標も表示する')); box.appendChild(az);
+    var infos = GL.data.students.filter(function (s) { var f = GL.student; return f === 'all' || (f.indexOf('s:') === 0 ? s.id === f.slice(2) : s.cls === f.slice(2)); }).map(glStudentInfo);
+    infos.sort(function (a, b) { return b.score - a.score || (a.s.cls + a.s.name).localeCompare(b.s.cls + b.s.name, 'ja'); });
+    if (!infos.length) { box.appendChild(glEmpty('生徒がいません。')); return; }
+    infos.forEach(function (i) {
+      var d = gle('details', 'gl-stu' + (i.score >= 3 ? ' attn' : '')); d.open = !!GL.open[i.s.id];
+      d.addEventListener('toggle', function () { if (d.open) { GL.open[i.s.id] = true; } else { delete GL.open[i.s.id]; } });
+      var sm = gle('summary'); sm.appendChild(gle('b', null, i.s.name)); if (i.s.cls) { sm.appendChild(gle('small', null, i.s.cls)); }
+      var chips = gle('span', 'gl-chips');
+      if (i.pend) { chips.appendChild(glChip('承認待ち ' + i.pend, 'hot')); }
+      if (i.rep) { chips.appendChild(glChip('報告 ' + i.rep, 'hot')); }
+      if (i.act) { chips.appendChild(glChip('取り組み中 ' + i.act)); }
+      if (i.acc) { chips.appendChild(glChip('返事待ち ' + i.acc)); }
+      if (i.late) { chips.appendChild(glChip('期限すぎ ' + i.late, 'late')); }
+      if (i.long) { chips.appendChild(glChip('2週間以上 ' + i.long, 'warn')); }
+      if (i.none) { chips.appendChild(glChip('いまの目標なし', 'warn')); }
+      chips.appendChild(glChip('今月 ' + i.month + '／累計 ' + i.s.done, 'quiet'));
+      sm.appendChild(chips); d.appendChild(sm);
+      var body = gle('div', 'gl-stu-body');
+      if (i.none) {
+        var p = gle('p', 'kb-hint', '取り組み中の目標がありません。'); p.appendChild(glBtn('この生徒に目標を入れる', 'pri', function () {
+          GL.draft = (GL.draft ? GL.draft.replace(/\s*$/, '\n') : '') + i.s.name + '：'; GL.parsed = null; glTab('add');
+          setTimeout(function () { var t = $('glDraft'); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } }, 0);
+        })); body.appendChild(p);
+      }
+      var ul = gle('ul', 'kb-cards');
+      var order = { PendingApproval: 0, Submitted: 1, PendingStudentAccept: 2, Active: 3, Completed: 4 };
+      i.gs.filter(function (g) { return GL.showAz || !g.az; }).sort(function (a, b) { return order[a.st] - order[b.st] || (b.cp || b.pa || 0) - (a.cp || a.pa || 0); }).forEach(function (g) {
+        ul.appendChild(glRow(g, { btns: function (row) { glStuButtons(row, g, i); } }, function (meta) {
+          var st = gle('span', 'kb-st ' + (g.st === 'Active' ? 'doing' : g.st === 'Completed' ? '' : 'today'), GL_ST[g.st] || g.st); meta.insertBefore(st, meta.firstChild);
+          var du = glDue(g.due); if (du && g.st !== 'Completed') { meta.appendChild(du); }
+          if (g.st === 'Completed') { meta.appendChild(gle('span', null, '完了 ' + glMD(g.cp))); }
+          if (g.st === 'Active' && g.ap) { meta.appendChild(gle('span', null, '開始 ' + glAgo(g.ap))); }
+        }));
+      });
+      if (!ul.childNodes.length) { body.appendChild(glEmpty('表示する目標はありません。')); } else { body.appendChild(ul); }
+      d.appendChild(body); box.appendChild(d);
+    });
+  }
+  function glStuButtons(row, g, info) {
+    var short = g.t.slice(0, 30);
+    if (g.st === 'PendingApproval') {
+      row.appendChild(glBtn('却下…', 'quiet danger', function () { glBeginEdit(g, 'reject'); }));
+      row.appendChild(glBtn('直して承認…', null, function () { glBeginEdit(g, 'fix'); }));
+      row.appendChild(glBtn('承認', 'pri', function () { glAct('approve', { ids: [g.id] }); }));
+    } else if (g.st === 'Submitted') {
+      row.appendChild(glBtn('やり直し…', 'quiet', function () { glBeginEdit(g, 'rework'); }));
+      row.appendChild(glBtn('完了にする', 'pri', function () { glAsk('「' + short + '」を完了にして、報酬を渡します。取り消せません。', '完了にする', function () { glAct('confirm', { ids: [g.id] }); }); }));
+    } else if (g.st === 'PendingStudentAccept') {
+      row.appendChild(glBtn('提案を取り下げる', 'quiet danger', function () { glAsk(glStu(g.sid).name + 'への先生の提案（' + info.acc + '件）を取り下げます。', '取り下げる', function () { glAct('withdraw', { studentId: g.sid }); }); }));
+      row.appendChild(glBtn('生徒に代わって承諾', 'pri', function () { glAct('accept', { studentId: g.sid }); }, '教室で本人と決めたとき。提案した分が全部、取り組み中になります'));
+    } else if (g.st === 'Active') {
+      row.appendChild(glBtn('文を直す…', 'quiet', function () { glBeginEdit(g, 'fix'); }));
+      row.appendChild(glBtn(g.vis ? '保護者に隠す' : '保護者に見せる', 'quiet', function () { glAct('visible', { ids: [g.id], visible: !g.vis }); }));
+      row.appendChild(glBtn('期限…', 'quiet', function () { glBeginEdit(g, 'due'); }));
+      row.appendChild(glBtn('破棄…', 'quiet danger', function () { glBeginEdit(g, 'discard'); }));
+      if (!g.az) { row.appendChild(glBtn('完了にする', 'pri', function () { glAsk('「' + short + '」を、報告を待たずに完了にして、報酬を渡します。取り消せません。', '完了にする', function () { glAct('complete', { ids: [g.id] }); }); })); }
+    }
+  }
+
+  // ---- 全体 ----
+  function glTab(t) { GL.tab = t; GL.edit = null; GL.confirm = null; try { localStorage.setItem('navi_gl_tab', t); } catch (e) { } glRender(true); }
+  function glBuild() {
+    var root = $('gl'); root.textContent = ''; root.classList.add('kb', 'gl');
+    var top = gle('div', 'gl-bar');
+    var sel = gle('select'); sel.id = 'glFilter'; sel.setAttribute('aria-label', '生徒・クラスで絞りこむ'); sel.addEventListener('change', function () { GL.student = sel.value; glRender(true); });
+    top.appendChild(sel);
+    var rl = gle('button', null, '🔄'); rl.type = 'button'; rl.title = 'スプレッドシートから読みなおす'; rl.id = 'glReload'; rl.addEventListener('click', function () { glSay('読みなおします…', true); glLoad(false); });
+    top.appendChild(rl);
+    var st = gle('span', 'gl-at'); st.id = 'glAt'; top.appendChild(st);
+    root.appendChild(top);
+    var sum = gle('dl', 'kb-sum'); sum.id = 'glSum'; root.appendChild(sum);
+    var m = gle('p', 'kb-msg'); m.id = 'glMsg'; m.setAttribute('role', 'status'); root.appendChild(m);
+    var fl = gle('ul', 'gl-fail'); fl.id = 'glFail'; root.appendChild(fl);
+    var tabs = gle('div', 'kb-tabs'); tabs.id = 'glTabs'; tabs.setAttribute('role', 'tablist'); root.appendChild(tabs);
+    var cf = gle('div'); cf.id = 'glConfirm'; root.appendChild(cf);
+    var body = gle('div', 'gl-body'); body.id = 'glBody'; root.appendChild(body);
+    GL.built = true;
+  }
+  function glRender(force) {
+    if (!GL.built) { return; }
+    var root = $('gl'), ae = document.activeElement;
+    if (!force && ae && root.contains(ae) && (ae.tagName === 'TEXTAREA' || (ae.tagName === 'INPUT' && ae.type !== 'checkbox'))) { return; }
+    var msg = $('glMsg'); msg.textContent = GL.msg; msg.className = GL.info ? 'kb-msg info' : 'kb-msg';
+    var fl = $('glFail'); fl.textContent = ''; GL.failed.forEach(function (t) { fl.appendChild(gle('li', null, '⚠ ' + t)); });
+    var at = $('glAt'); at.textContent = GL.at ? '更新 ' + new Date(GL.at).getHours() + ':' + ('0' + new Date(GL.at).getMinutes()).slice(-2) : '';
+    var body = $('glBody'), sum = $('glSum'), tabs = $('glTabs'), cf = $('glConfirm');
+    var keep = { x: window.pageXOffset, y: window.pageYOffset };
+    body.textContent = ''; sum.textContent = ''; tabs.textContent = ''; cf.textContent = '';
+    if (!GL.data) {
+      body.appendChild(glEmpty(GL.loading ? '読み込んでいます…' : (GL.err ? '読み込めませんでした。🔄 を押してもう一度。' : '')));
+      return;
+    }
+    // 絞りこみの選択肢
+    var sel = $('glFilter'); sel.textContent = '';
+    var o0 = gle('option', null, '全員'); o0.value = 'all'; sel.appendChild(o0);
+    var cls = []; GL.data.students.forEach(function (s) { if (s.cls && cls.indexOf(s.cls) < 0) { cls.push(s.cls); } });
+    cls.sort(function (a, b) { return a.localeCompare(b, 'ja'); }).forEach(function (c) { var o = gle('option', null, 'クラス：' + c); o.value = 'c:' + c; sel.appendChild(o); });
+    GL.data.students.slice().sort(function (a, b) { return a.name.localeCompare(b.name, 'ja'); }).forEach(function (s) { var o = gle('option', null, s.name); o.value = 's:' + s.id; sel.appendChild(o); });
+    sel.value = GL.student; if (sel.value !== GL.student) { GL.student = 'all'; sel.value = 'all'; }
+    // 数
+    var cnt = { pending: glCountAll('PendingApproval'), reported: glCountAll('Submitted'), active: glCountAll('Active'), accept: glCountAll('PendingStudentAccept') };
+    [['承認待ち', cnt.pending, cnt.pending > 0], ['報告', cnt.reported, cnt.reported > 0], ['取り組み中', cnt.active, false], ['返事待ち', cnt.accept, false]].forEach(function (x) {
+      var d = gle('div'); d.appendChild(gle('dt', null, x[0])); d.appendChild(gle('dd', x[2] ? 'over' : null, String(x[1]))); sum.appendChild(d);
+    });
+    if (GL.data.cut && (GL.data.cut.done || GL.data.cut.az || GL.data.cut.text)) {
+      var cut = gle('div'); cut.appendChild(gle('dt', null, '省いた分')); cut.appendChild(gle('dd', null, '多すぎるため、古い完了などを一部省いています')); sum.appendChild(cut);
+    }
+    // タブ
+    [['pending', '承認待ち', cnt.pending], ['reported', '報告', cnt.reported], ['add', '登録', 0], ['students', '生徒ごと', 0]].forEach(function (t) {
+      var b = gle('button', null, t[1] + (t[2] ? '（' + t[2] + '）' : '')); b.type = 'button'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', String(GL.tab === t[0]));
+      b.addEventListener('click', function () { glTab(t[0]); }); tabs.appendChild(b);
+    });
+    var bar = glConfirmBar(); if (bar) { cf.appendChild(bar); }
+    if (GL.tab === 'pending') { glPanelPending(body); } else if (GL.tab === 'reported') { glPanelReported(body); }
+    else if (GL.tab === 'add') { glPanelAdd(body); } else { glPanelStudents(body); }
+    window.scrollTo(keep.x, keep.y);
+  }
+  function glShow() {
+    if (!GL.built) { glBuild(); }
+    glRender(true);
+    if (!GL.data || Date.now() - GL.at > 20000) { glLoad(!!GL.data); }
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && GL.built && $('gl').offsetParent !== null && (!GL.data || Date.now() - GL.at > 20000)) { glLoad(true); }
+  });
+  setInterval(function () {      // 開いている間は、1分おきに読みなおす（入力中・操作中は止める）
+    if (GL.built && document.visibilityState === 'visible' && $('gl').offsetParent !== null && !GL.busy && !GL.loading && !GL.edit && !GL.confirm && Date.now() - GL.at > 60000) {
+      var ae = document.activeElement; if (ae && $('gl').contains(ae) && (ae.tagName === 'TEXTAREA' || (ae.tagName === 'INPUT' && ae.type !== 'checkbox'))) { return; }
+      glLoad(true);
+    }
+  }, 30000);
+// GOALS-UI:JS:END
+
   var curTab = 'chat';
-  var PANES = { chat: 'paneChat', sched: 'paneSched', lesson: 'paneLesson', todo: 'paneTodo', parent: 'paneParent', outbox: 'paneOutbox', notices: 'paneNotices', list: 'paneList', date: 'paneDate', form: 'paneForm' };
-  var TABS = { chat: 'tabChat', sched: 'tabSched', lesson: 'tabLesson', todo: 'tabTodo', parent: 'tabParent', outbox: 'tabOutbox', notices: 'tabNotices', list: 'tabList', date: 'tabDate', form: 'tabForm' };
+  var PANES = { chat: 'paneChat', sched: 'paneSched', lesson: 'paneLesson', todo: 'paneTodo', board: 'paneBoard', goals: 'paneGoals', parent: 'paneParent', outbox: 'paneOutbox', notices: 'paneNotices', list: 'paneList', sec: 'paneSec', date: 'paneDate', form: 'paneForm' };
+  var TABS = { chat: 'tabChat', sched: 'tabSched', lesson: 'tabLesson', todo: 'tabTodo', board: 'tabBoard', goals: 'tabGoals', parent: 'tabParent', outbox: 'tabOutbox', notices: 'tabNotices', list: 'tabList', sec: 'tabSec', date: 'tabDate', form: 'tabForm' };
   function showTab(t) {
     if (!PANES[t]) { t = 'chat'; }
     curTab = t;
+    try { localStorage.setItem('navi_tab', t); } catch (e) { }
     Object.keys(PANES).forEach(function (k) {
       $(PANES[k]).className = 'pane' + (k === t ? ' on' : '');
       $(TABS[k]).className = k === t ? 'on' : '';
@@ -1570,20 +2759,27 @@
     $('chips').style.display = chat ? '' : 'none';
     document.querySelector('footer').style.display = chat ? '' : 'none';
     updatePendingBar();
+    try { $(TABS[t]).scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); } catch (e) { }
     if (t === 'notices') { loadNotices(); }
     if (t === 'sched') { renderSched(); fetchSnapshot(); }
     if (t === 'outbox') { renderOutbox(); }
     if (t === 'lesson') { renderLessons(); fetchSnapshot(); }
     if (t === 'todo') { renderTodos(); fetchSnapshot(); }
     if (t === 'parent') { loadParents(); }
+    if (t === 'board') { kbShow(); }
+    if (t === 'goals') { glShow(); }
     if (t === 'list') { loadPanel('panel', ''); }
-    if (t === 'form') { sel.value = formKey; loadFormInfo(function () { renderForm(); }); }
+    if (t === 'sec') { buildSecretary(); }
+    if (t === 'form') { sel.value = formKey; loadFormInfo(function () { renderForm(); renderFormQ(); }); }
   }
   $('tabSched').onclick = function () { showTab('sched'); };
   $('tabLesson').onclick = function () { showTab('lesson'); };
   $('tabTodo').onclick = function () { showTab('todo'); };
+  $('tabBoard').onclick = function () { showTab('board'); };
+  $('tabGoals').onclick = function () { showTab('goals'); };
   $('tabParent').onclick = function () { showTab('parent'); };
   $('tabList').onclick = function () { showTab('list'); };
+  $('tabSec').onclick = function () { showTab('sec'); };
   $('tabDate').onclick = function () { showTab('date'); };
   $('tabForm').onclick = function () { showTab('form'); };
 
@@ -1639,13 +2835,95 @@
     loadPanel('job_add', t).then(function () { $('jobText').value = ''; panelTab = 'shelf'; renderPanel(); });
   };
 
+
+  // ---- 秘書（ボタンを押すだけで、秘書の機能を呼ぶ）----
+  var SEC_GROUPS = [
+    ['いま', [['↩ 直前の実行を取り消す', '取り消して'], ['👉 次、何する？', '次、何する？'], ['📝 今日必要なフォーム', '今日必要なフォーム出して'], ['🧹 たまっているもの', 'たまってるものある？']]],
+    ['レッスン・予定', [['📘 次のレッスンの準備', '次のレッスンの準備'], ['🗓 今週の見通し', '今週の見通し'], ['📆 来週への準備', '来週の準備'], ['🕐 あいている時間', '来週で1時間あいてる日は？']]],
+    ['生徒・保護者', [['👀 気になる生徒', '気になる生徒は？'], ['📮 欠席の子へのフォロー', '欠席の子にフォローしたい'], ['✉ 連絡もれチェック', '連絡忘れてない？'], ['💬 返事待ちの保護者', '返信してない保護者は？'], ['🤝 面談の候補日（LINE文）', '面談の候補日を出して']]],
+    ['見る（一覧）', [['📋 Todo一覧', 'Todo一覧を見せて'], ['📒 メモ一覧', 'メモを見せて'], ['🗓 今日の予定', '今日の予定を見せて'], ['🧑‍🏫 毎週のレッスン', '時間割を見せて'], ['👥 レッスンと生徒の名簿', 'レッスンと生徒の一覧を見せて'], ['📄 書きかけのフォーム', '途中保存の一覧']]],
+    ['データ', [['💾 バックアップを書き出す', 'バックアップを取って']]],
+    ['登録', [['❓ レッスン・生徒の登録のしかた', 'レッスンってどうやって登録するの？']]],
+    ['ふりかえり・健康', [['🗒 今月のふりかえり', '今月のふりかえり'], ['🛌 働きすぎチェック', '働きすぎてない？'], ['📣 インスタの材料', 'インスタに何載せよう'], ['🩺 動作点検', '点検して']]]
+  ];
+  var secBuilt = false;
+  function buildSecretary() {
+    if (secBuilt) { return; }
+    secBuilt = true;
+    var body = $('secBody');
+    var home = el('div', { className: 'secHome' });
+    home.appendChild(el('div', { className: 'secHomeT', text: '☀ 今日の要点' }));
+    var homeTxt = el('div', { className: 'secHomeB', text: '読み込み中…' });
+    home.appendChild(homeTxt);
+    home.appendChild(el('div', { className: 'tools' }, [el('button', { text: '✏ 今日の予定を直す（動かす・消す）', onclick: function () { $('dDate').value = isoOf(new Date()); showTab('date'); dayCall('day', $('dDate').value); } })]));
+    body.appendChild(home);
+    var kwIn = el('input', { type: 'text', placeholder: '言葉で絞る（例：保護者）' });
+    body.appendChild(el('div', { className: 'secTitle', text: '絞り込んで見る' }));
+    body.appendChild(el('div', { className: 'tools' }, [kwIn, el('button', { text: 'Todo', onclick: function () { if (kwIn.value.trim()) { secCall(kwIn.value.trim() + 'のTodo'); } } }), el('button', { text: 'メモ', onclick: function () { if (kwIn.value.trim()) { secCall(kwIn.value.trim() + 'のメモ'); } } })]));
+    jcall('panel', '').then(function (r) {
+      var t = (r && r.texts && r.texts.today) || '';
+      var lines = t.split('\n').filter(function (x) { return x.trim(); });
+      homeTxt.textContent = lines.slice(0, 9).join('\n') + (lines.length > 9 ? '\n…（「📋 一覧」の★今日で、全部見られます）' : '');
+    }).catch(function () { homeTxt.textContent = '（PCにつながると、ここに今日の要点が出ます）'; });
+    SEC_GROUPS.forEach(function (g) {
+      body.appendChild(el('div', { className: 'secTitle', text: g[0] }));
+      var grid = el('div', { className: 'secGrid' });
+      g[1].forEach(function (b) {
+        var i = b[0].indexOf(' ');
+        var btn = el('button', { onclick: function () { secCall(b[1]); } }, [el('span', { className: 'ico', text: b[0].slice(0, i) }), el('span', { className: 'lab', text: b[0].slice(i + 1) })]);
+        grid.appendChild(btn);
+      });
+      body.appendChild(grid);
+    });
+  }
+  function secCall(phrase) {
+    var out = $('secOut'); out.style.display = 'block'; out.textContent = '考え中…（PCが読んでいます）';
+    $('secForm').innerHTML = '';
+    return guarded(function () {
+      return jcall('send', phrase).then(function (st) {
+        out.textContent = (st && st.reply) || '（答えがありませんでした）';
+        if (st && st.form_offer) {
+          var b = el('button', { className: 'go', text: '📝 フォームを開く' });
+          b.onclick = function () { openForm(st.form_offer.key, st.form_offer.prefill || {}); };
+          $('secForm').appendChild(b);
+        }
+        var nexts = [];       // 見た結果から、そのまま操作へ進める
+        if (/予定|スケジュール/.test(phrase)) { nexts = [['event', '＋ 予定を入れる'], ['event_move', '↔ 動かす'], ['event_copy', '📋 コピー'], ['event_delete', '🗑 消す']]; }
+        else if (/Todo|やること/i.test(phrase)) { nexts = [['todo', '＋ Todoを入れる'], ['todo_manage', '🗂 Todo管理（完了・期限）']]; }
+        else if (/時間割|毎週のレッスン/.test(phrase)) { nexts = [['lesson_add', '＋ 毎週のレッスンを登録'], ['lesson_change', '✏ 曜日・時間を変える'], ['lesson_delete', '🛑 やめる'], ['lesson_skip', '🌴 お休みにする']]; }
+        else if (/生徒|名簿|レッスンと/.test(phrase)) { nexts = [['lesson_setup', '🏫 レッスンの登録・生徒を入れる'], ['student_add', '➕ 生徒を追加']]; }
+        else if (/メモ/.test(phrase)) { nexts = [['memo', '＋ メモを残す']]; }
+        nexts.forEach(function (n) { var nb = el('button', { text: n[1], onclick: function () { openForm(n[0], {}); } }); $('secForm').appendChild(nb); });
+      });
+    }, out);
+  }
+
   // ---- 日付 ----
   function isoOf2(d) { var m = ('0' + (d.getMonth() + 1)).slice(-2), dd = ('0' + d.getDate()).slice(-2); return d.getFullYear() + '-' + m + '-' + dd; }
   $('dDate').value = isoOf2(new Date());
+  function drawDayActions(evs) {
+    var box = $('dateAct');
+    if (!box) { box = el('div', { id: 'dateAct' }); $('dateOut').parentNode.insertBefore(box, $('dateOut').nextSibling); }
+    box.innerHTML = '';
+    if (!evs.length) { return; }
+    box.appendChild(el('div', { className: 'secHomeT', text: '✏ この予定を直す（タップ → 確認の画面）' }));
+    evs.forEach(function (e) {
+      var rowEl = el('div', { className: 'fq' });
+      var label = e.date.slice(5).replace('-', '/') + ' ' + (e.start || '終日') + ' ' + e.title + (e.lesson ? '（レッスン）' : (e.repeat && e.repeat !== 'none' ? '（くり返し）' : ''));
+      rowEl.appendChild(el('div', { className: 'fqb' }, [el('b', { text: label })]));
+      if (e.lesson) {
+        rowEl.appendChild(el('button', { text: '🌴 お休み', onclick: function () { openForm('lesson_skip', { 'class': e.title, date: e.date }); } }));
+      } else {
+        rowEl.appendChild(el('button', { text: '↔', onclick: function () { openForm('event_move', { keyword: e.title }); } }));
+        rowEl.appendChild(el('button', { text: '🗑', onclick: function () { openForm('event_delete', { keyword: e.title, date: e.date, scope: e.repeat && e.repeat !== 'none' ? 'この日だけ消す' : '' }); } }));
+      }
+      box.appendChild(rowEl);
+    });
+  }
   function dayCall(mode, value) {
     var out = $('dateOut'); out.style.display = 'block'; out.textContent = '調べています…';
     return guarded(function () {
-      return jcall('day', { mode: mode, value: value }).then(function (r) { out.textContent = r.reply || ''; });
+      return jcall('day', { mode: mode, value: value }).then(function (r) { out.textContent = r.reply || ''; drawDayActions(r.events || []); });
     }, out);
   }
   $('dDate').onchange = function () { dayCall('day', $('dDate').value); };
@@ -1658,15 +2936,26 @@
 
   // ---- フォーム ----
   var formInfo = null, formKey = 'lesson_goal', formPre = {};
-  var FORM_LIST = [['lesson_goal', '目標（レッスン）'], ['todo', 'Todo'], ['event', '予定'], ['student_note', '生徒メモ'], ['parent_message', '保護者連絡'], ['report', '月の報告書'], ['job', '依頼箱（任せる）'], ['todo_manage', 'Todo管理']];
+  var FORM_LIST = [['lesson_goal', 'レッスン記録'], ['todo', 'Todo'], ['event', '予定'], ['event_move', '予定を動かす'], ['event_delete', '予定を消す'], ['event_copy', '予定をコピー'], ['student_note', '生徒メモ'], ['parent_message', '保護者連絡'], ['report', '月の報告書'], ['job', '依頼箱（任せる）'], ['todo_manage', 'Todo管理'], ['memo', 'メモ'], ['lesson_skip', 'レッスンのお休み'], ['lesson_add', '毎週のレッスン'], ['lesson_change', 'レッスンを変える'], ['lesson_delete', 'レッスンをやめる'], ['lesson_setup', 'レッスンの登録'], ['student_add', '生徒を追加']];
   var sel = $('formSel');
   FORM_LIST.forEach(function (f) { sel.appendChild(el('option', { value: f[0], text: f[1] })); });
   sel.onchange = function () { formKey = sel.value; formPre = {}; renderForm(); };
   function loadFormInfo(then) {
     if (formInfo) { then(); return; }
+    if (busy) { setTimeout(function () { loadFormInfo(then); }, 300); return; }   // 通信中なら、終わるのを待ってからやり直す
+    var cached = null;
+    try { cached = JSON.parse(localStorage.getItem('navi_forminfo') || 'null'); } catch (e) { cached = null; }
     guarded(function () {
-      return jcall('form_info', {}).then(function (r) { formInfo = r; then(); });
-    }, $('formMsg')).then(function () { if (formInfo) { $('formMsg').textContent = ''; } });
+      return jcall('form_info', {}).then(function (r) {
+        if (!r || !r.forms) { throw new Error('フォームの形を受け取れませんでした'); }
+        formInfo = r; try { localStorage.setItem('navi_forminfo', JSON.stringify(r)); } catch (e) { }
+        then();
+      }).catch(function (e) {
+        if (!cached) { throw e; }        // PCにつながらない → 前回の形（フォーム・生徒・クラス）で書ける
+        formInfo = cached; then();
+        $('formMsg').textContent = '📴 PCにつながっていません。前回の形で書けます（「ためる」で貯めて、つながったら送れます）';
+      });
+    }, $('formMsg')).then(function () { if (formInfo && !cached) { $('formMsg').textContent = ''; } });
   }
   function openForm(key, pre) { formKey = key; formPre = pre || {}; showTab('form'); }
 
@@ -1674,6 +2963,34 @@
     var l = el('label', { className: 'f' }); l.appendChild(document.createTextNode(label + ' '));
     if (required) { l.appendChild(el('b', { text: '＊必須' })); }
     l.appendChild(node); return l;
+  }
+  /* 日付・時間を「えらべる」ようにする：文字で打つ（あした／3時）のも、そのままできる */
+  function pickerRow(node, kind) {
+    var pick = el('input', { type: kind === 'date' ? 'date' : 'time', className: 'pick' });
+    if (kind === 'time') { pick.step = 900; }
+    pick.title = kind === 'date' ? 'カレンダーからえらぶ' : '時刻をえらぶ';
+    pick.addEventListener('change', function () { if (pick.value) { node.value = pick.value; node.dispatchEvent(new Event('input', { bubbles: true })); } });
+    var btn = el('button', { type: 'button', className: 'pickbtn', text: kind === 'date' ? '📅' : '🕒', onclick: function () {
+      try { if (pick.showPicker) { pick.showPicker(); } else { pick.focus(); pick.click(); } } catch (e) { pick.focus(); pick.click(); }
+    } });
+    var row = el('div', { className: 'pickrow' }, [node, btn, pick]);
+    if (kind === 'date') {
+      var q = el('div', { className: 'quick' });
+      [['今日', 0], ['あした', 1], ['あさって', 2], ['1週間後', 7]].forEach(function (b) {
+        q.appendChild(el('button', { type: 'button', text: b[0], onclick: function () {
+          var d = new Date(); d.setDate(d.getDate() + b[1]);
+          node.value = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+          node.dispatchEvent(new Event('input', { bubbles: true }));
+        } }));
+      });
+      return el('div', {}, [row, q]);
+    }
+    return row;
+  }
+  function timeList() {
+    var dl = el('datalist', { id: 'timeList' });
+    for (var m = 6 * 60; m <= 22 * 60 + 45; m += 15) { dl.appendChild(el('option', { value: ('0' + Math.floor(m / 60)).slice(-2) + ':' + ('0' + (m % 60)).slice(-2) })); }
+    return dl;
   }
   function renderForm() {
     var body = $('formBody'); body.innerHTML = ''; $('formMsg').textContent = '';
@@ -1689,18 +3006,45 @@
       if (f.kind === 'lines') { node = el('textarea', { className: 'f', rows: 4 }); }
       else if (f.kind === 'choice') {
         node = el('select'); (f.options || []).forEach(function (o) { node.appendChild(el('option', { value: o, text: o || '（選ばない）' })); });
-      } else { node = el('input', { type: 'text' }); if (f.kind === 'student') { node.setAttribute('list', 'stuList'); } }
+      } else if (f.kind === 'days') {
+        node = el('input', { type: 'text', style: 'display:none' });
+        var dbar = el('div', { className: 'checks' });
+        var dboxes = {};
+        ['月', '火', '水', '木', '金', '土', '日'].forEach(function (d) {
+          var cb = el('input', { type: 'checkbox' }); dboxes[d] = cb;
+          cb.addEventListener('change', function () { node.value = Object.keys(dboxes).filter(function (k) { return dboxes[k].checked; }).join('、'); node.dispatchEvent(new Event('input', { bubbles: true })); });
+          dbar.appendChild(el('label', {}, [cb, document.createTextNode(d)]));
+        });
+        node._boxes = dboxes; node._bar = dbar;
+        Object.defineProperty(node, 'value', { get: function () { return Object.keys(dboxes).filter(function (k) { return dboxes[k].checked; }).join('、'); }, set: function (v) { Object.keys(dboxes).forEach(function (k) { dboxes[k].checked = String(v || '').indexOf(k) >= 0; }); } });
+      } else { node = el('input', { type: 'text' }); if (f.kind === 'student') { node.setAttribute('list', 'stuList'); } if (f.kind === 'time') { node.setAttribute('list', 'timeList'); node.placeholder = '15:00'; } if (f.kind === 'classname') { node.setAttribute('list', 'clsList'); } if (f.kind === 'eventname') { node.setAttribute('list', 'evList'); } }
       if (f.kind === 'choice' && f.default) { node.value = f.default; }
       var pv = formPre[f.name]; if (pv) {
         if (f.kind === 'choice') { var hit = (f.options || []).filter(function (o) { return o === pv || o.split('：')[0] === pv; })[0]; if (hit !== undefined) { node.value = hit; } }
         else { node.value = Array.isArray(pv) ? pv.join('、') : String(pv); }
       }
-      inputs[f.name] = node; body.appendChild(field(f.label, node, f.required));
+      inputs[f.name] = node;
+      var wrap = node;
+      if (f.kind === 'days') { wrap = node._bar; }
+      if (f.kind === 'date' || f.kind === 'time') { wrap = pickerRow(node, f.kind); }
+      body.appendChild(field(f.label, wrap, f.required));
     });
+    var drs = Object.keys(formPre).length ? null : draftGet(formKey);
+    if (drs) { Object.keys(inputs).forEach(function (k) { if (drs[k] !== undefined && drs[k] !== '') { inputs[k].value = drs[k]; } }); $('formMsg').textContent = '📄 前回の途中保存を開きました（登録すると消えます）'; }
+    function collectSimple() { var values = {}; Object.keys(inputs).forEach(function (k) { values[k] = inputs[k].value; }); return values; }
+    wireAutosave(body, formKey, collectSimple);
     var dl = el('datalist', { id: 'stuList' });
     (formInfo.students || []).forEach(function (s) { dl.appendChild(el('option', { value: s.name })); });
     body.appendChild(dl);
-    body.appendChild(el('div', { className: 'tools' }, [el('span', { className: 'grow' }), el('button', { className: 'go', text: '確認へ', onclick: function () {
+    body.appendChild(timeList());
+    var cl = el('datalist', { id: 'clsList' }); (formInfo.class_names || formInfo.classes || []).forEach(function (c) { cl.appendChild(el('option', { value: c })); }); body.appendChild(cl);
+    var evl = el('datalist', { id: 'evList' }); (formInfo.event_titles || []).forEach(function (c) { evl.appendChild(el('option', { value: c })); }); body.appendChild(evl);
+    body.appendChild(el('div', { className: 'tools' }, [el('button', { text: '💾 途中保存', onclick: function () {
+      $('formMsg').textContent = draftPut(formKey, collectSimple()) ? '💾 途中保存しました。閉じても、次に開くと続きから始められます' : '（まだ何も書かれていないので、保存しませんでした）';
+    } }), el('span', { className: 'grow' }), el('button', { text: '📥 ためる', onclick: function () {
+      var values = {}; Object.keys(inputs).forEach(function (k) { values[k] = inputs[k].value; });
+      queueForm(formKey, values);
+    } }), el('button', { className: 'go', text: '確認へ', onclick: function () {
       var values = {}; Object.keys(inputs).forEach(function (k) { values[k] = inputs[k].value; });
       submitForm(formKey, values);
     } })]));
@@ -1740,34 +3084,49 @@
   }
   function renderGoalForm(body) {
     var today = isoOf2(new Date());
-    body.appendChild(el('div', { className: 'msg', text: 'クラス・日付・内容を入れて、目標を決める。出席の生徒は、そのまま達成にできます（レッスンのあとでもOK）' }));
+    var dr = Object.keys(formPre).length ? null : draftGet('lesson_goal');
+    var P = dr || formPre;
+    body.appendChild(el('div', { className: 'msg', text: '①レッスンの前：クラス・日付・内容を入れて、目標を立てて保存（「レッスンはもう終わった」を外す）。②レッスンのあと：出席・達成・様子・生徒ごとのメモを残す。書きかけは「💾 途中保存」（自動でも残ります）' }));
     var cls = el('select'); cls.appendChild(el('option', { value: '', text: '（選んでください）' }));
     formInfo.classes.forEach(function (c) { cls.appendChild(el('option', { value: c, text: c })); });
-    if (formPre.cls) { cls.value = formPre.cls; }
-    var date = el('input', { type: 'date', value: formPre.date || today });
-    var act = el('textarea', { className: 'f', rows: 3, value: formPre.activity || '' });
-    var done = el('input', { type: 'checkbox', checked: true });
-    var goals = el('textarea', { className: 'f', rows: 5, value: Array.isArray(formPre.goals) ? formPre.goals.join('\n') : (formPre.goals || '') });
-    var checks = el('div', { className: 'checks' });
+    if (P.cls) { cls.value = P.cls; }
+    var date = el('input', { type: 'date', value: P.date || today });
+    var act = el('textarea', { className: 'f', rows: 3, value: P.activity || '' });
+    var done = el('input', { type: 'checkbox', checked: P.done !== false });
+    var goals = el('textarea', { className: 'f', rows: 5, value: Array.isArray(P.goals) ? P.goals.join('\n') : (P.goals || '') });
+    var classNote = el('textarea', { className: 'f', rows: 3, value: P.class_note || '' });
+    var notes = {};  // 生徒ID → メモの欄
+    var keepNotes = (P.notes && typeof P.notes === 'object') ? P.notes : {};
+    var checks = el('div', { className: 'fq-members' });
     var boxes = {};
+    var checkedInit = Array.isArray(P.attendees) ? P.attendees.map(String) : null;
     function fillMembers() {
-      checks.innerHTML = ''; boxes = {};
+      Object.keys(notes).forEach(function (k) { if (notes[k].value.trim()) { keepNotes[k] = notes[k].value; } });   // クラスを選び直しても、書いたメモは消さない
+      checks.innerHTML = ''; boxes = {}; notes = {};
       var ms = (formInfo.students || []).filter(function (s) { return s.class === cls.value; });
       if (!ms.length) { checks.appendChild(el('span', { text: '（クラスを選ぶと、生徒が出ます）' })); }
       ms.forEach(function (s) {
-        var cb = el('input', { type: 'checkbox', checked: true }); boxes[s.id] = cb;
-        checks.appendChild(el('label', {}, [cb, document.createTextNode(s.name)]));
+        var cb = el('input', { type: 'checkbox', checked: checkedInit ? checkedInit.indexOf(String(s.id)) >= 0 : true }); boxes[s.id] = cb;
+        var nt = el('input', { type: 'text', placeholder: 'この子のメモ（任意）', value: keepNotes[s.id] || '' }); notes[s.id] = nt;
+        checks.appendChild(el('div', { className: 'memrow' }, [el('label', {}, [cb, document.createTextNode(s.name)]), nt]));
       });
     }
-    cls.onchange = fillMembers; fillMembers();
-    var ach = el('input', { type: 'checkbox', checked: formPre.achieve !== false });
+    cls.onchange = function () { checkedInit = null; fillMembers(); }; fillMembers();
+    var ach = el('input', { type: 'checkbox', checked: P.achieve !== false });
     var coin = el('select'); ['なし'].concat(formInfo.coins || []).forEach(function (c) { coin.appendChild(el('option', { value: c, text: c })); });
     coin.value = (formInfo.default_coin && (formInfo.coins || []).indexOf(formInfo.default_coin) >= 0) ? formInfo.default_coin : 'なし';
     var qty = el('input', { type: 'text', value: String(formInfo.default_qty || 1) });
     var pub = el('input', { type: 'checkbox' });
+    function collectGoal() {
+      var at = Object.keys(boxes).filter(function (k) { return boxes[k].checked; });
+      var nn = {}; Object.keys(keepNotes).forEach(function (k) { if (String(keepNotes[k]).trim()) { nn[k] = keepNotes[k]; } });
+      Object.keys(notes).forEach(function (k) { if (notes[k].value.trim()) { nn[k] = notes[k].value; } else { delete nn[k]; } });
+      return { cls: cls.value, date: date.value, activity: act.value, goals: goals.value, attendees: at, achieve: ach.checked, coin: coin.value, qty: qty.value, publish: pub.checked,
+               done: done.checked, class_note: classNote.value, notes: nn };
+    }
     body.appendChild(field('クラス', cls, true)); body.appendChild(field('日付', date, true));
     body.appendChild(field('やった（やる）内容：教科書の単元・活動', act));
-    body.appendChild(el('label', { className: 'f' }, [done, document.createTextNode(' レッスンはもう終わった（「〜した」の形にする）')]));
+    body.appendChild(el('label', { className: 'f' }, [done, document.createTextNode(' レッスンはもう終わった（✓：出席・達成・様子・メモも残す／外す：目標を立てるだけ）')]));
     var draft = el('button', { text: '🤖 内容から、目標の下書きを作る', onclick: function () {
       guarded(function () {
         return jcall('form_draft', { cls: cls.value, activity: act.value, done: done.checked }).then(function (r) {
@@ -1778,19 +3137,115 @@
       }, $('formMsg'));
     } });
     body.appendChild(el('div', { className: 'tools' }, [draft]));
-    body.appendChild(field('目標（1行に1つ。「〜する」「〜した」の形）', goals, true));
-    body.appendChild(el('label', { className: 'f', text: '出席の生徒（チェックした生徒が対象）' }));
+    body.appendChild(field('目標（1行に1つ。「〜する」「〜した」の形）', goals));
+    body.appendChild(el('label', { className: 'f', text: '生徒（チェック＝出席。下の欄に、その子のメモ）' }));
     body.appendChild(checks);
     body.appendChild(el('label', { className: 'f' }, [ach, document.createTextNode(' 出席の生徒を、この目標の達成にする（コインが付きます）')]));
+    body.appendChild(field('レッスンの様子（クラス全体。レッスンのあとに）', classNote));
     body.appendChild(field('コイン', coin)); body.appendChild(field('枚数', qty));
     body.appendChild(el('label', { className: 'f' }, [pub, document.createTextNode(' すぐ公開')]));
-    body.appendChild(el('div', { className: 'tools' }, [el('span', { className: 'grow' }), el('button', { className: 'go', text: '確認へ', onclick: function () {
-      var at = Object.keys(boxes).filter(function (k) { return boxes[k].checked; });
-      submitForm('lesson_goal', { cls: cls.value, date: date.value, goals: goals.value, attendees: at, achieve: ach.checked, coin: coin.value, qty: qty.value, publish: pub.checked });
-    } })]));
+    body.appendChild(el('div', { className: 'tools' }, [
+      el('button', { text: '💾 途中保存', onclick: function () {
+        $('formMsg').textContent = draftPut('lesson_goal', collectGoal()) ? '💾 途中保存しました。閉じても、次に開くと続きから始められます' : '（まだ何も書かれていないので、保存しませんでした）';
+      } }),
+      el('span', { className: 'grow' }),
+      el('button', { text: '📥 ためる', onclick: function () { queueForm('lesson_goal', collectGoal()); } }),
+      el('button', { className: 'go', text: '確認へ', onclick: function () { submitForm('lesson_goal', collectGoal()); } })]));
+    wireAutosave(body, 'lesson_goal', collectGoal);
+    if (dr) { $('formMsg').textContent = '📄 前回の途中保存を開きました（登録すると消えます）'; }
   }
+
+
+  // ---- 途中保存（このスマホの中に残る。登録したら消える）----
+  function draftKeyOf(k) { return 'navi_draft_' + k; }
+  var DRAFT_SKIP = { date: 1, coin: 1, qty: 1, publish: 1, achieve: 1, done: 1, repeat: 1, attendees: 1 };
+  function draftHasContent(v) {
+    return Object.keys(v || {}).some(function (k) {
+      if (DRAFT_SKIP[k]) { return false; }
+      var x = v[k];
+      if (x && typeof x === 'object') { return Object.keys(x).some(function (y) { return String(Array.isArray(x) ? x[y] : x[y]).trim(); }); }
+      return String(x == null ? '' : x).trim() !== '';
+    });
+  }
+  function draftGet(k) { try { return JSON.parse(localStorage.getItem(draftKeyOf(k)) || 'null'); } catch (e) { return null; } }
+  function draftPut(k, v) {
+    try {
+      if (!draftHasContent(v)) { localStorage.removeItem(draftKeyOf(k)); return false; }
+      localStorage.setItem(draftKeyOf(k), JSON.stringify(v)); return true;
+    } catch (e) { return false; }
+  }
+  function draftClear(k) { try { localStorage.removeItem(draftKeyOf(k)); } catch (e) { } }
+  var draftTimer = null;
+  function wireAutosave(root, key, collect) {      // 書くたびに、少し待ってから自動で途中保存
+    var go = function () { clearTimeout(draftTimer); draftTimer = setTimeout(function () { draftPut(key, collect()); }, 400); };
+    root.addEventListener('input', go); root.addEventListener('change', go);
+  }
+
+  // ---- ためて送る（フォームをためておいて、あとでまとめて・順番に送る）----
+  var FORMQ_KEY = 'navi_formq';
+  var formQ = [];
+  try { formQ = JSON.parse(localStorage.getItem(FORMQ_KEY) || '[]') || []; } catch (e) { formQ = []; }
+  function saveFormQ() { try { localStorage.setItem(FORMQ_KEY, JSON.stringify(formQ)); } catch (e) { } renderFormQ(); }
+  function formTitle(key) { var f = FORM_LIST.filter(function (x) { return x[0] === key; })[0]; return f ? f[1] : key; }
+  function formGist(key, v) {
+    var t = v.title || v.text || v.request || v.notes || v.cls || v.students || '';
+    if (key === 'lesson_goal') { t = (v.cls || '') + '　' + String(v.goals || '').split('\n')[0]; }
+    return String(t).replace(/\s+/g, ' ').slice(0, 40);
+  }
+  function queueForm(key, values) {
+    draftClear(key); pendingDraftKey = '';
+    formQ.push({ cid: 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), key: key, values: values, at: Date.now() });
+    saveFormQ();
+    $('formMsg').textContent = '📥 ためました（' + formQ.length + '件）。下の「まとめて送る」で、順番にPCへ送ります';
+  }
+  function renderFormQ() {
+    var box = $('formQ'); if (!box) { return; }
+    box.innerHTML = '';
+    if (!formQ.length) { return; }
+    var card = el('div', { className: 'card' });
+    card.appendChild(el('div', { className: 'secHomeT', text: '📥 ためたフォーム：' + formQ.length + '件（古い順に送ります）' }));
+    formQ.forEach(function (it, i) {
+      var row = el('div', { className: 'fq' });
+      row.appendChild(el('div', { className: 'fqb' }, [
+        el('b', { text: (i + 1) + '. ' + formTitle(it.key) }),
+        el('div', { className: 'fqs', text: formGist(it.key, it.values || {}) }),
+        it.err ? el('div', { className: 'fqe', text: '⚠ ' + it.err }) : el('span')
+      ]));
+      row.appendChild(el('button', { text: '✕', onclick: function () { formQ.splice(i, 1); saveFormQ(); } }));
+      card.appendChild(row);
+    });
+    var tools = el('div', { className: 'tools' }, [el('span', { className: 'grow' }), el('button', { className: 'go', text: '📤 まとめて送る（' + formQ.length + '件）', onclick: sendFormQ })]);
+    card.appendChild(tools);
+    box.appendChild(card);
+  }
+  function sendFormQ() {
+    if (!formQ.length) { return; }
+    var msg = $('formMsg'), sentOk = 0, bad = 0, skip = {};
+    function round() {
+      var chunk = formQ.filter(function (x) { return !skip[x.cid]; }).slice(0, 5);
+      if (!chunk.length) { msg.textContent = (sentOk ? '✅ ' + sentOk + '件を、順番に登録しました。' : '') + (bad ? bad + '件は直す所があります（↑の ⚠ を見て、✕で消して入れ直してください）' : ''); return Promise.resolve(); }
+      return jcall('form_batch', { items: chunk.map(function (x) { return { cid: x.cid, key: x.key, values: x.values }; }) }).then(function (r) {
+        (r.batch || []).forEach(function (b) {
+          var it = formQ.filter(function (x) { return x.cid === b.cid; })[0];
+          if (b.ok) { sentOk++; formQ = formQ.filter(function (x) { return x.cid !== b.cid; }); }
+          else { bad++; skip[b.cid] = true; if (it) { it.err = b.message; } }
+        });
+        saveFormQ();
+        return round();
+      });
+    }
+    guarded(function () { return round(); }, msg);
+  }
+
+  var pendingDraftKey = '';
   function submitForm(key, values) {
+    draftPut(key, values); pendingDraftKey = key;      // 確認でやめても書いた内容が残る（実行できたら消える）
     var msg = $('formMsg');
+    if (pcOnline === false) {   // PCにつながっていない → 自動でためる
+      queueForm(key, values);
+      msg.textContent = '📥 PCにつながっていないので、ためました（' + formQ.length + '件）。つながったら「まとめて送る」を押してください';
+      return;
+    }
     guarded(function () {
       return jcall('form_submit', { key: key, values: values }).then(function (st) { showTab('chat'); showState(st); });
     }, msg);
@@ -1847,6 +3302,16 @@
   document.querySelectorAll('#chips button').forEach(function (b) {
     b.onclick = function () { send('send', b.getAttribute('data-q')); };
   });
+
+  // ---- 書きかけを残す／最後のタブを覚える ----
+  (function () {
+    var tx = document.getElementById('text');
+    if (!tx) { return; }
+    try { var d = localStorage.getItem('navi_draft'); if (d && !tx.value) { tx.value = d; } } catch (e) { }
+    tx.addEventListener('input', function () { try { localStorage.setItem('navi_draft', tx.value); } catch (e) { } });
+    var sb = document.getElementById('sendBtn');
+    if (sb) { sb.addEventListener('click', function () { setTimeout(function () { if (!tx.value) { try { localStorage.removeItem('navi_draft'); } catch (e) { } } }, 0); }); }
+  })();
   var ta = $('text');
   ta.addEventListener('input', function () { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 120) + 'px'; });
 
@@ -1867,6 +3332,7 @@
     $('setInfo').textContent = '接続先：' + (info.host || '未登録') + ' ／ 版：' + (info.version || '') + ' ／ 通知：' + (info.canNotify ? '許可済み' : '未許可');
     $('setMsg2').textContent = '';
     $('settings').className = 'on';
+    try { if (window.NAVI && NAVI.onFocus) { NAVI.onFocus(); } } catch (e) {}
     A.listVoices();
   }
   function applyVoiceSettings() {
@@ -1957,6 +3423,63 @@
     if (!n) { box.textContent = '見つかりません'; }
   }
   $('pcFind').oninput = findParentApps;
+
+  /* ---------- 伴走と宿題（スマホの目覚まし・アプリにかぶせる） ---------- */
+  var FC_PRESET = [['com.google.android.youtube', 'YouTube'], ['com.instagram.android', 'Instagram'], ['com.zhiliaoapp.musically', 'TikTok'], ['com.ss.android.ugc.trill', 'TikTok'],
+                   ['com.twitter.android', 'X（Twitter）'], ['com.facebook.katana', 'Facebook'], ['com.netflix.mediaclient', 'Netflix'], ['jp.co.abematv', 'ABEMA'], ['com.amazon.avod.thirdpartyclient', 'Prime Video']];
+  function fcInfo() { try { return JSON.parse((A && A.focusInfo) ? A.focusInfo() : '{}'); } catch (e) { return {}; } }
+  function fcRender() {
+    if (!A || !A.focusInfo) { $('focusBox').style.display = 'none'; return; }
+    var o = fcInfo(), list = o.blocked || [];
+    $('fcAlarm').checked = o.alarm !== false; $('fcBlock').checked = o.block !== false;
+    var apps = []; try { apps = JSON.parse(A.getInstalledApps() || '[]'); } catch (e) {}
+    var names = {}; apps.forEach(function (a) { names[a.pkg] = a.label; }); FC_PRESET.forEach(function (p) { if (!names[p[0]]) { names[p[0]] = p[1]; } });
+    var box = $('fcList'); box.innerHTML = '';
+    var shown = {};
+    FC_PRESET.concat(list.map(function (p) { return [p, names[p] || p]; })).forEach(function (p) {
+      if (shown[p[0]] || (apps.length && !apps.some(function (a) { return a.pkg === p[0]; }) && list.indexOf(p[0]) < 0)) { return; }
+      shown[p[0]] = 1;
+      var row = el('div', { className: 'sw' }, [el('span', { text: names[p[0]] || p[1] })]);
+      var cb = el('input', { type: 'checkbox' }); cb.checked = list.indexOf(p[0]) >= 0;
+      cb.onchange = function () { fcSet(p[0], cb.checked); };
+      row.appendChild(cb); box.appendChild(row);
+    });
+    if (!box.children.length) { box.textContent = '下の欄で、かぶせたいアプリを探して足してください'; }
+    var st = o.state || {}, msgs = [];
+    msgs.push(o.a11y ? '🛡 かぶせる許可：オン' : '⚠ かぶせる許可がまだです（上のボタン →「N.A.V.I. 伴走のガード」をオン。灰色で押せないときは、端末の「設定 → アプリ → N.A.V.I. → ︙ → 制限付きの設定を許可」を先に）');
+    msgs.push(o.fullScreen ? '⏰ 全画面の許可：オン' : '⚠ 全画面で出す許可がまだです（上のボタンから）');
+    if (st.drive) { msgs.push('🎯 伴走中：' + st.drive.task); }
+    if (st.quiet && st.quiet.until > Date.now()) { var qd = new Date(st.quiet.until); msgs.push('🔕 いまは静かにしています：' + st.quiet.reason + '（〜' + ('0' + qd.getHours()).slice(-2) + ':' + ('0' + qd.getMinutes()).slice(-2) + '）'); }
+    var left = (st.homework || []).filter(function (h) { return !h.done; });
+    if (st.mentor) { msgs.push('📘 指導中：まだの宿題 ' + left.length + '件'); }
+    if (o.blockedToday) { msgs.push('今日かぶせた回数：' + o.blockedToday); }
+    $('fcState').innerHTML = ''; msgs.forEach(function (m) { $('fcState').appendChild(el('div', { text: m })); });
+  }
+  function fcSet(pkg, on) {
+    var l = fcInfo().blocked || [];
+    if (on && l.indexOf(pkg) < 0) { l.push(pkg); }
+    if (!on) { l = l.filter(function (x) { return x !== pkg; }); }
+    A.setFocusBlocked(l.join(',')); fcRender();
+  }
+  if ($('focusBox')) {
+    $('fcAlarm').onchange = $('fcBlock').onchange = function () { A.setFocusOptions($('fcAlarm').checked, $('fcBlock').checked); };
+    $('fcA11y').onclick = function () { A.openA11ySettings(); };
+    $('fcFull').onclick = function () { A.openFullScreenSettings(); };
+    $('fcSync').onclick = function () { $('fcState').textContent = '取り直しています…'; A.focusSync(); };
+    $('fcFind').oninput = function () {
+      var q = ($('fcFind').value || '').trim().toLowerCase(), box = $('fcFound'); box.innerHTML = '';
+      if (!q) { return; }
+      var apps = []; try { apps = JSON.parse(A.getInstalledApps() || '[]'); } catch (e) {}
+      var n = 0;
+      apps.forEach(function (a) {
+        if (n >= 10 || (String(a.label).toLowerCase().indexOf(q) < 0 && String(a.pkg).toLowerCase().indexOf(q) < 0)) { return; }
+        n++;
+        box.appendChild(el('button', { type: 'button', text: '＋ ' + a.label, onclick: function () { fcSet(a.pkg, true); $('fcFind').value = ''; box.innerHTML = ''; } }));
+      });
+      if (!n) { box.textContent = '見つかりません'; }
+    };
+    try { fcRender(); } catch (e) {}
+  }
   function saveParentCfg() {
     var pkgs = [], words = ($('pcWords').value || '').split(/[,、，\s]+/).filter(function (x) { return x; });
     document.querySelectorAll('.pcPkg').forEach(function (e) { if (e.checked) { pkgs.push(e.getAttribute('data-pkg')); } });
@@ -2022,6 +3545,7 @@
   }
 
   refreshInfo();
+  try { var lt = localStorage.getItem('navi_tab'); if (lt && lt !== 'chat' && PANES[lt] && info.paired && ['list', 'sec', 'form'].indexOf(lt) < 0) { showTab(lt); } } catch (e) { }   // 通信が要るタブは、起動直後に自動で開かない
   if (info.paired) {
     say('ai', 'N.A.V.I.です。🎤を押して話しかけてください。内容を確認して「実行」と言うか、ボタンを押すと動きます。');
     if (!info.canNotify) { A.requestNotify(); }
