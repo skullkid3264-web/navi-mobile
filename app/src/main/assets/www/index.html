@@ -251,7 +251,7 @@
   .kb-wb path.edge.pass { stroke:var(--accent); stroke-width:2; } .kb-wb path.head.pass { fill:var(--accent); }
   .kb-wb path.edge.on { stroke:var(--text); stroke-width:3; } .kb-wb path.head.on { fill:var(--text); }
   .kb-wb path.edge.tmp { stroke:var(--accent); stroke-width:2.5; stroke-dasharray:5 4; }
-  .kb-wb path.hit { fill:none; stroke:transparent; stroke-width:22; pointer-events:stroke; cursor:pointer; }
+  .kb-wb path.hit { fill:none; stroke:transparent; stroke-width:30; pointer-events:stroke; cursor:pointer; }
   .kb-hd { position:absolute; right:-12px; top:50%; width:22px; height:22px; margin-top:-11px; border-radius:50%; background:var(--card); border:2.5px solid var(--accent); cursor:crosshair; touch-action:none; box-sizing:border-box; }
   .kb-hd::after { content:''; position:absolute; inset:-9px; }
   .kb-hd:hover, .kb-node.linking .kb-hd { background:var(--accent); }
@@ -264,6 +264,9 @@
   .kb-links .kb-chips { display:flex; flex-wrap:wrap; gap:6px; } .kb-links .kb-chips span { background:var(--card); border-radius:999px; padding:2px 4px 2px 10px; font-size:13px; }
   .kb-links .kb-acts select { flex:1 1 160px; width:auto; }
   .kb-arrow { color:var(--accent); font-weight:700; }
+
+  .kb-eop { position:absolute; z-index:4; transform:translate(-50%,-50%); display:flex; gap:6px; background:var(--card); border:1.5px solid var(--text); border-radius:999px; padding:4px; box-shadow:0 2px 8px rgba(0,0,0,.3); }
+  .kb-eop button { min-height:36px; min-width:44px; border-radius:999px; font-size:13px; font-weight:700; }
 /* BOARD-UI:CSS:END */
 /* GOALS-UI:CSS:START */
   /* ===== 生徒の目標（承認・報告・登録・生徒ごと） ===== */
@@ -2243,6 +2246,7 @@
   }
   function kbDrawLines() {
     var svg = $('kbSvg'), NS = 'http://www.w3.org/2000/svg'; svg.textContent = '';
+    Array.prototype.slice.call($('kbWb').querySelectorAll('.kb-eop')).forEach(function (x) { x.remove(); });
     function mk(cls, d) { var p = document.createElementNS(NS, 'path'); p.setAttribute('class', cls); p.setAttribute('d', d); svg.appendChild(p); return p; }
     kbEdges.forEach(function (e) {
       var a = e[0], b = e[1]; if (!a || !b) { return; }
@@ -2251,6 +2255,13 @@
       var d = e[2] ? 'M' + x1 + ' ' + y1 + ' H' + (x1 + 16) + ' V' + y2 + ' H' + x2 : 'M' + x1 + ' ' + y1 + ' C' + (x1 + k) + ' ' + y1 + ' ' + (x2 - k) + ' ' + y2 + ' ' + (x2 - 6) + ' ' + y2;
       var fa = !e[2] && kbBy[a.dataset.cid], pass = !!(fa && fa.status === 'done');
       var on = !e[2] && KB.selEdge && KB.selEdge.a === a.dataset.cid && KB.selEdge.b === b.dataset.cid;
+      if (on) {                                   // 選んだ矢印のまんなかに、その場で「外す」を出す（下の欄まで探さなくてよい）
+        var op = kbe('div', 'kb-eop'); op.style.left = Math.round((x1 + x2) / 2) + 'px'; op.style.top = Math.round((y1 + y2) / 2) + 'px';
+        var fid = a.dataset.cid, tid = b.dataset.cid;
+        var rm = kbBtn('✕ 外す', 'danger', function (ev) { ev.stopPropagation(); kbUnlink(fid, tid); }), fl = kbBtn('⇄ 逆', '', function (ev) { ev.stopPropagation(); kbFlip(fid, tid); });
+        rm.setAttribute('aria-label', '矢印を外す'); fl.setAttribute('aria-label', '矢印の向きを逆にする');
+        op.appendChild(rm); op.appendChild(fl); $('kbWb').appendChild(op);
+      }
       mk('edge' + (e[2] ? ' root' : '') + (pass ? ' pass' : '') + (on ? ' on' : ''), d);
       if (!e[2]) {
         mk('head' + (pass ? ' pass' : '') + (on ? ' on' : ''), 'M' + x2 + ' ' + y2 + ' l-8 -4.5 v9 z');
