@@ -1729,10 +1729,11 @@
     $('badge').textContent = unread;
   }
 
+
 // BOARD-UI:JS:START
   // ================= やることボード（カンバン） =================
   // Claudeの「やることボード」と同じ機能。カードはNAVIのTodoそのもの（PCの kanban_core）。動かすと、声の指示・Todo管理にも反映される
-  var KB = { data: null, filter: 'all', view: 'board', open: {}, editing: null, sel: null, pending: 0, localPos: {}, dragging: false, deferred: false, loaded: false, built: false, q: Promise.resolve(), focusAfter: null, loadedAt: 0, failed: '' };
+  var KB = { cards: [], deleted: {}, dirty: {}, meta: { limits: { today: 3, doing: 1 }, doneTotal: 0, doneHidden: 0 }, skew: 0, syncedAt: 0, syncing: false, syncAgain: false, data: null, filter: 'all', view: 'board', open: {}, editing: null, sel: null, localPos: {}, dragging: false, deferred: false, loaded: false, built: false, focusAfter: null, failed: '', timer: 0 };
   try { var kbv = localStorage.getItem('navi_kb_view'); if (kbv === 'board' || kbv === 'list' || kbv === 'map') { KB.view = kbv; } } catch (e) { }
   var KB_ST = { todo: '未着手', today: '今日やる', doing: '進行中', done: '完了' };
   var KB_WD = ['日', '月', '火', '水', '木', '金', '土'];
@@ -1749,39 +1750,84 @@
     return (d.getMonth() + 1) + '/' + d.getDate() + '（' + KB_WD[d.getDay()] + '）' + (n === 0 ? '今日' : n > 0 ? 'あと' + n + '日' : Math.abs(n) + '日すぎ');
   }
   function kbNow() { var d = new Date(), p = function (n) { return ('0' + n).slice(-2); }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()); }
-  function kbCards() { return (KB.data && KB.data.cards) || []; }
+  function kbCards() { return KB.cards; }
   function kbArea(c) { return c.area || 'その他'; }
   function kbG(c) { var i = ((KB.data && KB.data.areas) || []).indexOf(kbArea(c)); return 'g' + (i < 0 ? 4 : i % 5); }
   function kbSay(text, info) { var m = $('kbMsg'); if (!m) { return; } m.textContent = text || ''; m.className = info ? 'kb-msg info' : 'kb-msg'; }
 
-  function kbLoad(quiet) {
-    if (KB.pending > 0) { return Promise.resolve(); }
-    if (!quiet) { kbSay('読みこみ中…', true); }
-    return jcall('board_list', {}).then(function (r) {
-      if (KB.pending > 0) { return; }
-      KB.data = r.board; KB.loaded = true; KB.failed = ''; KB.loadedAt = Date.now();
-      if (!quiet) { kbSay(''); }
-      kbRender();
-    }).catch(function (e) { KB.loaded = true; KB.failed = e.message; kbSay('❌ ' + e.message); kbRender(); });
+  // ---- データ：この端末に保存して（オフラインでも動く）、PCと同期する。カードごとに、更新が新しいほうが残る ----
+  var KB_STORE = 'navi_kb_store';
+  function kbNowMs() { return Date.now() + (KB.skew || 0); }
+  function kbPersist() { try { localStorage.setItem(KB_STORE, JSON.stringify({ cards: KB.cards, deleted: KB.deleted, dirty: KB.dirty, meta: KB.meta, skew: KB.skew, syncedAt: KB.syncedAt })); } catch (e) { } }
+  function kbRestore() {
+    try {
+      var st = JSON.parse(localStorage.getItem(KB_STORE) || 'null');
+      if (st && Array.isArray(st.cards)) { KB.cards = st.cards; KB.deleted = st.deleted || {}; KB.dirty = st.dirty || {}; KB.meta = st.meta || KB.meta; KB.skew = st.skew || 0; KB.syncedAt = st.syncedAt || 0; KB.loaded = true; }
+    } catch (e) { }
+    kbRecalc();
   }
-  // 操作：画面はすぐ変えて（local）、PCへは順番に送る。PCの答えが来たら、それに合わせる
-  function kbAct(op, d, local) {
-    if (local) { local(); }
-    KB.pending++;
-    var body = { op: op }; Object.keys(d || {}).forEach(function (k) { body[k] = d[k]; });
-    KB.q = KB.q.then(function () { return jcall('board_act', body); }).then(function (r) {
-      KB.pending--;
-      if (r && r.reply && op !== 'pos' && op !== 'steps') { kbSay(r.reply, true); }
-      if (KB.pending === 0 && r && r.board) {
-        KB.data = r.board; KB.loadedAt = Date.now();
-        kbCards().forEach(function (c) { var l = KB.localPos[c.id]; if (l && c.pos && c.pos.x === l.x && c.pos.y === l.y) { delete KB.localPos[c.id]; } });
-      }
-      kbRender();
-    }).catch(function (e) {
-      KB.pending--; kbSay('❌ ' + e.message);
-      if (KB.pending === 0) { kbLoad(true); }
+  // 先にやることが終わっていないカードの「待ち」と、上の帯・絞りこみに使う数を計算し直す
+  function kbRecalc() {
+    var by = {}, areas = [], projects = [], counts = { todo: 0, today: 0, doing: 0, done: 0 };
+    KB.cards.forEach(function (c) { by[c.id] = c; });
+    KB.cards.forEach(function (c) {
+      var left = (c.after || []).filter(function (id) { return by[id] && by[id].status !== 'done'; });
+      if (c.status !== 'done' && left.length) {
+        if (!c.wait || c.wait.indexOf('先に：') === 0) { c.wait = ('先に：' + left.map(function (id) { return by[id].title.slice(0, 14); }).join('・')).slice(0, 36); }
+      } else if (c.wait && c.wait.indexOf('先に：') === 0) { c.wait = ''; }
+      var a = kbArea(c); if (areas.indexOf(a) < 0) { areas.push(a); }
+      if (projects.indexOf(c.project) < 0) { projects.push(c.project); }
+      counts[c.status] = (counts[c.status] || 0) + 1;
     });
-    kbRender();
+    counts.done = Math.max(counts.done, KB.meta.doneTotal || 0);
+    KB.data = { cards: KB.cards, areas: areas, projects: projects, limits: KB.meta.limits, counts: counts, doneHidden: KB.meta.doneHidden || 0 };
+  }
+  function kbChanged(msg) { kbRecalc(); kbPersist(); if (msg) { kbSay(msg, true); } kbSyncLine(); kbRender(); kbSchedule(false); }
+  // カードを変えたら、更新時刻を「いま」にして、送る印（dirty）を付ける
+  function kbTouch(c, fn, msg) { fn(); c.upd = kbNowMs(); KB.dirty[c.id] = c.upd; kbChanged(msg); }
+  function kbWire(c) { return { id: c.id, title: c.title, project: c.project, area: c.area || '', due: c.due || '', status: c.status, after: c.after || [], steps: c.steps || [], memo: c.memo || '', pos: c.pos || null, upd: c.upd || 0 }; }
+  function kbSyncLine() {
+    var el = $('kbSync'); if (!el) { return; }
+    var n = Object.keys(KB.dirty).length + Object.keys(KB.deleted).length, t = KB.syncedAt ? new Date(KB.syncedAt) : null;
+    var hm = t ? t.getHours() + ':' + ('0' + t.getMinutes()).slice(-2) : '';
+    if (KB.syncing) { el.textContent = '🔄 PCと同期しています…'; }
+    else if (KB.failed) { el.textContent = '📴 PCにつながっていません。変更' + (n ? n + '件' : '') + 'はこの端末に保存してあり、つながったら自動で送ります' + (hm ? '（最後の同期 ' + hm + '）' : ''); }
+    else if (n) { el.textContent = '⏳ 未同期の変更 ' + n + '件'; }
+    else { el.textContent = hm ? '✔ 同期ずみ ' + hm + '（PCと同じ内容です）' : ''; }
+  }
+  function kbSchedule(now) { clearTimeout(KB.timer); KB.timer = setTimeout(kbSync, now ? 0 : 700); }
+  function kbSync() {
+    if (KB.syncing) { KB.syncAgain = true; return Promise.resolve(); }
+    KB.syncing = true; KB.syncAgain = false;
+    var by = {}; KB.cards.forEach(function (c) { by[c.id] = c; });
+    var batch = [], size = 0;
+    Object.keys(KB.dirty).forEach(function (id) {
+      var c = by[id]; if (!c) { delete KB.dirty[id]; return; }
+      var j = JSON.stringify(kbWire(c)).length; if (batch.length && size + j > 6500) { return; }
+      batch.push(c); size += j;
+    });
+    var dels = {}, dn = 0; Object.keys(KB.deleted).forEach(function (id) { if (dn < 40) { dels[id] = KB.deleted[id]; dn++; } });
+    var sent = {}; batch.forEach(function (c) { sent[c.id] = c.upd; });
+    kbSyncLine();
+    return jcall('board_sync', { dirty: batch.map(kbWire), deleted: dels, now: Date.now() }).then(function (r) {
+      var b = r && r.board; if (!b || !b.cards) { throw new Error('PCの返事が読めませんでした'); }
+      if (r.now) { KB.skew = r.now - Date.now(); }
+      batch.forEach(function (c) { if (KB.dirty[c.id] === sent[c.id]) { delete KB.dirty[c.id]; } });
+      Object.keys(dels).forEach(function (id) { if (KB.deleted[id] === dels[id]) { delete KB.deleted[id]; } });
+      var local = {}, out = [], seen = {};
+      KB.cards.forEach(function (c) { local[c.id] = c; });
+      b.cards.forEach(function (sc) { seen[sc.id] = 1; out.push(KB.dirty[sc.id] && local[sc.id] ? local[sc.id] : sc); });     // こちらで直して、まだ送っていないものは、こちらを残す
+      KB.cards.forEach(function (c) { if (!seen[c.id] && KB.dirty[c.id]) { out.push(c); } });                                  // PCで消えたカードは、きれいなままなら、ここでも消える
+      KB.cards = out;
+      KB.meta = { limits: b.limits || KB.meta.limits, doneTotal: (b.counts && b.counts.done) || 0, doneHidden: b.doneHidden || 0 };
+      KB.loaded = true; KB.failed = ''; KB.syncedAt = Date.now();
+      var a = r.applied || {};
+      if (a.kept) { kbSay('PCのほうが新しい変更が ' + a.kept + '件あったので、PCの内容にそろえました。', true); }
+    }).catch(function (e) { KB.failed = e.message || '同期できませんでした'; KB.loaded = true; }).then(function () {
+      KB.syncing = false; kbRecalc(); kbPersist(); kbSyncLine(); kbRender();
+      if (KB.failed) { clearTimeout(KB.timer); KB.timer = setTimeout(kbSync, 30000); }
+      else if (KB.syncAgain || Object.keys(KB.dirty).length || Object.keys(KB.deleted).length) { kbSchedule(true); }
+    });
   }
 
   function kbDepths(cards) {
@@ -1837,7 +1883,7 @@
     var del = kbBtn('消す', 'quiet danger', function () {
       if (!sure) { sure = true; del.textContent = '本当に消す'; return; }
       var id = c.id; KB.editing = null; if (KB.sel === id) { KB.sel = null; }
-      kbAct('delete', { id: id }, function () { KB.data.cards = kbCards().filter(function (x) { return x.id !== id; }); KB.data.cards.forEach(function (x) { x.after = (x.after || []).filter(function (a) { return a !== id; }); }); });
+      kbDeleteCard(id);
     });
     acts.appendChild(del); acts.appendChild(kbe('span', 'sp'));
     acts.appendChild(kbBtn('やめる', '', close));
@@ -1845,10 +1891,12 @@
       var v = title.value.trim();
       if (!v) { kbSay('やることを書いてください。'); title.focus(); return; }
       var p = pj.value.trim();
+      if (kbWouldCycle(c.id, after)) { kbSay('その並びだと、ぐるぐる回ってしまいます（先にやることが、自分の後になっています）'); return; }
       KB.editing = null;
-      kbAct('edit', { id: c.id, title: v, project: p, due: due.value || '', after: after }, function () {
-        c.title = v; c.project = p || (c.area || 'その他'); c.due = due.value || ''; c.after = after;
-      });
+      kbTouch(c, function () {
+        c.title = v; c.project = p || (c.area || 'その他'); c.due = due.value || ''; c.after = after.slice();
+        if (p) { var same = kbCards().filter(function (x) { return x !== c && x.project === p && x.area; })[0]; if (same) { c.area = same.area; } }
+      }, '直しました');
     }));
     box.appendChild(title); box.appendChild(row); box.appendChild(chips); box.appendChild(sel); box.appendChild(acts);
     return box;
@@ -1856,7 +1904,7 @@
 
   function kbDetail(c) {
     var box = kbe('div', 'kb-detail'), steps = c.steps || [];
-    function put(n) { kbAct('steps', { id: c.id, steps: n }, function () { c.steps = n; }); }
+    function put(n) { kbTouch(c, function () { c.steps = n; }); }
     function copy() { return steps.map(function (x) { return { t: x.t, done: !!x.done }; }); }
     box.appendChild(kbe('p', 'lab', '小さな手順'));
     if (steps.length) {
@@ -1881,7 +1929,7 @@
     box.appendChild(kbe('p', 'lab', 'メモ'));
     var ta = kbe('textarea'); ta.maxLength = 1000; ta.value = c.memo || ''; ta.placeholder = '気づいたこと、決めたこと、材料など';
     if (c.memoCut) { ta.readOnly = true; ta.value = c.memo + '…'; box.appendChild(ta); box.appendChild(kbe('p', 'lab', 'メモが長いので、ここでは読むだけです。PCで直してください。')); return box; }
-    function saveMemo() { if (ta.value === (c.memo || '')) { return; } var v = ta.value; kbAct('memo', { id: c.id, memo: v }, function () { c.memo = v; }); }
+    function saveMemo() { if (ta.value === (c.memo || '')) { return; } var v = ta.value; kbTouch(c, function () { c.memo = v; }, 'メモを保存しました'); }
     ta.addEventListener('blur', saveMemo);
     var acts = kbe('div', 'kb-acts'); acts.appendChild(kbBtn('メモを保存', '', saveMemo));
     box.appendChild(ta); box.appendChild(acts);
@@ -1889,7 +1937,27 @@
   }
 
   function kbMove(c, to) {
-    kbAct('move', { id: c.id, to: to }, function () { c.status = to; if (to === 'done') { c.doneAt = kbNow(); } });
+    var name = (c.title || '').slice(0, 24);
+    kbTouch(c, function () { c.status = to; if (to === 'done') { c.doneAt = kbNow(); } });
+    var lim = KB.meta.limits, n = { today: 0, doing: 0 };
+    kbCards().forEach(function (x) { if (n[x.status] !== undefined) { n[x.status]++; } });
+    var w = [];
+    if (to === 'today' && n.today > lim.today) { w.push('「今日やる」が' + n.today + '件です（' + lim.today + '件までにしましょう）'); }
+    if ((to === 'today' || to === 'doing') && c.wait && c.wait.indexOf('先に：') === 0) { w.push('まだ「' + c.wait + '」が終わっていません'); }
+    if (to === 'doing' && n.doing > lim.doing) { w.push('「進行中」が' + n.doing + '件です（1つだけにしましょう）'); }
+    kbSay('「' + name + '」を' + { todo: '未着手に戻しました', today: '「今日やる」にしました', doing: '始めました', done: '完了にしました' }[to] + (w.length ? '。' + w.join('。') : ''), true);
+  }
+  function kbWouldCycle(id, newAfter) {
+    var by = {}, seen = {}, st = newAfter.slice(); kbCards().forEach(function (c) { by[c.id] = c; });
+    while (st.length) { var cur = st.pop(); if (cur === id) { return true; } if (seen[cur] || !by[cur]) { continue; } seen[cur] = 1; (by[cur].after || []).forEach(function (a) { st.push(a); }); }
+    return false;
+  }
+  function kbDeleteCard(id) {
+    var c = kbCards().filter(function (x) { return x.id === id; })[0]; if (!c) { return; }
+    KB.cards = kbCards().filter(function (x) { return x.id !== id; });
+    KB.cards.forEach(function (x) { if ((x.after || []).indexOf(id) >= 0) { x.after = x.after.filter(function (a) { return a !== id; }); } });
+    delete KB.dirty[id]; KB.deleted[id] = kbNowMs();
+    kbChanged('「' + (c.title || '').slice(0, 24) + '」を消しました');
   }
   function kbCard(c, showStatus, forceOpen) {
     var s = c.status, li = kbe('li', 'kb-card' + (s === 'done' ? ' is-done' : ''));
@@ -1929,7 +1997,7 @@
       '<form class="kb-add" id="kbAdd" novalidate><div class="fld grow"><label for="kbNewTitle">やることを追加</label><input type="text" id="kbNewTitle" maxlength="120" placeholder="30分〜1時間で終わる大きさで書く" autocomplete="off"></div>' +
       '<div class="fld mid"><label for="kbNewProject">まとまり</label><input type="text" id="kbNewProject" maxlength="30" list="kbProjList" placeholder="例：インスタ" autocomplete="off"><datalist id="kbProjList"></datalist></div>' +
       '<div class="fld"><label for="kbNewDue">期日（なくてもよい）</label><input type="date" id="kbNewDue"></div><button type="submit" class="pri" id="kbAddBtn">追加</button><button type="button" id="kbReload" title="PCから読みなおす">🔄</button></form>' +
-      '<p class="kb-msg" id="kbMsg" role="status"></p>' +
+      '<p class="kb-msg" id="kbMsg" role="status"></p><p class="kb-msg info" id="kbSync"></p>' +
       '<div class="kb-tabs" role="tablist"><button type="button" role="tab" data-v="board">ボード</button><button type="button" role="tab" data-v="list">まとめ</button><button type="button" role="tab" data-v="map">つながり</button></div>' +
       '<div class="kb-filters" id="kbFilters"></div>' +
       '<div class="kb-board" id="kbBoard"><section class="kb-col todo"><div class="kb-head"><h2>未着手</h2><span id="kbCTodo">0</span></div><p class="kb-hint">全部ここに置く</p><ul class="kb-cards" id="kbLTodo"></ul></section>' +
@@ -1943,8 +2011,8 @@
     Array.prototype.forEach.call(root.querySelectorAll('.kb-tabs button'), function (b) {
       b.addEventListener('click', function () { KB.view = b.getAttribute('data-v'); KB.editing = null; try { localStorage.setItem('navi_kb_view', KB.view); } catch (e) { } kbRender(true); });
     });
-    $('kbTidy').addEventListener('click', function () { kbAct('tidy', {}, function () { KB.localPos = {}; kbCards().forEach(function (c) { c.pos = null; }); }); });
-    $('kbReload').addEventListener('click', function () { kbLoad(false); });
+    $('kbTidy').addEventListener('click', function () { KB.localPos = {}; kbCards().forEach(function (c) { if (c.pos) { c.pos = null; c.upd = kbNowMs(); KB.dirty[c.id] = c.upd; } }); kbChanged('並べ直しました'); });
+    $('kbReload').addEventListener('click', function () { kbSay('PCと同期します…', true); kbSchedule(true); });
     $('kbNewTitle').addEventListener('input', function () { kbSay(''); });
     $('kbAdd').addEventListener('submit', function (ev) {
       ev.preventDefault();
@@ -1952,10 +2020,11 @@
       if (!title) { kbSay('やることを書いてください。'); $('kbNewTitle').focus(); return; }
       var p = $('kbNewProject').value.trim(), due = $('kbNewDue').value || '';
       $('kbNewTitle').value = ''; $('kbNewDue').value = '';
-      kbAct('add', { title: title, project: p, due: due }, function () {
-        if (!KB.data) { return; }
-        kbCards().push({ id: 'new' + Date.now(), title: title, project: p || 'その他', area: '', due: due, status: 'todo', after: [], steps: [], memo: '', pos: null, order: 99999, doneAt: '', wait: '' });
-      });
+      var nid = 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), now = kbNowMs();
+      var same = p ? kbCards().filter(function (x) { return x.project === p && x.area; })[0] : null;
+      KB.cards.push({ id: nid, title: title.slice(0, 120), project: p || 'その他', area: same ? same.area : '', due: due, status: 'todo', after: [], steps: [], memo: '', pos: null, order: 99999, doneAt: '', wait: '', upd: now });
+      KB.dirty[nid] = now; KB.loaded = true;
+      kbChanged('「' + title.slice(0, 24) + '」を入れました');
     });
     root.addEventListener('focusout', function () { setTimeout(function () { if (KB.deferred && !KB.dragging) { KB.deferred = false; kbRender(); } }, 0); });
     KB.built = true;
@@ -2003,7 +2072,7 @@
   }
   function kbEmptyText(col) {
     if (!KB.loaded) { return '読みこみ中…'; }
-    if (KB.failed && !KB.data) { return 'PCから読めませんでした。右上の🔄でもう一度。'; }
+    if (KB.failed && !kbCards().length) { return 'PCにつながっていません。つながると、PCのカードがここに出ます（右上の🔄でもう一度）。'; }
     if (!kbCards().length && col === 'todo') { return 'まだカードがありません。上の「やることを追加」から最初の1枚を書けます。'; }
     return { today: '未着手から3つ選びます。', doing: '「始める」を押した1枚がここに来ます。', done: '終わったカードがここにたまります。' }[col] || 'ここは空です。';
   }
@@ -2115,7 +2184,7 @@
       if (cancel) { kbRender(true); return; }
       if (was) {
         var p = { x: n.offsetLeft, y: n.offsetTop };
-        kbAct('pos', { id: c.id, pos: p }, function () { KB.localPos[c.id] = p; c.pos = p; });
+        KB.localPos[c.id] = p; kbTouch(c, function () { c.pos = p; });
       } else { KB.sel = c.id; kbRender(true); }
     }
     n.addEventListener('pointerup', function () { end(false); });
@@ -2123,13 +2192,14 @@
   }
 
   function kbShow() {
-    if (!KB.built) { kbBuild(); }
-    kbRender(true);
-    if (!KB.loaded || Date.now() - KB.loadedAt > 15000) { kbLoad(KB.loaded); }
+    if (!KB.built) { kbBuild(); kbRestore(); }
+    kbSyncLine(); kbRender(true);
+    kbSchedule(true);
   }
   document.addEventListener('visibilitychange', function () {
-    if (document.visibilityState === 'visible' && KB.built && $('kb').offsetParent !== null && KB.pending === 0 && Date.now() - KB.loadedAt > 20000) { kbLoad(true); }
+    if (document.visibilityState === 'visible' && KB.built && $('kb').offsetParent !== null) { kbSchedule(true); }
   });
+  setInterval(function () { if (KB.built && document.visibilityState === 'visible' && $('kb').offsetParent !== null && !KB.syncing && !KB.dragging) { kbSync(); } }, 45000);
 // BOARD-UI:JS:END
 
   var curTab = 'chat';
@@ -2155,6 +2225,7 @@
     if (t === 'todo') { renderTodos(); fetchSnapshot(); }
     if (t === 'parent') { loadParents(); }
     if (t === 'board') { kbShow(); }
+    if (t === 'board') { kbShow(); }
     if (t === 'list') { loadPanel('panel', ''); }
     if (t === 'sec') { buildSecretary(); }
     if (t === 'form') { sel.value = formKey; loadFormInfo(function () { renderForm(); renderFormQ(); }); }
@@ -2162,6 +2233,7 @@
   $('tabSched').onclick = function () { showTab('sched'); };
   $('tabLesson').onclick = function () { showTab('lesson'); };
   $('tabTodo').onclick = function () { showTab('todo'); };
+  $('tabBoard').onclick = function () { showTab('board'); };
   $('tabBoard').onclick = function () { showTab('board'); };
   $('tabParent').onclick = function () { showTab('parent'); };
   $('tabList').onclick = function () { showTab('list'); };
