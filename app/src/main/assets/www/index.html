@@ -246,6 +246,24 @@
   #kbDetail { max-width:460px; }
   @media (max-width:900px) { .kb-board { grid-template-columns:repeat(2, minmax(0,1fr)); } }
   @media (max-width:560px) { .kb-board { grid-template-columns:minmax(0,1fr); } .kb-col.today { order:1; } .kb-col.doing { order:2; } .kb-col.todo { order:3; } .kb-col.done { order:4; } .kb-tabs button { padding-inline:10px; } }
+
+  /* ===== つながり：矢印で順番を結ぶ ===== */
+  .kb-wb path.edge.pass { stroke:var(--accent); stroke-width:2; } .kb-wb path.head.pass { fill:var(--accent); }
+  .kb-wb path.edge.on { stroke:var(--text); stroke-width:3; } .kb-wb path.head.on { fill:var(--text); }
+  .kb-wb path.edge.tmp { stroke:var(--accent); stroke-width:2.5; stroke-dasharray:5 4; }
+  .kb-wb path.hit { fill:none; stroke:transparent; stroke-width:22; pointer-events:stroke; cursor:pointer; }
+  .kb-hd { position:absolute; right:-12px; top:50%; width:22px; height:22px; margin-top:-11px; border-radius:50%; background:var(--card); border:2.5px solid var(--accent); cursor:crosshair; touch-action:none; box-sizing:border-box; }
+  .kb-hd::after { content:''; position:absolute; inset:-9px; }
+  .kb-hd:hover, .kb-node.linking .kb-hd { background:var(--accent); }
+  .kb-node.lk-ok { outline:3px solid var(--accent); outline-offset:2px; } .kb-node.lk-ng { outline:3px dashed var(--ng); outline-offset:2px; opacity:.7; }
+  .kb-node.blocked { opacity:.72; border-style:dotted; }
+  .kb-node.nextup { box-shadow:0 0 0 3px var(--accent); }
+  .kb-no { position:absolute; left:-9px; top:-9px; width:20px; height:20px; border-radius:50%; background:var(--text); color:var(--card); font:700 11px/20px sans-serif; text-align:center; font-style:normal; }
+  .kb-links { display:flex; flex-direction:column; gap:8px; margin-top:10px; background:var(--card2); border-radius:10px; padding:10px 12px; }
+  .kb-lrow { display:flex; flex-direction:column; gap:4px; } .kb-lrow b { font-size:12px; color:var(--sub); } .kb-lrow small { color:var(--sub); }
+  .kb-links .kb-chips { display:flex; flex-wrap:wrap; gap:6px; } .kb-links .kb-chips span { background:var(--card); border-radius:999px; padding:2px 4px 2px 10px; font-size:13px; }
+  .kb-links .kb-acts select { flex:1 1 160px; width:auto; }
+  .kb-arrow { color:var(--accent); font-weight:700; }
 /* BOARD-UI:CSS:END */
 /* GOALS-UI:CSS:START */
   /* ===== 生徒の目標（承認・報告・登録・生徒ごと） ===== */
@@ -1789,7 +1807,7 @@
 // BOARD-UI:JS:START
   // ================= やることボード（カンバン） =================
   // Claudeの「やることボード」と同じ機能。カードはNAVIのTodoそのもの（PCの kanban_core）。動かすと、声の指示・Todo管理にも反映される
-  var KB = { cards: [], deleted: {}, dirty: {}, meta: { limits: { today: 3, doing: 1 }, doneTotal: 0, doneHidden: 0 }, skew: 0, syncedAt: 0, syncing: false, syncAgain: false, data: null, filter: 'all', view: 'board', open: {}, editing: null, sel: null, localPos: {}, dragging: false, deferred: false, loaded: false, built: false, focusAfter: null, failed: '', timer: 0 };
+  var KB = { cards: [], deleted: {}, dirty: {}, meta: { limits: { today: 3, doing: 1 }, doneTotal: 0, doneHidden: 0 }, skew: 0, syncedAt: 0, syncing: false, syncAgain: false, data: null, filter: 'all', view: 'board', open: {}, editing: null, sel: null, localPos: {}, dragging: false, deferred: false, loaded: false, built: false, focusAfter: null, failed: '', timer: 0, selEdge: null, link: null };
   try { var kbv = localStorage.getItem('navi_kb_view'); if (kbv === 'board' || kbv === 'list' || kbv === 'map') { KB.view = kbv; } } catch (e) { }
   var KB_ST = { todo: '未着手', today: '今日やる', doing: '進行中', done: '完了' };
   var KB_WD = ['日', '月', '火', '水', '木', '金', '土'];
@@ -2001,7 +2019,53 @@
     if (to === 'today' && n.today > lim.today) { w.push('「今日やる」が' + n.today + '件です（' + lim.today + '件までにしましょう）'); }
     if ((to === 'today' || to === 'doing') && c.wait && c.wait.indexOf('先に：') === 0) { w.push('まだ「' + c.wait + '」が終わっていません'); }
     if (to === 'doing' && n.doing > lim.doing) { w.push('「進行中」が' + n.doing + '件です（1つだけにしましょう）'); }
+    var up = [];
+    if (to === 'done') {       // このカードが終わって、次に進めるようになったカード
+      kbCards().forEach(function (x) {
+        if (x.status !== 'done' && (x.after || []).indexOf(c.id) >= 0 && kbReady(x)) { up.push(x); }
+      });
+      if (up.length) { w.push('次に進めます：' + up.slice(0, 3).map(function (x) { return '「' + (x.title || '').slice(0, 14) + '」'; }).join('・')); KB.sel = up[0].id; KB.selEdge = null; }
+    }
     kbSay('「' + name + '」を' + { todo: '未着手に戻しました', today: '「今日やる」にしました', doing: '始めました', done: '完了にしました' }[to] + (w.length ? '。' + w.join('。') : ''), true);
+  }
+  // ---- つながり（矢印）：「先にやること」を、順番として結ぶ ----
+  function kbReady(c) { return c.status !== 'done' && (c.after || []).every(function (id) { return !kbBy[id] || kbBy[id].status === 'done'; }); }
+  function kbNexts(c) { return kbCards().filter(function (x) { return (x.after || []).indexOf(c.id) >= 0; }); }
+  function kbBad(fromId, toId) {         // 矢印 from → to を引けない理由（引けるなら空）
+    var a = kbBy[fromId], b = kbBy[toId];
+    if (!a || !b) { return 'カードが見つかりません'; }
+    if (fromId === toId) { return '自分には結べません'; }
+    if ((b.after || []).indexOf(fromId) >= 0) { return 'もうつながっています'; }
+    if (b.status === 'done') { return '終わったカードには結べません'; }
+    if (kbWouldCycle(toId, (b.after || []).concat([fromId]))) { return 'ぐるぐる回ってしまいます'; }
+    return '';
+  }
+  function kbLink(fromId, toId) {
+    var why = kbBad(fromId, toId); if (why) { kbSay(why + '。', false); return false; }
+    var a = kbBy[fromId], b = kbBy[toId], note = '';
+    if (a.status !== 'done' && (b.status === 'today' || b.status === 'doing')) { note = '。「' + (b.title || '').slice(0, 12) + '」はまだ始められません（「' + (a.title || '').slice(0, 12) + '」が先）'; }
+    KB.selEdge = null; KB.sel = toId;
+    kbTouch(b, function () { b.after = (b.after || []).concat([fromId]); }, '「' + (a.title || '').slice(0, 14) + '」→「' + (b.title || '').slice(0, 14) + '」とつなぎました（先に前のカード）' + note);
+    return true;
+  }
+  function kbUnlink(fromId, toId) {
+    var b = kbBy[toId]; if (!b) { return; }
+    KB.selEdge = null;
+    kbTouch(b, function () { b.after = (b.after || []).filter(function (x) { return x !== fromId; }); }, '矢印を外しました');
+  }
+  function kbFlip(fromId, toId) {        // 向きを逆にする（from → to を to → from に）
+    var a = kbBy[fromId], b = kbBy[toId]; if (!a || !b) { return; }
+    if (a.status === 'done') { kbSay('終わったカードは、あとにできません。', false); return; }
+    var old = b.after || [];
+    b.after = old.filter(function (x) { return x !== fromId; });                 // 仮に外して、ぐるぐる回らないか確かめる
+    var loop = kbWouldCycle(fromId, (a.after || []).concat([toId]));
+    b.after = old;
+    if (loop) { kbSay('向きを逆にすると、ぐるぐる回ってしまいます。', false); return; }
+    KB.selEdge = { a: toId, b: fromId };
+    var now = kbNowMs();                                                          // 2枚を同時に直す（途中で描き直さない）
+    b.after = old.filter(function (x) { return x !== fromId; }); a.after = (a.after || []).concat([toId]);
+    a.upd = b.upd = now; KB.dirty[b.id] = now; KB.dirty[a.id] = now;     // 先に外す側を送る（PC側は1枚ずつ、輪にならないか確かめるため）
+    kbChanged('矢印の向きを逆にしました');
   }
   function kbWouldCycle(id, newAfter) {
     var by = {}, seen = {}, st = newAfter.slice(); kbCards().forEach(function (c) { by[c.id] = c; });
@@ -2031,6 +2095,8 @@
     if (sts.length) { meta.appendChild(kbe('span', null, '手順 ' + sts.filter(function (x) { return x.done; }).length + '/' + sts.length)); }
     if (c.memo) { meta.appendChild(kbe('span', null, 'メモあり')); }
     if (c.wait && s !== 'done') { meta.appendChild(kbe('span', 'kb-wait', '⏳ ' + c.wait)); }
+    var nxs = s === 'done' ? [] : kbNexts(c).filter(function (x) { return x.status !== 'done'; });
+    if (nxs.length) { meta.appendChild(kbe('span', null, '▶ このあと：' + nxs.slice(0, 2).map(function (x) { return (x.title || '').slice(0, 12); }).join('・') + (nxs.length > 2 ? ' ほか' + (nxs.length - 2) : ''))); }
     li.appendChild(meta);
     var acts = kbe('div', 'kb-acts');
     acts.appendChild(kbBtn('直す', 'quiet', function () { KB.editing = c.id; kbRender(true); }));
@@ -2061,7 +2127,7 @@
       '<section class="kb-col doing"><div class="kb-head"><h2>進行中</h2><span id="kbCDoing">0 / 1</span></div><p class="kb-hint">1つだけ</p><ul class="kb-cards" id="kbLDoing"></ul></section>' +
       '<section class="kb-col done"><div class="kb-head"><h2>完了</h2><span id="kbCDone">0</span></div><p class="kb-hint">終わったら移す</p><ul class="kb-cards" id="kbLDone"></ul></section></div>' +
       '<div class="kb-plist" id="kbPlist" hidden></div>' +
-      '<div id="kbMapView" class="kb-mapview" hidden><div class="kb-tools"><p>線は「先にやること → 次にやること」。カードを押すと下で動かせます。掴んで引くと場所を変えられます。</p><button type="button" id="kbTidy">並べ直す</button></div>' +
+      '<div id="kbMapView" class="kb-mapview" hidden><div class="kb-tools"><p>矢印は「先にやること → このあと」。カード右の●をつかんで、次のカードまで引くとつながります。矢印を押すと外せます。カード本体をつかむと場所を動かせます。</p><button type="button" id="kbTidy">並べ直す</button></div>' +
       '<div class="kb-wbs" id="kbWbs"><div class="kb-wb" id="kbWb"><svg id="kbSvg" aria-hidden="true"></svg></div></div><div id="kbDetail"></div></div>';
     root.classList.add('kb');
     Array.prototype.forEach.call(root.querySelectorAll('.kb-tabs button'), function (b) {
@@ -2177,29 +2243,40 @@
   }
   function kbDrawLines() {
     var svg = $('kbSvg'), NS = 'http://www.w3.org/2000/svg'; svg.textContent = '';
+    function mk(cls, d) { var p = document.createElementNS(NS, 'path'); p.setAttribute('class', cls); p.setAttribute('d', d); svg.appendChild(p); return p; }
     kbEdges.forEach(function (e) {
       var a = e[0], b = e[1]; if (!a || !b) { return; }
       var x1 = a.offsetLeft + a.offsetWidth, y1 = a.offsetTop + a.offsetHeight / 2, x2 = b.offsetLeft, y2 = b.offsetTop + b.offsetHeight / 2;
       var back = x2 < x1 + 12, k = back ? 60 : Math.max(20, (x2 - x1) / 2);
-      var p = document.createElementNS(NS, 'path'); p.setAttribute('class', 'edge' + (e[2] ? ' root' : ''));
-      p.setAttribute('d', e[2] ? 'M' + x1 + ' ' + y1 + ' H' + (x1 + 16) + ' V' + y2 + ' H' + x2 : 'M' + x1 + ' ' + y1 + ' C' + (x1 + k) + ' ' + y1 + ' ' + (x2 - k) + ' ' + y2 + ' ' + (x2 - 6) + ' ' + y2);
-      svg.appendChild(p);
-      if (!e[2]) { var h = document.createElementNS(NS, 'path'); h.setAttribute('class', 'head'); h.setAttribute('d', 'M' + x2 + ' ' + y2 + ' l-8 -4.5 v9 z'); svg.appendChild(h); }
+      var d = e[2] ? 'M' + x1 + ' ' + y1 + ' H' + (x1 + 16) + ' V' + y2 + ' H' + x2 : 'M' + x1 + ' ' + y1 + ' C' + (x1 + k) + ' ' + y1 + ' ' + (x2 - k) + ' ' + y2 + ' ' + (x2 - 6) + ' ' + y2;
+      var fa = !e[2] && kbBy[a.dataset.cid], pass = !!(fa && fa.status === 'done');
+      var on = !e[2] && KB.selEdge && KB.selEdge.a === a.dataset.cid && KB.selEdge.b === b.dataset.cid;
+      mk('edge' + (e[2] ? ' root' : '') + (pass ? ' pass' : '') + (on ? ' on' : ''), d);
+      if (!e[2]) {
+        mk('head' + (pass ? ' pass' : '') + (on ? ' on' : ''), 'M' + x2 + ' ' + y2 + ' l-8 -4.5 v9 z');
+        var hit = mk('hit', d);
+        hit.addEventListener('click', function (ev) { ev.stopPropagation(); KB.selEdge = { a: a.dataset.cid, b: b.dataset.cid }; KB.sel = null; kbRender(true); });
+      }
     });
+    if (KB.link && KB.link.path) { svg.appendChild(KB.link.path); }
   }
   function kbRenderMap() {
-    var wb = $('kbWb'), L = kbLayout(), els = {};
+    var wb = $('kbWb'), L = kbLayout(), els = {}, pr = kbProjects();
     Array.prototype.slice.call(wb.querySelectorAll('.kb-node,.kb-pnode,.kb-empty')).forEach(function (n) { n.remove(); });
     kbEdges = [];
     wb.style.width = L.w + 'px'; wb.style.height = L.h + 'px';
     if (!kbCards().length) { var m = kbe('p', 'kb-empty', kbEmptyText('todo')); m.style.padding = '16px'; wb.appendChild(m); kbDrawLines(); kbRenderDetail(); return; }
     kbCards().forEach(function (c) {
-      var n = kbe('div', 'kb-node ' + c.status + (KB.sel === c.id ? ' sel' : '')), ss = c.steps || [];
-      n.appendChild(kbe('b', null, KB_ST[c.status] + (c.due && c.status !== 'done' ? '・' + kbDueLabel(c.due) : '') + (ss.length ? '・手順 ' + ss.filter(function (x) { return x.done; }).length + '/' + ss.length : '') + (c.wait && c.status !== 'done' ? '・待ち' : '')));
+      var nx = kbNexts(c), chain = (c.after || []).length || nx.length, waiting = c.status !== 'done' && !kbReady(c), up = chain && kbReady(c) && c.status !== 'doing';
+      var n = kbe('div', 'kb-node ' + c.status + (KB.sel === c.id ? ' sel' : '') + (waiting && chain ? ' blocked' : '') + (up ? ' nextup' : '')), ss = c.steps || [];
+      n.dataset.cid = c.id;
+      if (chain) { var no = kbe('i', 'kb-no', String(pr.dep[c.id] || 1)); no.title = '順番 ' + (pr.dep[c.id] || 1); n.appendChild(no); }
+      n.appendChild(kbe('b', null, (waiting && chain ? '🔒 ' : up ? '▶ 次はこれ・' : '') + KB_ST[c.status] + (c.due && c.status !== 'done' ? '・' + kbDueLabel(c.due) : '') + (ss.length ? '・手順 ' + ss.filter(function (x) { return x.done; }).length + '/' + ss.length : '') + (c.wait && c.status !== 'done' ? '・待ち' : '')));
       n.appendChild(kbe('span', null, c.title || '（無題）'));
       n.style.left = L.pos[c.id].x + 'px'; n.style.top = L.pos[c.id].y + 'px';
       n.tabIndex = 0; n.setAttribute('role', 'button');
       n.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); KB.sel = c.id; kbRender(true); } });
+      var hd = kbe('span', 'kb-hd'); hd.title = 'つかんで、次のカードまで引くと矢印がつながります'; hd.setAttribute('aria-hidden', 'true'); n.appendChild(hd); kbLinkify(hd, n, c);
       kbDragify(n, c); wb.appendChild(n); els[c.id] = n;
     });
     L.pnodes.forEach(function (o) {
@@ -2213,11 +2290,90 @@
     kbCards().forEach(function (c) { (c.after || []).forEach(function (id) { if (els[id]) { kbEdges.push([els[id], els[c.id], false]); } }); });
     kbDrawLines(); kbRenderDetail();
   }
+  function kbLinkify(hd, n, c) {
+    var wb = null;
+    function pt(ev) { var r = wb.getBoundingClientRect(); return { x: ev.clientX - r.left, y: ev.clientY - r.top }; }
+    function under(ev) { var e = document.elementFromPoint(ev.clientX, ev.clientY); return e && e.closest ? e.closest('.kb-node') : null; }
+    function clear() { Array.prototype.slice.call(document.querySelectorAll('.kb-node.lk-ok,.kb-node.lk-ng')).forEach(function (x) { x.classList.remove('lk-ok'); x.classList.remove('lk-ng'); }); }
+    function line(p) {
+      var x1 = n.offsetLeft + n.offsetWidth, y1 = n.offsetTop + n.offsetHeight / 2, k = Math.max(20, Math.abs(p.x - x1) / 2);
+      KB.link.path.setAttribute('d', 'M' + x1 + ' ' + y1 + ' C' + (x1 + k) + ' ' + y1 + ' ' + (p.x - k) + ' ' + p.y + ' ' + p.x + ' ' + p.y);
+    }
+    hd.addEventListener('pointerdown', function (ev) {
+      if (ev.button > 0) { return; }
+      ev.stopPropagation(); ev.preventDefault();
+      wb = $('kbWb');
+      var path = document.createElementNS('http://www.w3.org/2000/svg', 'path'); path.setAttribute('class', 'edge tmp');
+      KB.link = { from: c.id, path: path, to: '' }; KB.dragging = true; n.classList.add('linking');
+      try { hd.setPointerCapture(ev.pointerId); } catch (e) { }
+      $('kbSvg').appendChild(path); line(pt(ev));
+    });
+    hd.addEventListener('pointermove', function (ev) {
+      if (!KB.link) { return; }
+      line(pt(ev)); clear();
+      var t = under(ev); KB.link.to = '';
+      if (t && t.dataset.cid) {
+        var why = kbBad(c.id, t.dataset.cid);
+        t.classList.add(why ? 'lk-ng' : 'lk-ok'); if (!why) { KB.link.to = t.dataset.cid; }
+        kbSay(why ? why + '。' : '離すと「' + (c.title || '').slice(0, 12) + '」→「' + ((kbBy[t.dataset.cid] || {}).title || '').slice(0, 12) + '」とつながります', !why);
+      } else { kbSay('', true); }
+    });
+    function end(cancel) {
+      if (!KB.link) { return; }
+      var to = cancel ? '' : KB.link.to; KB.link = null; KB.dragging = false; n.classList.remove('linking'); clear();
+      if (to) { kbLink(c.id, to); } else { kbSay('', true); kbRender(true); }
+    }
+    hd.addEventListener('pointerup', function () { end(false); });
+    hd.addEventListener('pointercancel', function () { end(true); });
+    hd.addEventListener('click', function (ev) { ev.stopPropagation(); });
+  }
+  function kbPick(label, list, onPick) {        // 「〜を足す…」の選択欄
+    var sel = kbe('select'); sel.setAttribute('aria-label', label);
+    var o0 = kbe('option', null, label); o0.value = ''; sel.appendChild(o0);
+    list.forEach(function (x) { var o = kbe('option', null, x.title || '（無題）'); o.value = x.id; sel.appendChild(o); });
+    sel.addEventListener('change', function () { if (sel.value) { onPick(sel.value); } });
+    return sel;
+  }
+  function kbLinkPanel(c) {       // 選んだカードの「つながり」を、矢印を引かなくても直せる所
+    var box = kbe('div', 'kb-links'), pre = (c.after || []).map(function (id) { return kbBy[id]; }).filter(Boolean), nx = kbNexts(c);
+    function row(label, items, unlink) {
+      var r = kbe('div', 'kb-lrow'); r.appendChild(kbe('b', null, label));
+      var ch = kbe('div', 'kb-chips');
+      if (!items.length) { ch.appendChild(kbe('small', null, 'なし')); }
+      items.forEach(function (x) { var sp = kbe('span', null, (x.status === 'done' ? '✓ ' : '') + (x.title || '（無題）')), b = kbBtn('×', 'quiet', function () { unlink(x); }); b.setAttribute('aria-label', '「' + (x.title || '') + '」とのつながりを外す'); sp.appendChild(b); ch.appendChild(sp); });
+      r.appendChild(ch); return r;
+    }
+    box.appendChild(row('先にやること', pre, function (x) { kbUnlink(x.id, c.id); }));
+    box.appendChild(row('このあと', nx, function (x) { kbUnlink(c.id, x.id); }));
+    var pickRow = kbe('div', 'kb-acts');
+    pickRow.appendChild(kbPick('先にやることを足す…', kbCards().filter(function (x) { return !kbBad(x.id, c.id); }), function (id) { kbLink(id, c.id); }));
+    pickRow.appendChild(kbPick('このあとを足す…', kbCards().filter(function (x) { return !kbBad(c.id, x.id); }), function (id) { kbLink(c.id, id); }));
+    box.appendChild(pickRow);
+    return box;
+  }
+  function kbEdgePanel(a, b) {
+    var box = kbe('div', 'kb-links kb-edgebox');
+    var t = kbe('p', 'ttl'); t.appendChild(document.createTextNode('「' + (a.title || '') + '」'));
+    t.appendChild(kbe('span', 'kb-arrow', ' → ')); t.appendChild(document.createTextNode('「' + (b.title || '') + '」'));
+    box.appendChild(t);
+    box.appendChild(kbe('p', 'lab', '「' + (a.title || '').slice(0, 16) + '」が終わったら、「' + (b.title || '').slice(0, 16) + '」に進めます。'));
+    var acts = kbe('div', 'kb-acts');
+    acts.appendChild(kbBtn('矢印を外す', 'danger', function () { kbUnlink(a.id, b.id); }));
+    acts.appendChild(kbBtn('向きを逆にする', '', function () { kbFlip(a.id, b.id); }));
+    acts.appendChild(kbe('span', 'sp'));
+    acts.appendChild(kbBtn('とじる', 'quiet', function () { KB.selEdge = null; kbRender(true); }));
+    box.appendChild(acts);
+    return box;
+  }
   function kbRenderDetail() {
     var box = $('kbDetail'); box.textContent = '';
+    var e = KB.selEdge, ea = e && kbBy[e.a], eb = e && kbBy[e.b];
+    if (e && ea && eb && (eb.after || []).indexOf(ea.id) >= 0) { box.appendChild(kbEdgePanel(ea, eb)); return; }
+    KB.selEdge = null;
     var c = KB.sel && kbBy[KB.sel];
-    if (!c) { if (kbCards().length) { box.appendChild(kbe('p', 'kb-empty', 'カードを押すと、ここに出ます。')); } return; }
+    if (!c) { if (kbCards().length) { box.appendChild(kbe('p', 'kb-empty', 'カードか矢印を押すと、ここに出ます。')); } return; }
     var ul = kbe('ul', 'kb-cards'); ul.appendChild(kbCard(c, true, true)); box.appendChild(ul);
+    box.appendChild(kbLinkPanel(c));
   }
   function kbDragify(n, c) {
     var st = null, moved = false, raf = 0;
